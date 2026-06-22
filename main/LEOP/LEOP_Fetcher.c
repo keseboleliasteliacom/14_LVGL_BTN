@@ -108,7 +108,7 @@ void LEOPFetcher_Work(void *arg)
         }
         else
         {
-            ESP_LOGI(TAG, "WiFi is not connected, waiting 3 seconds until retrying, loading cached data:");
+            ESP_LOGI(TAG, "WiFi is not connected, waiting 60 seconds until retrying, loading cached data:");
 
             leop_data->recommendations.status.recommendation_fetched =
                 (Recommendation_FetchCache(&leop_data->recommendations) == 0);

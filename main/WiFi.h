@@ -88,6 +88,10 @@ typedef struct
     wifi_info wifi_info;
 } wifi_data;
 
+typedef void (*wifi_connection_cb_t)(bool connected, void *ctx);
+void WiFi_SetConnectionCallback(wifi_connection_cb_t cb, void *ctx);
+
+
 /**
  * @brief Initializes the Wi-Fi module.
  *

@@ -12,6 +12,7 @@
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
 #include "SNTP/time_sync.h"
+//#include "../app_types.h"
 
 #define TAG "WiFi"
 
@@ -20,7 +21,14 @@
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
 
+#define WIFI_RETRY_ATTEMPT 100
+
+#define WIFI_RECONNECT_BASE_DELAY_MS 1000
+#define WIFI_RECONNECT_MAX_DELAY_MS 30000
+
 // static const int WIFI_RETRY_ATTEMPT = 3;
+
+static bool sntp_synced = false;
 
 static int wifi_retry_count = 0;
 
@@ -30,6 +38,8 @@ static esp_event_handler_instance_t ip_event;
 static esp_event_handler_instance_t wifi_event;
 
 static EventGroupHandle_t wifi_event_group = NULL;
+static bool wifi_reconnect_pending = false;
+static TickType_t wifi_reconnect_time = 0;
 
 static wifi_state w_state = {0};
 
@@ -42,6 +52,28 @@ QueueHandle_t event_queue = NULL;
 esp_err_t WiFi_Connect(wifi_data *w_info);
 esp_err_t WiFi_Dispose(void);
 esp_err_t WiFi_Disconnect(void);
+
+
+
+static wifi_connection_cb_t wifi_connection_cb = NULL;
+static void *wifi_connection_ctx = NULL;
+
+void WiFi_SetConnectionCallback(wifi_connection_cb_t cb, void *ctx)
+{
+    wifi_connection_cb = cb;
+    wifi_connection_ctx = ctx;
+}
+
+static void WiFi_SetConnectedState(bool connected)
+{
+    w_state.is_connected = connected;
+    if (wifi_connection_cb != NULL)
+    {
+        wifi_connection_cb(connected, wifi_connection_ctx);
+    }
+}
+
+
 
 /**
  * @brief Handles IP events from the ESP-IDF event loop.
@@ -60,11 +92,22 @@ static void ip_event_cb(void *arg, esp_event_base_t event_base, int32_t event_id
         ip_event_got_ip_t *event_ip = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event_ip->ip_info.ip));
 
-        w_state.is_connected = true;
+        //w_state.is_connected = true;
+        WiFi_SetConnectedState(true);
         wifi_retry_count = 0;
+        wifi_reconnect_pending = false;
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
 
-        esp_err_t time_result = TimeSync_Start();
+        /*
+        if (sntp_synced == false)
+        {
+            esp_err_t sntp_result = TimeSync_Start();
+            if (sntp_result == ESP_OK)
+            {
+                sntp_synced = true;
+            }
+        }
+        */
         break;
         // esp_err_t time_result = TimeSync_Start();
         // ip_event_got_ip_t *event_ip = (ip_event_got_ip_t *)event_data;
@@ -74,7 +117,8 @@ static void ip_event_cb(void *arg, esp_event_base_t event_base, int32_t event_id
         // break;
     case (IP_EVENT_STA_LOST_IP):
         ESP_LOGI(TAG, "Lost IP");
-        w_state.is_connected = false;
+        //w_state.is_connected = false;
+        WiFi_SetConnectedState(false);
         break;
     case (IP_EVENT_GOT_IP6):
         ip_event_got_ip6_t *event_ip6 = (ip_event_got_ip6_t *)event_data;
@@ -104,13 +148,14 @@ static void wifi_event_cb(void *arg, esp_event_base_t event_base, int32_t event_
     switch (event_id)
     {
     case (WIFI_EVENT_WIFI_READY):
+        status = WIFI_STATUS_INITIALIZED;
         ESP_LOGI(TAG, "Wi-Fi ready");
-        xQueueSend(event_queue, &status, portMAX_DELAY);
+        xQueueSend(event_queue, &status, 0);
         break;
     case (WIFI_EVENT_SCAN_DONE):
         ESP_LOGI(TAG, "Wi-Fi scan done");
         status = WIFI_STATUS_SCAN_DONE;
-        xQueueSend(event_queue, &status, portMAX_DELAY);
+        xQueueSend(event_queue, &status, 0);
         break;
     case (WIFI_EVENT_STA_START):
         ESP_LOGI(TAG, "Wi-Fi started, connecting to AP...");
@@ -120,15 +165,34 @@ static void wifi_event_cb(void *arg, esp_event_base_t event_base, int32_t event_
         ESP_LOGI(TAG, "Wi-Fi stopped");
         break;
     case (WIFI_EVENT_STA_CONNECTED):
-        ESP_LOGI(TAG, "Wi-Fi connected");
+        //w_state.is_connected = true;
+        ESP_LOGI(TAG, "Wi-Fi AP connected, waiting for IP...");
         status = WIFI_STATUS_CONNECTED;
-        xQueueSend(event_queue, &status, portMAX_DELAY);
+        xQueueSend(event_queue, &status, 0);
         break;
     case (WIFI_EVENT_STA_DISCONNECTED):
+        wifi_event_sta_disconnected_t *disc = (wifi_event_sta_disconnected_t *)event_data;
+
+        ESP_LOGW(TAG, "Wifi disocnnected with reason: %d", disc->reason);
         ESP_LOGI(TAG, "Wi-Fi disconnected");
-        w_state.is_connected = false;
-        status = WIFI_STATUS_DISCONNECTED;
-        xQueueSend(event_queue, &status, portMAX_DELAY);
+        //w_state.is_connected = false;
+        WiFi_SetConnectedState(false);
+        if (wifi_retry_count < WIFI_RETRY_ATTEMPT)
+        {
+            wifi_retry_count++;
+            uint32_t delay_ms = WIFI_RECONNECT_BASE_DELAY_MS * wifi_retry_count;
+            if (delay_ms > WIFI_RECONNECT_MAX_DELAY_MS)
+            {
+                delay_ms = WIFI_RECONNECT_MAX_DELAY_MS;
+            }
+            ESP_LOGI(TAG, "Scheduling wifi reconnect attempt %d/%d in %"PRIu32" ms", wifi_retry_count, WIFI_RETRY_ATTEMPT, delay_ms);
+            wifi_reconnect_pending = true;
+            wifi_reconnect_time = xTaskGetTickCount() + pdMS_TO_TICKS(delay_ms);
+        }
+        else {
+            status = WIFI_STATUS_DISCONNECTED;
+            xQueueSend(event_queue, &status, 0);
+        }
         break;
     case (WIFI_EVENT_STA_AUTHMODE_CHANGE):
         ESP_LOGI(TAG, "Wi-Fi authmode changed");
@@ -212,6 +276,7 @@ esp_err_t WiFi_Initialize()
     // Wi-Fi stack configuration parameters
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+     esp_wifi_set_ps(WIFI_PS_NONE); // Disable powersaving mode as it can cause problems with some routerns/APs under reconnect
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_cb, NULL, &wifi_event));
 
@@ -276,13 +341,26 @@ esp_err_t WiFi_Scan(wifi_data *w_data)
  */
 void WiFi_Work(void *arg)
 {
+    //app_state_t* app = (app_state_t*)arg;
+
     wifi_status status;
     wifi_data w_data;
 
     while (1)
     {
+        if (wifi_reconnect_pending && xTaskGetTickCount() >= wifi_reconnect_time)
+        {
+            wifi_reconnect_pending = false;
+            ESP_LOGI(TAG, "Retrying wifi-connection...");
+            esp_err_t err = esp_wifi_connect();
 
-        if (xQueueReceive(wifi_cmd_queue, &w_data, pdMS_TO_TICKS(5000)) == pdPASS)
+            if (err != ESP_OK)
+            {
+                ESP_LOGW(TAG, "Wi-Fi reconnect request failed: %s", esp_err_to_name(err));
+            }
+        }
+
+        if (xQueueReceive(wifi_cmd_queue, &w_data, pdMS_TO_TICKS(100)) == pdPASS)
         {
             switch (w_data.cmd)
             {
@@ -311,13 +389,17 @@ void WiFi_Work(void *arg)
                 }
                 break;
             case WIFI_CMD_DISCONNECT:
-                WiFi_Disconnect();
+                //WiFi_Disconnect();
                 if (xQueueReceive(event_queue, &status, pdMS_TO_TICKS(5000)))
                 {
                     if (status == WIFI_STATUS_DISCONNECTED)
                     {
                         w_data.status = status;
                         xQueueSend(wifi_result_queue, &w_data, 0);
+                        //ESP_LOGI(TAG, "Wifi dsocnnected, attempting reconnect");
+                        //w_data.status = WIFI_STATUS_CONN
+                        //WiFi_Connect(&w_data);
+                        //xQueueSend(wifi_result_queue, &w_data, 0);
                     }
                 }
                 break;
@@ -383,11 +465,13 @@ bool WiFi_IsConnected()
  */
 esp_err_t WiFi_Disconnect(void)
 {
+    /*
     if (wifi_event_group)
     {
         vEventGroupDelete(wifi_event_group);
     }
 
+    */
     return esp_wifi_disconnect();
 }
 

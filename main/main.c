@@ -45,11 +45,17 @@ static TaskHandle_t uart_task_handle = NULL;
 static TaskHandle_t sensor_task_handle = NULL;
 static TaskHandle_t leop_task_handle = NULL;
 
-#define WIFI_STACK_SIZE     4096
+#define WIFI_STACK_SIZE     8192
 #define UI_STACK_SIZE       16384
 #define UART_STACK_SIZE     4096
 #define SENSOR_STACK_SIZE   4096
 #define LEOP_STACK_SIZE     4096
+
+static void on_wifi_connection_changed(bool connected, void *ctx)
+{
+    app_state_t *app = (app_state_t *)ctx;
+    app->system_status.wifi_connected = connected;
+}
 
 
 /**
@@ -125,6 +131,8 @@ void app_main()
     ESP_ERROR_CHECK(lvgl_port_init(panel_handle, tp_handle)); // Initialize LVGL with the panel and touch handles
 
     WiFi_Initialize();
+    // Setup out callback
+    WiFi_SetConnectionCallback(on_wifi_connection_changed, &app);
 
     Spiffs_Initialize();
 
@@ -136,13 +144,13 @@ void app_main()
         lvgl_port_unlock();
     }
 
-    xTaskCreate(WiFi_Work, &app.system_task_handlers.wifi_task.name, app.system_task_handlers.wifi_task.stack_size, NULL, 5, &wifi_task_handle);
+    xTaskCreate(WiFi_Work, app.system_task_handlers.wifi_task.name, app.system_task_handlers.wifi_task.stack_size, NULL, 5, &wifi_task_handle);
 
-    xTaskCreate(ui_update_task, &app.system_task_handlers.wifi_task.name, app.system_task_handlers.wifi_task.stack_size, NULL, 5, &ui_task_handle);
+    xTaskCreate(ui_update_task, app.system_task_handlers.ui_task.name, app.system_task_handlers.ui_task.stack_size, NULL, 5, &ui_task_handle);
 
-    xTaskCreate(UART_Work, &app.system_task_handlers.wifi_task.name, app.system_task_handlers.wifi_task.stack_size, &app, 4, &uart_task_handle);
+    xTaskCreate(UART_Work, &app.system_task_handlers.uart_task.name, app.system_task_handlers.uart_task.stack_size, &app, 4, &uart_task_handle);
 
-    xTaskCreate(Sensor_Work, &app.system_task_handlers.sensor_task.name, app.system_task_handlers.sensor_task.stack_size, &app, 4, &sensor_task_handle);
+    //xTaskCreate(Sensor_Work, &app.system_task_handlers.sensor_task.name, app.system_task_handlers.sensor_task.stack_size, &app, 4, &sensor_task_handle);
 
 
     // Använd appens leop_data istället för en statisk lokal här.
@@ -152,7 +160,7 @@ void app_main()
     ESP_LOGI(TAG, "Leop data config time interval: %ld", *app.leop_data.leop_conf.time_interval);
 
     //xTaskCreate(LEOPFetcher_Work, "LEOP", LEOP_STACK_SIZE, &leop_data, 4, NULL);
-    xTaskCreate(LEOPFetcher_Work, &app.system_task_handlers.leop_task.name, app.system_task_handlers.leop_task.stack_size, &app.leop_data, 4, &leop_task_handle);
+    xTaskCreate(LEOPFetcher_Work, app.system_task_handlers.leop_task.name, app.system_task_handlers.leop_task.stack_size, &app.leop_data, 4, &leop_task_handle);
     //  ESP_ERROR_CHECK(WiFi_Dispose());
 
     // Set the task handles after the tasks has been started, so we actually store info/data instead of NULL

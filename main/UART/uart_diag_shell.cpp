@@ -17,6 +17,7 @@
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "../app_types.h"
+//#include "../WiFi.h"
 #include "UART.hpp"
 #include <ctime>
 
@@ -269,7 +270,10 @@ void handle_input(const std::string &input, app_state_t *state)
  */
 void handle_status(app_state_t* state)
 {
-    std::cout << "Wifi: " << connected_text(state->system_status.wifi_connected) << std::endl;
+    //bool live_wifi_connected = WiFi_IsConnected();
+
+    std::cout << "Wifi(system): " << connected_text(state->system_status.wifi_connected) << std::endl;
+    //std::cout << "Wifi(live): " << connected_text(live_wifi_connected) << std::endl;
     std::cout << "LEOP: " << connected_text(state->system_status.leop_connected) << std::endl;
     std::cout << "Sensor: " << ok_text(state->system_status.sensor_ok) << std::endl;
     std::cout << "Update counter: " << state->system_status.update_counter << std::endl;

@@ -22,11 +22,11 @@ namespace hal {
      * Contains the measured humidity value and timestamps captured by the
      * implementation.
      */
-    struct HumidityReading {
-        float humidity; /**< Humidity value in project-defined units. */
-        uint32_t monotonic_timestamp; /**< Monotonic timestamp associated with the reading. */
-        time_t unix_timestamp; /**< Unix timestamp associated with the reading. */
-    };
+    // struct HumidityReading {
+    //     float humidity; /**< Humidity value in project-defined units. */
+    //     uint32_t monotonic_timestamp; /**< Monotonic timestamp associated with the reading. */
+    //     time_t unix_timestamp; /**< Unix timestamp associated with the reading. */
+    // };
 
     /**
      * @brief Abstract interface for humidity sensor implementations.

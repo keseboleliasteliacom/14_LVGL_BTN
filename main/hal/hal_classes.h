@@ -14,6 +14,8 @@
 #ifndef HAL_CLASSES_H
 #define HAL_CLASSES_H
 
+#include "time.h"
+
 namespace hal {
     /**
      * @brief Error codes reported by sensor-oriented HAL operations.
@@ -25,7 +27,26 @@ namespace hal {
         InvalidReading,
         Timeout
     };
-}
+    
+    struct TemperatureReading {
+        float celcius; /**< Temperature value in degrees Celsius. */
+        uint32_t monotonic_timestamp; /**< Monotonic timestamp associated with the reading. */
+        time_t unix_timestamp; /**< UNIX timestamp associated with the reading. */
+    };
+
+
+    struct HumidityReading {
+        float humidity; /**< Humidity value in project-defined units. */
+        uint32_t monotonic_timestamp; /**< Monotonic timestamp associated with the reading. */
+        time_t unix_timestamp; /**< Unix timestamp associated with the reading. */
+    };
+
+    struct PressureReading {
+        float pressure; /**< Measured pressure value. */
+        uint32_t monotonic_timestamp; /**< Monotonic timestamp for the reading. */
+        time_t unix_timestamp; /**< UNIX timestamp for the reading. */
+    };
+};
 
 
 #endif

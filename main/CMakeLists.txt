@@ -18,7 +18,7 @@ idf_component_register(
     "LEOP/LEOP_Fetcher.c" "Cache/Cache.c"
     "LEOP/Price.c"
     "LEOP/LEOP_Fetcher.c"
-    "hal/bme280_sensor.cpp"
+    "hal/bme280_sensor.cpp" "hal/bme280_sensor_v2.cpp"
     "Memory/Spiffs.c"
     INCLUDE_DIRS "." "SNTP" "fake" "hal" "leop" "sensor" "UART" "Memory"
     WHOLE_ARCHIVE

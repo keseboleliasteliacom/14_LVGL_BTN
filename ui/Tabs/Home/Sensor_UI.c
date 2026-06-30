@@ -132,6 +132,8 @@ void Sensor_UI_Update(void)
             char temp[50];
             char humidity[50];
             char pressure[50];
+
+            //snprintf(temp, sizeof(temp), "%2.1f", sensor_data.temperature);
             snprintf(temp, sizeof(temp), "%2.1f", sensor_data.temperature);
             snprintf(humidity, sizeof(humidity), "%2.1f%%", sensor_data.humidity);
             snprintf(pressure, sizeof(pressure), "%.1f pHa", sensor_data.pressure);

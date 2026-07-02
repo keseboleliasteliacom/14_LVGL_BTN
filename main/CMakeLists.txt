@@ -19,7 +19,7 @@ idf_component_register(
     "LEOP/Price.c"
     "LEOP/LEOP_Fetcher.c"
     "hal/bme280_sensor.cpp"
-    "Memory/Spiffs.c"
+    "Memory/Spiffs.c" "Memory/NVS.c"
     INCLUDE_DIRS "." "SNTP" "fake" "hal" "leop" "sensor" "UART" "Memory"
     WHOLE_ARCHIVE
     PRIV_REQUIRES can gpio rgb_lcd_port spiffs

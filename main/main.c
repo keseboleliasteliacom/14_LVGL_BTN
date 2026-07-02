@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "fake/fake_config.hpp"
+#include "Memory/NVS.h"
 
 
 #define WIFI_PASS "rockyunit953"
@@ -50,6 +51,7 @@ static TaskHandle_t leop_task_handle = NULL;
 #define UART_STACK_SIZE     4096
 #define SENSOR_STACK_SIZE   4096
 #define LEOP_STACK_SIZE     4096
+
 
 
 /**
@@ -161,4 +163,12 @@ void app_main()
     app.system_task_handlers.uart_task.handle = uart_task_handle;
     app.system_task_handlers.sensor_task.handle = sensor_task_handle;
     app.system_task_handlers.leop_task.handle = leop_task_handle;
+
+    //FullNVS();
+    NVS_Init();
+//NVS_WriteToFile("testing", "yes1");
+
+    char testing[20];
+    NVS_LoadFromFile("testing", testing, sizeof(testing));
+    ESP_LOGI(TAG, "\"testing\" value is: %s", testing);
 }

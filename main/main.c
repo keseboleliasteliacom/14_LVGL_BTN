@@ -31,6 +31,7 @@
 #include <time.h>
 #include "fake/fake_config.hpp"
 #include "Memory/NVS.h"
+#include "Config/AppConfig.h"
 
 
 #define WIFI_PASS "rockyunit953"
@@ -105,8 +106,19 @@ void app_main()
     setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
     tzset();
 
+    NVS_Init();
+
+
     // Inits with "fake" config data, should be used as a default fallback if settings from NVS can't be loaded
-    fake_config_data(&app.config_data);
+    //fake_config_data(&app.config_data);
+    Config_SetDefaults(&app.config_data);
+    Config_LoadFromNVS(&app.config_data);
+
+    ESP_LOGI(TAG, "TEST: Config values.");
+    ESP_LOGI(TAG, "fetch_interval_minutes: %lu", app.config_data.fetch_interval_minutes);
+    ESP_LOGI(TAG, "test_mode: %d", app.config_data.test_mode);
+    ESP_LOGI(TAG, "sensor_interval_ms: %lu", app.config_data.sensor_interval_ms);
+    
 
     // Init the name and stack sizes for our tasks
     init_app_system_task_handlers(&app);    
@@ -165,10 +177,10 @@ void app_main()
     app.system_task_handlers.leop_task.handle = leop_task_handle;
 
     //FullNVS();
-    NVS_Init();
+    // NVS_Init();
 //NVS_WriteToFile("testing", "yes1");
 
-    char testing[20];
-    NVS_LoadFromFile("testing", testing, sizeof(testing));
-    ESP_LOGI(TAG, "\"testing\" value is: %s", testing);
+    // char testing[20];
+    // NVS_LoadFromFile("testing", testing, sizeof(testing));
+    // ESP_LOGI(TAG, "\"testing\" value is: %s", testing);
 }

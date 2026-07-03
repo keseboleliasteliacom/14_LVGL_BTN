@@ -58,6 +58,149 @@ int NVS_LoadFromFile(const char* key, char* value, size_t length) {
     return 0;
 }
 
+int NVS_ReadString(const char* nvs_namespace, const char* key, char* buffer, size_t size)
+{
+    nvs_handle_t handle;
+    esp_err_t result = nvs_open(nvs_namespace, NVS_READONLY, &handle);
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when opening NVS namespace \"%s\".", esp_err_to_name(result), nvs_namespace);
+        return -1;
+    }
+
+    size_t required_size = size;
+    result = nvs_get_str(handle, key, buffer, &required_size);
+    nvs_close(handle);
+
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when reading string key \"%s\".", esp_err_to_name(result), key);
+        return -2;
+    }
+
+    return 0;
+}
+
+int NVS_WriteString(const char* nvs_namespace, const char* key, const char* value)
+{
+    nvs_handle_t handle;
+    esp_err_t result = nvs_open(nvs_namespace, NVS_READWRITE, &handle);
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when opening NVS namespace \"%s\".", esp_err_to_name(result), nvs_namespace);
+        return -1;
+    }
+
+    result = nvs_set_str(handle, key, value);
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when writing string key \"%s\".", esp_err_to_name(result), key);
+        nvs_close(handle);
+        return -2;
+    }
+
+    result = nvs_commit(handle);
+    nvs_close(handle);
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when committing string key \"%s\".", esp_err_to_name(result), key);
+        return -3;
+    }
+
+    return 0;
+}
+
+int NVS_ReadU32(const char* nvs_namespace, const char* key, uint32_t* out_value)
+{
+    nvs_handle_t handle;
+    esp_err_t result = nvs_open(nvs_namespace, NVS_READONLY, &handle);
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when opening NVS namespace \"%s\".", esp_err_to_name(result), nvs_namespace);
+        return -1;
+    }
+
+    result = nvs_get_u32(handle, key, out_value);
+    nvs_close(handle);
+
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when reading u32 key \"%s\".", esp_err_to_name(result), key);
+        return -2;
+    }
+
+    return 0;
+}
+
+int NVS_WriteU32(const char* nvs_namespace, const char* key, uint32_t value)
+{
+    nvs_handle_t handle;
+    esp_err_t result = nvs_open(nvs_namespace, NVS_READWRITE, &handle);
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when opening NVS namespace \"%s\".", esp_err_to_name(result), nvs_namespace);
+        return -1;
+    }
+
+    result = nvs_set_u32(handle, key, value);
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when writing u32 key \"%s\".", esp_err_to_name(result), key);
+        nvs_close(handle);
+        return -2;
+    }
+
+    result = nvs_commit(handle);
+    nvs_close(handle);
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when committing u32 key \"%s\".", esp_err_to_name(result), key);
+        return -3;
+    }
+
+    return 0;
+}
+
+int NVS_ReadBool(const char* nvs_namespace, const char* key, bool* out_value)
+{
+    uint8_t stored_value = 0;
+    nvs_handle_t handle;
+    esp_err_t result = nvs_open(nvs_namespace, NVS_READONLY, &handle);
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when opening NVS namespace \"%s\".", esp_err_to_name(result), nvs_namespace);
+        return -1;
+    }
+
+    result = nvs_get_u8(handle, key, &stored_value);
+    nvs_close(handle);
+
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when reading bool key \"%s\".", esp_err_to_name(result), key);
+        return -2;
+    }
+
+    *out_value = stored_value != 0;
+    return 0;
+}
+
+int NVS_WriteBool(const char* nvs_namespace, const char* key, bool value)
+{
+    nvs_handle_t handle;
+    esp_err_t result = nvs_open(nvs_namespace, NVS_READWRITE, &handle);
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when opening NVS namespace \"%s\".", esp_err_to_name(result), nvs_namespace);
+        return -1;
+    }
+
+    result = nvs_set_u8(handle, key, value ? 1 : 0);
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when writing bool key \"%s\".", esp_err_to_name(result), key);
+        nvs_close(handle);
+        return -2;
+    }
+
+    result = nvs_commit(handle);
+    nvs_close(handle);
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Error %s when committing bool key \"%s\".", esp_err_to_name(result), key);
+        return -3;
+    }
+
+    return 0;
+}
+
+
+
 
 void FullNVS() {
     esp_err_t err = nvs_flash_init();

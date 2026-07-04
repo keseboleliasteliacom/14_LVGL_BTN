@@ -1,3 +1,10 @@
+/**
+ * @file bme280_sensor_v2.cpp
+ * @brief Implementation of the BME280 sensor HAL.
+ *
+ * @ingroup HAL
+ */
+
 #include "bme280_sensor_v2.hpp"
 #include "driver/gpio.h"
 #include "freertos/task.h"
@@ -20,16 +27,28 @@
 static constexpr char* TAG = "bme280_sensor_v2.cpp";
 static bool fake_mode = false;
 
+/**
+ * @brief Constructs the BME280 sensor wrapper and configures I2C settings.
+ */
 hal::BME280SensorV2::BME280SensorV2()
 {
     BME280Sensor_init_i2c_config();
 }
 
+/**
+ * @brief Reports whether the BME280 sensor is present.
+ *
+ * @return Always returns false in the current implementation.
+ */
 bool hal::BME280SensorV2::is_present() {
     return 0;
 }
 
-
+/**
+ * @brief Returns the current Unix time.
+ *
+ * @return Current system time as Unix time.
+ */
 static time_t clock_unix_time() {
     time_t now;
     time(&now);
@@ -37,6 +56,11 @@ static time_t clock_unix_time() {
     return now;
 }
 
+/**
+ * @brief Implementation of read.
+ *
+ * See header for full contract documentation.
+ */
 hal::SensorError hal::BME280SensorV2::read(hal::EnvironmentReading& reading) {
     if (!this->bme280_ready || this->bme280 == NULL) {
         int64_t now_ms = esp_timer_get_time() / 1000;
@@ -82,6 +106,13 @@ hal::SensorError hal::BME280SensorV2::read(hal::EnvironmentReading& reading) {
     return hal::SensorError::Ok;
 }
 
+/**
+ * @brief Initializes the BME280 instance at a specific I2C address.
+ *
+ * @param[in] address I2C address to probe.
+ *
+ * @return True on successful initialization, false otherwise.
+ */
 bool hal::BME280SensorV2::bme280_init_at_address(uint8_t address)
 {
     this->bme280 = bme280_create(this->bme280_bus, address);
@@ -103,6 +134,9 @@ bool hal::BME280SensorV2::bme280_init_at_address(uint8_t address)
     return true;
 }
 
+/**
+ * @brief Configures the default I2C parameters used by the BME280 sensor.
+ */
 void hal::BME280SensorV2::BME280Sensor_init_i2c_config()
 {
     this->i2c_config.mode = I2C_MODE_MASTER; // ESP I2C buss is master
@@ -113,7 +147,14 @@ void hal::BME280SensorV2::BME280Sensor_init_i2c_config()
     this->i2c_config.master.clk_speed = BME280_I2C_FREQ_HZ; // sets clock speed to previously defined clock speed
 }
 
-
+/**
+ * @brief Initializes the BME280 sensor and I2C bus.
+ *
+ * The first successful address probe keeps the created bus and sensor handle.
+ * If the bus already exists, it is reused for reconnect attempts.
+ *
+ * @return True on success, false if the bus or sensor cannot be initialized.
+ */
 bool hal::BME280SensorV2::bme280_sensor_init() {
     // This scans for devices, logs adresses. Mainly used for debugging so we can see if the 0x77 appears, or the fallback 0x76
     // If bme280 bus is set it means we're trying to attempting to reconnect, so don't create duplicated bus.

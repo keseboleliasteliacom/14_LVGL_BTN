@@ -1,10 +1,22 @@
+/**
+ * @file NVS.c
+ * @brief Implementation of the NVS helper module.
+ *
+ * @ingroup NVS
+ */
+
 #include "NVS.h"
 
 static esp_err_t err;
 nvs_handle_t my_handle;
 
 const static char* TAG = "NVS";
-// Todo - proper error code info
+
+/**
+ * @brief Initializes the default NVS flash partition.
+ *
+ * Returns a non-zero value if the partition must be erased and reinitialized.
+ */
 int NVS_Init() {
     err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -17,6 +29,11 @@ int NVS_Init() {
     return 0;
 }
 
+/**
+ * @brief Implementation of NVS_WriteToFile.
+ *
+ * See header for full contract documentation.
+ */
 int NVS_WriteToFile(const char* key, const char* value)
 {
     err = nvs_open("storage", NVS_READWRITE, &my_handle);
@@ -39,6 +56,11 @@ int NVS_WriteToFile(const char* key, const char* value)
     return 0;
 }
 
+/**
+ * @brief Implementation of NVS_LoadFromFile.
+ *
+ * See header for full contract documentation.
+ */
 int NVS_LoadFromFile(const char* key, char* value, size_t length) {
     //char value[20];
 
@@ -58,6 +80,11 @@ int NVS_LoadFromFile(const char* key, char* value, size_t length) {
     return 0;
 }
 
+/**
+ * @brief Implementation of NVS_ReadString.
+ *
+ * See header for full contract documentation.
+ */
 int NVS_ReadString(const char* nvs_namespace, const char* key, char* buffer, size_t size)
 {
     nvs_handle_t handle;
@@ -79,6 +106,11 @@ int NVS_ReadString(const char* nvs_namespace, const char* key, char* buffer, siz
     return 0;
 }
 
+/**
+ * @brief Implementation of NVS_WriteString.
+ *
+ * See header for full contract documentation.
+ */
 int NVS_WriteString(const char* nvs_namespace, const char* key, const char* value)
 {
     nvs_handle_t handle;
@@ -105,6 +137,11 @@ int NVS_WriteString(const char* nvs_namespace, const char* key, const char* valu
     return 0;
 }
 
+/**
+ * @brief Implementation of NVS_ReadU32.
+ *
+ * See header for full contract documentation.
+ */
 int NVS_ReadU32(const char* nvs_namespace, const char* key, uint32_t* out_value)
 {
     nvs_handle_t handle;
@@ -125,6 +162,11 @@ int NVS_ReadU32(const char* nvs_namespace, const char* key, uint32_t* out_value)
     return 0;
 }
 
+/**
+ * @brief Implementation of NVS_WriteU32.
+ *
+ * See header for full contract documentation.
+ */
 int NVS_WriteU32(const char* nvs_namespace, const char* key, uint32_t value)
 {
     nvs_handle_t handle;
@@ -151,6 +193,11 @@ int NVS_WriteU32(const char* nvs_namespace, const char* key, uint32_t value)
     return 0;
 }
 
+/**
+ * @brief Implementation of NVS_ReadBool.
+ *
+ * See header for full contract documentation.
+ */
 int NVS_ReadBool(const char* nvs_namespace, const char* key, bool* out_value)
 {
     uint8_t stored_value = 0;
@@ -173,6 +220,11 @@ int NVS_ReadBool(const char* nvs_namespace, const char* key, bool* out_value)
     return 0;
 }
 
+/**
+ * @brief Implementation of NVS_WriteBool.
+ *
+ * See header for full contract documentation.
+ */
 int NVS_WriteBool(const char* nvs_namespace, const char* key, bool value)
 {
     nvs_handle_t handle;
@@ -202,6 +254,12 @@ int NVS_WriteBool(const char* nvs_namespace, const char* key, bool value)
 
 
 
+/**
+ * @brief Demonstrates NVS initialization, read-modify-write, and restart flow.
+ *
+ * The function opens the storage namespace, updates the restart counter, and
+ * then delays before restarting the device.
+ */
 void FullNVS() {
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {

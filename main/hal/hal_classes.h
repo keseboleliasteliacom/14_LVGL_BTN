@@ -28,6 +28,9 @@ namespace hal {
         Timeout
     };
     
+    /**
+     * @brief Temperature sample with monotonic and UNIX timestamps.
+     */
     struct TemperatureReading {
         float celcius; /**< Temperature value in degrees Celsius. */
         uint32_t monotonic_timestamp; /**< Monotonic timestamp associated with the reading. */
@@ -35,12 +38,18 @@ namespace hal {
     };
 
 
+    /**
+     * @brief Humidity sample with monotonic and UNIX timestamps.
+     */
     struct HumidityReading {
         float humidity; /**< Humidity value in project-defined units. */
         uint32_t monotonic_timestamp; /**< Monotonic timestamp associated with the reading. */
         time_t unix_timestamp; /**< Unix timestamp associated with the reading. */
     };
 
+    /**
+     * @brief Pressure sample with monotonic and UNIX timestamps.
+     */
     struct PressureReading {
         float pressure; /**< Measured pressure value. */
         uint32_t monotonic_timestamp; /**< Monotonic timestamp for the reading. */

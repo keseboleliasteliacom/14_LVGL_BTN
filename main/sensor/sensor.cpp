@@ -66,6 +66,7 @@ bool Sensor_Read_v3(sensor_data_t* sensor, hal::BME280SensorV2& environment_sens
 
     sensor->valid = true;
     sensor->last_update_seconds = esp_timer_get_time() / 1000000ULL;
+    sensor->last_unix_time = reading.unix_timestamp;
     sensor->wall_time_valid = sensor->last_unix_time >= MIN_VALID_UNIX_TIME;
 
     sensor_data_t sensor_snapshot = *sensor;

@@ -125,7 +125,7 @@ void WiFi_UI_Initialize()
  */
 void WiFi_UI_Scan_cb(lv_event_t *_Event)
 {
-    wifi_data w_data;
+    wifi_data w_data = {0};
     w_data.cmd = WIFI_CMD_SCAN;
     xQueueSend(wifi_cmd_queue, &w_data, 0);
 }
@@ -147,8 +147,8 @@ void WiFi_UI_Keyboard_cb(lv_event_t *_Event)
     {
         const char *pass = lv_textarea_get_text(ta);
 
-        w_data.wifi_info.password = pass;
-        w_data.wifi_info.ssid = wifi_ui.selected_ssid;
+        strlcpy(w_data.wifi_info.password, pass, sizeof(w_data.wifi_info.password));
+        strlcpy(w_data.wifi_info.ssid, wifi_ui.selected_ssid, sizeof(w_data.wifi_info.ssid));
 
         xQueueSend(wifi_cmd_queue, &w_data, 0);
 
@@ -219,7 +219,15 @@ void WiFi_UI_Update(void)
             ESP_LOGI(TAG, "Connection finished!");
             lv_label_set_text(wifi_ui.status_label_dyn, "Connected");
             lv_obj_set_style_text_color(wifi_ui.status_label_dyn, lv_color_hex(0x66FF00), LV_PART_MAIN | LV_STATE_DEFAULT);
-            lv_label_set_text(wifi_ui.ssid_label, wifi_ui.selected_ssid);
+            // If SSID was loaded from NVS into w_data.wifi_info.ssid
+            if (w_data.wifi_info.ssid[0] != '\0') {
+                lv_label_set_text(wifi_ui.ssid_label, w_data.wifi_info.ssid);
+            }
+            // Else if manually connected
+            else {
+                lv_label_set_text(wifi_ui.ssid_label, wifi_ui.selected_ssid);
+            }
+
 
             vTaskDelay(pdMS_TO_TICKS(1000));
         }

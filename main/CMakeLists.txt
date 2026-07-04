@@ -19,8 +19,9 @@ idf_component_register(
     "LEOP/Price.c"
     "LEOP/LEOP_Fetcher.c"
     "hal/bme280_sensor.cpp" "hal/bme280_sensor_v2.cpp"
-    "Memory/Spiffs.c"
-    INCLUDE_DIRS "." "SNTP" "fake" "hal" "leop" "sensor" "UART" "Memory"
+    "Memory/Spiffs.c" "Memory/NVS.c" 
+    "Config/AppConfig.c" "Config/WifiConfig.c"
+    INCLUDE_DIRS "." "SNTP" "fake" "hal" "leop" "sensor" "UART" "Memory" "Config"
     WHOLE_ARCHIVE
     PRIV_REQUIRES can gpio rgb_lcd_port spiffs
     REQUIRES esp_lcd nvs_flash esp_event esp_wifi esp_http_client jansson espressif__bme280 espressif__i2c_bus

@@ -164,7 +164,7 @@ void app_main()
 
     xTaskCreate(UART_Work, &app.system_task_handlers.uart_task.name, app.system_task_handlers.uart_task.stack_size, &app, 4, &uart_task_handle);
 
-    //xTaskCreate(Sensor_Work, &app.system_task_handlers.sensor_task.name, app.system_task_handlers.sensor_task.stack_size, &app, 4, &sensor_task_handle);
+    xTaskCreate(Sensor_Work, &app.system_task_handlers.sensor_task.name, app.system_task_handlers.sensor_task.stack_size, &app, 4, &sensor_task_handle);
 
 
     // Använd appens leop_data istället för en statisk lokal här.

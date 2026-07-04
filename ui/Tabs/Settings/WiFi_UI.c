@@ -147,8 +147,6 @@ void WiFi_UI_Keyboard_cb(lv_event_t *_Event)
     {
         const char *pass = lv_textarea_get_text(ta);
 
-        //w_data.wifi_info.password = pass;
-        //w_data.wifi_info.ssid = wifi_ui.selected_ssid;
         strlcpy(w_data.wifi_info.password, pass, sizeof(w_data.wifi_info.password));
         strlcpy(w_data.wifi_info.ssid, wifi_ui.selected_ssid, sizeof(w_data.wifi_info.ssid));
 

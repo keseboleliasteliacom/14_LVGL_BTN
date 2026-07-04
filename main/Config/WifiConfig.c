@@ -2,8 +2,6 @@
 
 static const char* TAG = "WifiConfig";
 
-//#define NVS_MAX_CHARACTER_LIMIT 15
-
 
 int Config_WriteToNVS_WifiSSID(char* ssid) {
     int result = NVS_WriteString("wifi", "ssid", ssid);
@@ -22,7 +20,6 @@ int Config_WriteToNVS_WifiPassword(char* pw) {
 }
 
 int Config_LoadFromNVS_WifiSSID(char* ssid) {
-    //char* wifi_id[15];
     int wifi_ssid_result = NVS_ReadString("wifi", "ssid", ssid, WIFI_MAX_SSID_LEN);
     if (wifi_ssid_result != 0) {
         return -1;

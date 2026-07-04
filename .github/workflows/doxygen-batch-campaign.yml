@@ -35,8 +35,8 @@ jobs:
       TARGET_REF: ${{ github.event.inputs.target_ref }}
       CAMPAIGN_LABEL: ${{ github.event.inputs.campaign_label }}
       BATCH_FILE: ${{ github.event.inputs.batch_file }}
-      MAX_FILES_PER_RUN: "20"
-      MAX_CHARS_PER_FILE: "18000"
+      MAX_FILES_PER_RUN: "30"
+      MAX_CHARS_PER_FILE: "30000"
       OPENAI_MAX_OUTPUT_TOKENS: "150000"
       OPENAI_INPUT_COST_PER_MILLION: "0.25"
       OPENAI_OUTPUT_COST_PER_MILLION: "2.00"

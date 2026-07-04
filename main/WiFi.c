@@ -302,7 +302,21 @@ void WiFi_Work(void *arg)
             // But calling function directly also seems bad
             ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
             ESP_ERROR_CHECK(esp_wifi_start());
-            WiFi_Connect(&w_data);
+            // If we successfully started a connection attempt, 
+            if (WiFi_Connect(&w_data) == ESP_OK) {
+                //then we wait for the event queue to tell us if we succedesfully connected and got IP.
+                if (xQueueReceive(event_queue, &status, pdMS_TO_TICKS(10000)) == pdPASS)
+                {
+                    //  and if we indeed did succed, tell the UI to update the Connected-status
+                    if (status == WIFI_STATUS_CONNECTED)
+                    {
+                        w_data.status = WIFI_STATUS_CONNECTED;
+                        xQueueSend(wifi_result_queue, &w_data, 0);
+                    }
+                }
+            }
+
+
         }
         first_boot = false;
 
@@ -398,10 +412,10 @@ esp_err_t WiFi_Connect(wifi_data *w_data)
         
     }
     // If we succesfully connected, we save the details so we automatically reconnect upon next boot/reboot
-    //int write_ssid_result = Config_WriteToNVS_WifiSSID((char*)wifi_config.sta.ssid);
-    //int write_pw_result = Config_WriteToNVS_WifiPassword((char*)wifi_config.sta.password);
-    // ESP_LOGI(TAG, "ssid_result %d", write_ssid_result);
-    // ESP_LOGI(TAG, "pw_result %d", write_pw_result);
+    int write_ssid_result = Config_WriteToNVS_WifiSSID((char*)wifi_config.sta.ssid);
+    int write_pw_result = Config_WriteToNVS_WifiPassword((char*)wifi_config.sta.password);
+    ESP_LOGI(TAG, "ssid_result %d", write_ssid_result);
+    ESP_LOGI(TAG, "pw_result %d", write_pw_result);
     
     // // vTaskDelay(pdMS_TO_TICKS(200));
     // char ssid_test[WIFI_SSID_MAX_LEN] = {0};

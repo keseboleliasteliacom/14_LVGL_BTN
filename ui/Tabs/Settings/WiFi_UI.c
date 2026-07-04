@@ -221,7 +221,15 @@ void WiFi_UI_Update(void)
             ESP_LOGI(TAG, "Connection finished!");
             lv_label_set_text(wifi_ui.status_label_dyn, "Connected");
             lv_obj_set_style_text_color(wifi_ui.status_label_dyn, lv_color_hex(0x66FF00), LV_PART_MAIN | LV_STATE_DEFAULT);
-            lv_label_set_text(wifi_ui.ssid_label, wifi_ui.selected_ssid);
+            // If SSID was loaded from NVS into w_data.wifi_info.ssid
+            if (w_data.wifi_info.ssid[0] != '\0') {
+                lv_label_set_text(wifi_ui.ssid_label, w_data.wifi_info.ssid);
+            }
+            // Else if manually connected
+            else {
+                lv_label_set_text(wifi_ui.ssid_label, wifi_ui.selected_ssid);
+            }
+
 
             vTaskDelay(pdMS_TO_TICKS(1000));
         }

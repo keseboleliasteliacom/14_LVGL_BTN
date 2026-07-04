@@ -102,7 +102,12 @@ static void ip_event_cb(void *arg, esp_event_base_t event_base, int32_t event_id
         wifi_reconnect_pending = false;
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
 
-        /*
+        // When we have confirmed status that we are connected and have ip, notify UI via wifi queue
+        wifi_status status = WIFI_STATUS_CONNECTED;
+        xQueueSend(event_queue, &status, 0);
+        
+
+        
         if (sntp_synced == false)
         {
             esp_err_t sntp_result = TimeSync_Start();
@@ -111,7 +116,7 @@ static void ip_event_cb(void *arg, esp_event_base_t event_base, int32_t event_id
                 sntp_synced = true;
             }
         }
-        */
+        
         break;
     case (IP_EVENT_STA_LOST_IP):
         ESP_LOGI(TAG, "Lost IP");
@@ -165,8 +170,8 @@ static void wifi_event_cb(void *arg, esp_event_base_t event_base, int32_t event_
     case (WIFI_EVENT_STA_CONNECTED):
         //w_state.is_connected = true;
         ESP_LOGI(TAG, "Wi-Fi AP connected, waiting for IP...");
-        status = WIFI_STATUS_CONNECTED;
-        xQueueSend(event_queue, &status, 0);
+        // status = WIFI_STATUS_CONNECTED;
+        // xQueueSend(event_queue, &status, 0);
         break;
     case (WIFI_EVENT_STA_DISCONNECTED):
         wifi_event_sta_disconnected_t *disc = (wifi_event_sta_disconnected_t *)event_data;
@@ -463,10 +468,7 @@ esp_err_t WiFi_Connect(wifi_data *w_data)
     {
         return ESP_FAIL;
     }
-    if (first_boot == false)
-    {
-        
-    }
+
     // If we succesfully connected, we save the details so we automatically reconnect upon next boot/reboot
     int write_ssid_result = Config_WriteToNVS_WifiSSID((char*)wifi_config.sta.ssid);
     int write_pw_result = Config_WriteToNVS_WifiPassword((char*)wifi_config.sta.password);

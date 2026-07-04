@@ -62,12 +62,26 @@ static bool first_boot = true;
 static wifi_connection_cb_t wifi_connection_cb = NULL;
 static void *wifi_connection_ctx = NULL;
 
+/**
+ * @brief Registers the Wi-Fi connection state callback.
+ *
+ * Stores the callback and its context for later use by the connection state
+ * update path.
+ *
+ * @param[in] cb Callback invoked when the connection state changes.
+ * @param[in] ctx Opaque context passed to the callback.
+ */
 void WiFi_SetConnectionCallback(wifi_connection_cb_t cb, void *ctx)
 {
     wifi_connection_cb = cb;
     wifi_connection_ctx = ctx;
 }
 
+/**
+ * @brief Updates the cached connection state and notifies the registered callback.
+ *
+ * @param[in] connected New connection state.
+ */
 static void WiFi_SetConnectedState(bool connected)
 {
     w_state.is_connected = connected;
@@ -76,8 +90,6 @@ static void WiFi_SetConnectedState(bool connected)
         wifi_connection_cb(connected, wifi_connection_ctx);
     }
 }
-
-
 
 /**
  * @brief Handles IP events from the ESP-IDF event loop.

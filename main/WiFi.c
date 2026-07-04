@@ -13,12 +13,16 @@
 #include "freertos/task.h"
 #include "SNTP/time_sync.h"
 
+#include "Config/WifiConfig.h"
+
 #define TAG "WiFi"
 
 #define WIFI_AUTH_MODE WIFI_AUTH_WPA2_PSK
 
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
+
+
 
 // static const int WIFI_RETRY_ATTEMPT = 3;
 
@@ -42,6 +46,9 @@ QueueHandle_t event_queue = NULL;
 esp_err_t WiFi_Connect(wifi_data *w_info);
 esp_err_t WiFi_Dispose(void);
 esp_err_t WiFi_Disconnect(void);
+
+static bool first_boot = true;
+
 
 /**
  * @brief Handles IP events from the ESP-IDF event loop.
@@ -276,8 +283,30 @@ esp_err_t WiFi_Scan(wifi_data *w_data)
  */
 void WiFi_Work(void *arg)
 {
-    wifi_status status;
-    wifi_data w_data;
+    wifi_status status = {0};
+    wifi_data w_data = {0};
+
+    // If we we just botted and started the work function, attempt to try to load wifi details from NVS and try connect.
+
+    if (first_boot == true) {
+        int read_ssid_result = Config_LoadFromNVS_WifiSSID(w_data.wifi_info.ssid);
+        int read_pw_result = Config_LoadFromNVS_WifiPassword(w_data.wifi_info.password);
+        if (read_ssid_result != 0 || read_pw_result != 0) {
+            ESP_LOGW(TAG, "Could not load wifi details from NVS.");
+        }
+        else {
+            ESP_LOGI(TAG, "Loaded wifi details form nvs.");
+            // Sending to its own queue once feels bad?
+            // status = WIFI_CMD_CONNECT;
+            // xQueueSend(event_queue, &status, portMAX_DELAY);
+            // But calling function directly also seems bad
+            ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+            ESP_ERROR_CHECK(esp_wifi_start());
+            WiFi_Connect(&w_data);
+        }
+        first_boot = false;
+
+    }
 
     while (1)
     {
@@ -287,16 +316,22 @@ void WiFi_Work(void *arg)
             switch (w_data.cmd)
             {
             case WIFI_CMD_SCAN:
-                WiFi_Scan(&w_data);
-                if (xQueueReceive(event_queue, &status, pdMS_TO_TICKS(5000)))
-                {
-                    if (status == WIFI_STATUS_SCAN_DONE)
+                //if (xQueueReceive(event_queue, &status, pdMS_TO_TICKS(5000)))
+                // Since esp_wifi_scan_start(&scan_config, 1) is blocking(1 is the blocking flag/value),
+                // so we dont need to wait for the WIFI_STATUS_SCAN_DONE from event queue.
+
+                if (WiFi_Scan(&w_data) == ESP_OK)                
                     {
-                        w_data.status = status;
+                        w_data.status = WIFI_STATUS_SCAN_DONE;
                         xQueueSend(wifi_result_queue, &w_data, 0);
+                        ESP_LOGI(TAG, "WiFi_Work got status after scan: %d", status);
+                        // if (status == WIFI_STATUS_SCAN_DONE)
+                        // {
+                        //     w_data.status = status;
+                        //     xQueueSend(wifi_result_queue, &w_data, 0);
+                        // }
                     }
-                }
-                break;
+                    break;
             case WIFI_CMD_CONNECT:
                 WiFi_Connect(&w_data);
                 if (xQueueReceive(event_queue, &status, pdMS_TO_TICKS(5000)))
@@ -349,8 +384,8 @@ esp_err_t WiFi_Connect(wifi_data *w_data)
 {
     wifi_config_t wifi_config = {0};
 
-    strcpy((char *)wifi_config.sta.ssid, w_data->wifi_info.ssid);
-    strcpy((char *)wifi_config.sta.password, w_data->wifi_info.password);
+    strlcpy((char *)wifi_config.sta.ssid, w_data->wifi_info.ssid, sizeof(wifi_config.sta.ssid));
+    strlcpy((char *)wifi_config.sta.password, w_data->wifi_info.password, sizeof(wifi_config.sta.password));
     esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
     esp_err_t err = esp_wifi_connect();
 
@@ -358,6 +393,30 @@ esp_err_t WiFi_Connect(wifi_data *w_data)
     {
         return ESP_FAIL;
     }
+    if (first_boot == false)
+    {
+        
+    }
+    // If we succesfully connected, we save the details so we automatically reconnect upon next boot/reboot
+    //int write_ssid_result = Config_WriteToNVS_WifiSSID((char*)wifi_config.sta.ssid);
+    //int write_pw_result = Config_WriteToNVS_WifiPassword((char*)wifi_config.sta.password);
+    // ESP_LOGI(TAG, "ssid_result %d", write_ssid_result);
+    // ESP_LOGI(TAG, "pw_result %d", write_pw_result);
+    
+    // // vTaskDelay(pdMS_TO_TICKS(200));
+    // char ssid_test[WIFI_SSID_MAX_LEN] = {0};
+    // int ssid_test_result = Config_LoadFromNVS_WifiSSID(ssid_test);
+    
+    // char pw_test[WIFI_PASSWORD_MAX_LEN] = {0};
+    // int pw_test_result = Config_LoadFromNVS_WifiPassword(pw_test);
+    // if (pw_test_result != 0 || ssid_test_result != 0) {
+    //     ESP_LOGW(TAG, "WARNINGSSS");
+    // }
+    // else {
+    //     ESP_LOGI(TAG, "ssid: %s,  password: %s", ssid_test, pw_test);
+    // }
+    ESP_LOGI(TAG, "w_data ssid: %s,  w_data pw: %s", w_data->wifi_info.ssid, w_data->wifi_info.password);
+
 
     return ESP_OK;
 }

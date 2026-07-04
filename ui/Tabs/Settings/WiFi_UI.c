@@ -125,7 +125,7 @@ void WiFi_UI_Initialize()
  */
 void WiFi_UI_Scan_cb(lv_event_t *_Event)
 {
-    wifi_data w_data;
+    wifi_data w_data = {0};
     w_data.cmd = WIFI_CMD_SCAN;
     xQueueSend(wifi_cmd_queue, &w_data, 0);
 }
@@ -147,8 +147,10 @@ void WiFi_UI_Keyboard_cb(lv_event_t *_Event)
     {
         const char *pass = lv_textarea_get_text(ta);
 
-        w_data.wifi_info.password = pass;
-        w_data.wifi_info.ssid = wifi_ui.selected_ssid;
+        //w_data.wifi_info.password = pass;
+        //w_data.wifi_info.ssid = wifi_ui.selected_ssid;
+        strlcpy(w_data.wifi_info.password, pass, sizeof(w_data.wifi_info.password));
+        strlcpy(w_data.wifi_info.ssid, wifi_ui.selected_ssid, sizeof(w_data.wifi_info.ssid));
 
         xQueueSend(wifi_cmd_queue, &w_data, 0);
 

@@ -12,6 +12,10 @@
 #include "freertos/queue.h"
 #include <stdbool.h>
 
+
+#define WIFI_SSID_MAX_LEN 33
+#define WIFI_PASSWORD_MAX_LEN 65
+
 /**
  * @file WiFi.h
  * @brief Public API for the Wi-Fi module.
@@ -69,8 +73,8 @@ typedef struct
  */
 typedef struct
 {
-    char *ssid; /**< Pointer to the SSID string. */
-    char *password; /**< Pointer to the password string. */
+    char ssid[WIFI_SSID_MAX_LEN]; /**< Pointer to the SSID string. */
+    char password[WIFI_PASSWORD_MAX_LEN]; /**< Pointer to the password string. */
 } wifi_info;
 
 /**

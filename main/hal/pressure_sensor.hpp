@@ -27,11 +27,11 @@ namespace hal {
      * Contains the measured pressure and timestamps captured by the caller's
      * sampling path.
      */
-    struct PressureReading {
-        float pressure; /**< Measured pressure value. */
-        uint32_t monotonic_timestamp; /**< Monotonic timestamp for the reading. */
-        time_t unix_timestamp; /**< UNIX timestamp for the reading. */
-    };
+    // struct PressureReading {
+    //     float pressure; /**< Measured pressure value. */
+    //     uint32_t monotonic_timestamp; /**< Monotonic timestamp for the reading. */
+    //     time_t unix_timestamp; /**< UNIX timestamp for the reading. */
+    // };
 
     /**
      * @brief Abstract interface for a pressure sensor implementation.

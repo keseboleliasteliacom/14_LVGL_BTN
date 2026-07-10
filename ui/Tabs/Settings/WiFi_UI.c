@@ -170,7 +170,7 @@ void WiFi_UI_TextArea_cb(lv_event_t *_Event)
 {
     lv_obj_t *ta = lv_event_get_target(_Event);
     lv_obj_t *kb = lv_keyboard_create(lv_scr_act());
-    lv_obj_set_size(kb, LV_HOR_RES, 120);
+    lv_obj_set_size(kb, LV_HOR_RES, 220);
     lv_obj_align(kb, LV_ALIGN_BOTTOM_MID, 0, 0);
 
     lv_keyboard_set_textarea(kb, ta);

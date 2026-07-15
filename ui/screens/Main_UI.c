@@ -16,9 +16,9 @@ lv_obj_t *ui_TabPage_Electricity = NULL;
 lv_obj_t *ui_Chart_Electricity = NULL;
 lv_obj_t *ui_TabPage_Weather = NULL;
 lv_obj_t *ui_Chart_Weather = NULL;
-lv_obj_t *ui_TabPage_Settings = NULL;
 lv_obj_t *ui_Group_Settings = NULL;
 lv_obj_t *ui_TabPage_WiFi = NULL;
+lv_obj_t *ui_TabPage_Settings = NULL;
 
 /**
  * @brief Implementation of Main_UI_Initialize.
@@ -95,11 +95,11 @@ void Main_UI_Initialize()
     lv_obj_set_style_border_width(ui_TabPage_Weather, 0, 0);
 
 
-    ui_TabPage_Settings = lv_tabview_add_tab(ui_Tab_Main, "SETTINGS");
-    lv_obj_set_style_bg_color(ui_TabPage_Settings, lv_color_hex(0x1E1425), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_TabPage_Settings, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    ui_TabPage_WiFi = lv_tabview_add_tab(ui_Tab_Main, "WIFI");
+    lv_obj_set_style_bg_color(ui_TabPage_WiFi, lv_color_hex(0x1E1425), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_TabPage_WiFi, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    ui_Group_Settings = lv_obj_create(ui_TabPage_Settings);
+    ui_Group_Settings = lv_obj_create(ui_TabPage_WiFi);
 
     lv_obj_set_width(ui_Group_Settings, 404);
     lv_obj_set_height(ui_Group_Settings, 380);
@@ -124,4 +124,8 @@ void Main_UI_Initialize()
     lv_obj_set_style_radius(ui_Group_Settings, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_width(ui_Group_Settings, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_color(ui_Group_Settings, lv_color_hex(0x6E10CE), LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_TabPage_Settings = lv_tabview_add_tab(ui_Tab_Main, "SETTINGS");
+    lv_obj_set_style_bg_color(ui_TabPage_Settings, lv_color_hex(0x1E1425), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_TabPage_Settings, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 }

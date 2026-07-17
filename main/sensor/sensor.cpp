@@ -147,7 +147,10 @@ void Sensor_Work(void* parameter) {
     //environment_sensor.bme280_sensor_init();
 
     hal::BME280SensorV2 environment_sensor_v2 = hal::BME280SensorV2();
-    environment_sensor_v2.bme280_sensor_init();
+    if (!environment_sensor_v2.bme280_sensor_init()) {
+        ESP_LOGW(TAG, "BME280 was unavailable during initial startup; periodic reconnect attempts will continue.");
+    }
+    
     while (1) {
         sensor_read_interval = app->config_data.sensor_interval_ms;
         //Sensor_Read_v2(&app->sensor_data, environment_sensor);

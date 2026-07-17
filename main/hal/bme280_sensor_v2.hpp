@@ -4,9 +4,9 @@
 #include "environment_sensor.hpp"
 #include "i2c_bus.h"
 #include "bme280.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "../app_queues.h"
+//#include "freertos/FreeRTOS.h"
+//#include "freertos/queue.h"
+//#include "../app_queues.h"
 
 /**
  * @file bme280_sensor_v2.hpp
@@ -28,6 +28,7 @@
  * @{
  */
 
+
 namespace hal {
     /**
      * @brief BME280-based environment sensor wrapper.
@@ -35,6 +36,9 @@ namespace hal {
      * Manages BME280 bus setup, address probing, and read retry handling for
      * the environment sensor interface.
      */
+    // Uses the shared board I2C bus to manage BME280 device initalization, address probing, measurements and reconnect handling.
+    // During normal app startup, the board I2C bus is initialized by the display/touch hardware stack.
+    // The expressiv V2 component retrieves and adopts that existing ESP_IDF bus.
     class BME280SensorV2 : public IEnvironmentSensor {
         public:
             /**
@@ -65,24 +69,26 @@ namespace hal {
              *
              * @return `true` on success, `false` if the bus or sensor cannot be initialized.
              */
+            // Retrieves the existing I2C_NUM_0 bus initalized by the board display/touch stack and creates BME280 device handle.
+            // If no compatible bus has been initialized, the i2c_bus component may init it using the supplied fallbakc config.
+
             bool bme280_sensor_init();
 
         private:
             uint8_t bme280_read_failures = 0;
             int64_t last_reconnect_attempt_ms = 0;
 
-            i2c_bus_handle_t bme280_bus = NULL;
+            i2c_bus_handle_t i2c_bus_wrapper = NULL;
             bme280_handle_t bme280 = NULL;
             bool bme280_ready = false;
+            uint8_t active_i2c_address = 0;
 
             i2c_config_t i2c_config;
-            i2c_port_t i2c_port;
-            uint8_t adress;
 
             /**
              * @brief Configures the default I2C parameters used by the sensor.
              */
-            void BME280Sensor_init_i2c_config();
+            void BME280Sensor_config_i2c_fallback();
 
             /**
              * @brief Initializes the BME280 instance at a specific I2C address.
@@ -92,6 +98,16 @@ namespace hal {
              * @return `true` on success, `false` otherwise.
              */
             bool bme280_init_at_address(uint8_t address);
+
+            /**
+             * @brief Probes the active address on the native shared I2C bus.
+             *
+             * The BME280 component maps several lower-level failures to
+             * `ESP_FAIL`. This diagnostic probe preserves the native ESP-IDF
+             * result so logs can distinguish an ACK, NACK/not-found result,
+             * bus timeout, or failure to obtain the shared bus handle.
+             */
+            void log_i2c_diagnostics() const;
     };
 }
 

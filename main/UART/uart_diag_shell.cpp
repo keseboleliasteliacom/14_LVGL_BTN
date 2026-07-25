@@ -227,6 +227,15 @@ void handle_input(const std::string &input, app_state_t *state)
     }
     const std::string &cmd = tokens[0];
 
+    // todo - testing, to be removed
+    if (cmd == "reboot"){
+        std::cout << "restarting device.. " << std::endl;
+        std::cout.flush();
+        //vTaskDelay(pdMS_TO_TICKS(200));
+
+        esp_restart();
+    }
+
     if (tokens.size() == 2 && cmd == "help" && tokens[1] == "immersive")
     {
         handle_help(true);

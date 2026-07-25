@@ -37,6 +37,34 @@ static void Settings_UI_FormatLastUpdate(
 
 static const char *Settings_UI_GetRestartReasonText(void)
 {
+    switch (esp_reset_reason())
+    {
+        case ESP_RST_POWERON:
+            return "Power turned on.";
+        case ESP_RST_EXT:
+            return "External reset.";
+        case ESP_RST_SW:
+            return "Software restart.";
+        case ESP_RST_PANIC:
+            return "Software crash.";
+        case ESP_RST_INT_WDT:
+            return "Interrupt watchdog.";
+        case ESP_RST_TASK_WDT:
+            return "Task watchdog.";
+        case ESP_RST_WDT:
+            return "Watchdog restart.";
+        case ESP_RST_DEEPSLEEP:
+            return "Woke from deep sleep.";
+        case ESP_RST_BROWNOUT:
+            return "Low supply voltage.";
+        case ESP_RST_SDIO:
+            return "SDIO reset.";
+        
+        case ESP_RST_UNKNOWN:
+        default:
+            return "Unkown.";
+
+    }
  
 
     return "Unknown";

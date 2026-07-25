@@ -5,13 +5,12 @@
 #include "hal_classes.h"
 #include <time.h>
 
-
 /**
  * @file temperature_sensor.hpp
  * @brief Public HAL interface for temperature sensor readings.
  *
- * Defines the temperature sensor reading snapshot and the abstract sensor
- * interface used by the HAL layer.
+ * Defines the temperature sensor snapshot and abstract interface used by the
+ * HAL layer.
  *
  * @defgroup HAL_TEMPERATURE_SENSOR HAL_TEMPERATURE_SENSOR
  * @brief Temperature sensor abstraction for the HAL layer.

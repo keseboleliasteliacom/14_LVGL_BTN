@@ -2,6 +2,10 @@ name: ESP-IDF Build
 
 on:
   push:
+    branches-ignore:
+      - "docs/doxygen-ai"
+      - "docs/doxygen-ai-*"
+      - "docs/doxygen-campaign-*"
   pull_request:
   workflow_dispatch:
 
@@ -14,6 +18,10 @@ concurrency:
 
 jobs:
   build:
+    if: >-
+      github.event_name != 'pull_request' ||
+      (!startsWith(github.head_ref, 'docs/doxygen-ai') &&
+      !startsWith(github.head_ref, 'docs/doxygen-campaign-'))
     name: Build ESP32-S3 firmware
     runs-on: ubuntu-latest
     timeout-minutes: 30

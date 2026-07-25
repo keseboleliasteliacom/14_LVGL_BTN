@@ -53,6 +53,12 @@ static TaskHandle_t leop_task_handle = NULL;
 #define SENSOR_STACK_SIZE   4096
 #define LEOP_STACK_SIZE     4096
 
+/**
+ * @brief Updates the Wi-Fi connection state in the shared application data.
+ *
+ * @param connected New connection state.
+ * @param ctx Pointer to the application state.
+ */
 static void on_wifi_connection_changed(bool connected, void *ctx)
 {
     app_state_t *app = (app_state_t *)ctx;

@@ -1,11 +1,19 @@
+/**
+ * @file bme280_sensor_v2.cpp
+ * @brief Implementation of the BME280 sensor HAL.
+ *
+ * @ingroup HAL
+ */
+
 #include "bme280_sensor_v2.hpp"
 #include "driver/gpio.h"
-#include "freertos/task.h"
+#include "driver/i2c_master.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_timer.h"
-#include "../app_queues.h"
 #include "time.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 
 #define BME280_SDA_GPIO GPIO_NUM_8
@@ -18,18 +26,29 @@
 #define BME280_RECONNECT_INTERVAL_MS 5000
 
 static constexpr char* TAG = "bme280_sensor_v2.cpp";
-static bool fake_mode = false;
 
+/**
+ * @brief Constructs the BME280 sensor wrapper and configures I2C settings.
+ */
 hal::BME280SensorV2::BME280SensorV2()
 {
-    BME280Sensor_init_i2c_config();
+    BME280Sensor_config_i2c_fallback();
 }
 
+/**
+ * @brief Reports whether the BME280 sensor is present.
+ *
+ * @return True when the sensor is initialized and has an active device handle.
+ */
 bool hal::BME280SensorV2::is_present() {
-    return 0;
+    return this->bme280_ready && this->bme280 != NULL;
 }
 
-
+/**
+ * @brief Returns the current Unix time.
+ *
+ * @return Current system time as Unix time.
+ */
 static time_t clock_unix_time() {
     time_t now;
     time(&now);
@@ -37,6 +56,41 @@ static time_t clock_unix_time() {
     return now;
 }
 
+/**
+ * @brief Logs native shared-bus reachability for the active BME280 address.
+ */
+void hal::BME280SensorV2::log_i2c_diagnostics() const
+{
+    if (this->active_i2c_address == 0) {
+        ESP_LOGW(TAG, "I2C diagnostic skipped: no active BME280 address");
+        return;
+    }
+
+    i2c_master_bus_handle_t native_bus = NULL;
+    esp_err_t bus_result = i2c_master_get_bus_handle(BME280_I2C_PORT, &native_bus);
+    if (bus_result != ESP_OK) {
+        ESP_LOGW(TAG, "I2C diagnostic could not obtain bus %d: %s (0x%x)",
+                 BME280_I2C_PORT, esp_err_to_name(bus_result), (unsigned int)bus_result);
+        return;
+    }
+
+    esp_err_t probe_result = i2c_master_probe(native_bus, this->active_i2c_address, 100);
+    if (probe_result == ESP_OK) {
+        ESP_LOGW(TAG,
+                 "I2C diagnostic: address 0x%02X ACKed; the preceding ESP_FAIL occurred during a BME280 read or data validation",
+                 this->active_i2c_address);
+    } else {
+        ESP_LOGW(TAG, "I2C diagnostic: address 0x%02X probe failed: %s (0x%x)",
+                 this->active_i2c_address, esp_err_to_name(probe_result),
+                 (unsigned int)probe_result);
+    }
+}
+
+/**
+ * @brief Implementation of read.
+ *
+ * See header for full contract documentation.
+ */
 hal::SensorError hal::BME280SensorV2::read(hal::EnvironmentReading& reading) {
     if (!this->bme280_ready || this->bme280 == NULL) {
         int64_t now_ms = esp_timer_get_time() / 1000;
@@ -63,11 +117,23 @@ hal::SensorError hal::BME280SensorV2::read(hal::EnvironmentReading& reading) {
     if (temp_result != ESP_OK || humidity_result != ESP_OK || pressure_result != ESP_OK) 
     {
         this->bme280_read_failures++;
-        ESP_LOGW(TAG, "BME280 read failed %u/%u. temp: %s, humidity: %s pressure%s", this->bme280_read_failures, BME280_MAX_READ_FAILURES, esp_err_to_name(temp_result), esp_err_to_name(humidity_result), esp_err_to_name(pressure_result));
+        ESP_LOGW(TAG, "BME280 read failed %u/%u: temp=%s, humidity=%s, pressure=%s",
+                 this->bme280_read_failures, BME280_MAX_READ_FAILURES,
+                 esp_err_to_name(temp_result), esp_err_to_name(humidity_result),
+                 esp_err_to_name(pressure_result));
+
+        // Probe only on the first consecutive failure. This adds useful native
+        // bus diagnostics without adding traffic after every failed reading.
+        if (this->bme280_read_failures == 1) {
+            this->log_i2c_diagnostics();
+        }
 
         if (this->bme280_read_failures >= BME280_MAX_READ_FAILURES) {
             ESP_LOGW(TAG, "BME280 marked disconnected after repeated read failures.");
             this->bme280_ready = false;
+            // Start the reconnect cooldown when the sensor is declared
+            // disconnected, rather than from an older reconnect attempt.
+            this->last_reconnect_attempt_ms = esp_timer_get_time() / 1000;
             this->bme280_read_failures = 0;
             if (this->bme280 != NULL) {
                 bme280_delete(&this->bme280);
@@ -82,9 +148,16 @@ hal::SensorError hal::BME280SensorV2::read(hal::EnvironmentReading& reading) {
     return hal::SensorError::Ok;
 }
 
+/**
+ * @brief Initializes the BME280 instance at a specific I2C address.
+ *
+ * @param[in] address I2C address to probe.
+ *
+ * @return True on successful initialization, false otherwise.
+ */
 bool hal::BME280SensorV2::bme280_init_at_address(uint8_t address)
 {
-    this->bme280 = bme280_create(this->bme280_bus, address);
+    this->bme280 = bme280_create(this->i2c_bus_wrapper, address);
     if (this->bme280 == NULL) 
     {
         ESP_LOGE(TAG, "Failed to create bme280 handle at adress 0x%02X", address);
@@ -99,11 +172,18 @@ bool hal::BME280SensorV2::bme280_init_at_address(uint8_t address)
         return false;
     }
 
+    // If reconnected, wait 150ms so sensor is given enough time to produce first valid smaple
+    vTaskDelay(pdMS_TO_TICKS(150));
+
+    this->active_i2c_address = address;
     ESP_LOGI(TAG, "BME280 init'ed at address 0x%02X", address);
     return true;
 }
 
-void hal::BME280SensorV2::BME280Sensor_init_i2c_config()
+/**
+ * @brief Configures the default I2C parameters used by the BME280 sensor.
+ */
+void hal::BME280SensorV2::BME280Sensor_config_i2c_fallback()
 {
     this->i2c_config.mode = I2C_MODE_MASTER; // ESP I2C buss is master
     this->i2c_config.sda_io_num = BME280_SDA_GPIO; // sets the SDA to the previously defined GPIO pin
@@ -113,14 +193,23 @@ void hal::BME280SensorV2::BME280Sensor_init_i2c_config()
     this->i2c_config.master.clk_speed = BME280_I2C_FREQ_HZ; // sets clock speed to previously defined clock speed
 }
 
+/**
+ * @brief Initializes the BME280 sensor and I2C bus.
+ *
+ * The first successful address probe keeps the created bus and sensor handle.
+ * If the bus already exists, it is reused for reconnect attempts.
+ *
+ * @return True on success, false if the bus or sensor cannot be initialized.
+ */
 
 bool hal::BME280SensorV2::bme280_sensor_init() {
-    // This scans for devices, logs adresses. Mainly used for debugging so we can see if the 0x77 appears, or the fallback 0x76
-    // If bme280 bus is set it means we're trying to attempting to reconnect, so don't create duplicated bus.
-    // if not set(NULL), then create it for the first time 
-    if (this->bme280_bus == NULL) {
-        this->bme280_bus = i2c_bus_create(BME280_I2C_PORT, &this->i2c_config);
-        if (this->bme280_bus == NULL) {
+// Obtain the i2c_bus wrapper once.
+// In normal application startup, the underlying native ESP-IDF bus already exists because the touch/display stack initialized it.
+// espressif/i2c_bus V2 adopts that existing bus.
+// Keep the wrapper for later BME280 reconnect attempts.
+if (this->i2c_bus_wrapper == NULL) {
+        this->i2c_bus_wrapper = i2c_bus_create(BME280_I2C_PORT, &this->i2c_config);
+        if (this->i2c_bus_wrapper == NULL) {
             ESP_LOGE(TAG, "Failed to create I2C bus for BME280");
             return false;
         }

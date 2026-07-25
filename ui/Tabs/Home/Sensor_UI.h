@@ -37,6 +37,7 @@ typedef struct
     lv_obj_t *temperature_label_dyn;
     lv_obj_t *pressure_label_dyn;
     lv_obj_t *humidity_label_dyn;
+    lv_obj_t *latest_data_label;
 } Sensor_UI;
 
 /**

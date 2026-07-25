@@ -41,8 +41,13 @@ static esp_event_handler_instance_t wifi_event;
 static EventGroupHandle_t wifi_event_group = NULL;
 static bool wifi_reconnect_pending = false;
 static TickType_t wifi_reconnect_time = 0;
+static volatile bool wifi_started = false; // Track if station has started, volatile rereads value because event callback can change it
+static volatile bool connect_on_sta_start = false;
 
 static wifi_state w_state = {0};
+static wifi_info active_wifi_info = {0}; // Credentials that is currently applied to wifi driver
+static wifi_info pending_wifi_info = {0};
+static bool save_credentials_on_connect = false;
 
 QueueHandle_t wifi_cmd_queue = NULL;
 
@@ -53,6 +58,8 @@ QueueHandle_t event_queue = NULL;
 esp_err_t WiFi_Connect(wifi_data *w_info);
 esp_err_t WiFi_Dispose(void);
 esp_err_t WiFi_Disconnect(void);
+// New helper function
+static esp_err_t WiFi_ApplyConfig(const wifi_data *w_data);
 
 static bool first_boot = true;
 
@@ -104,7 +111,8 @@ static void ip_event_cb(void *arg, esp_event_base_t event_base, int32_t event_id
     ESP_LOGI(TAG, "Handling IP event, event code 0x%" PRIx32, event_id);
     switch (event_id)
     {
-        case (IP_EVENT_STA_GOT_IP):
+    case (IP_EVENT_STA_GOT_IP):
+    {
         ip_event_got_ip_t *event_ip = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event_ip->ip_info.ip));
 
@@ -116,7 +124,7 @@ static void ip_event_cb(void *arg, esp_event_base_t event_base, int32_t event_id
 
         // When we have confirmed status that we are connected and have ip, notify UI via wifi queue
         wifi_status status = WIFI_STATUS_CONNECTED;
-        xQueueSend(event_queue, &status, 0);
+        xQueueOverwrite(event_queue, &status);
         
 
         
@@ -130,6 +138,7 @@ static void ip_event_cb(void *arg, esp_event_base_t event_base, int32_t event_id
         }
         
         break;
+    }
     case (IP_EVENT_STA_LOST_IP):
         ESP_LOGI(TAG, "Lost IP");
         //w_state.is_connected = false;
@@ -169,14 +178,31 @@ static void wifi_event_cb(void *arg, esp_event_base_t event_base, int32_t event_
         break;
     case (WIFI_EVENT_SCAN_DONE):
         ESP_LOGI(TAG, "Wi-Fi scan done");
-        status = WIFI_STATUS_SCAN_DONE;
-        xQueueSend(event_queue, &status, 0);
         break;
     case (WIFI_EVENT_STA_START):
-        ESP_LOGI(TAG, "Wi-Fi started, connecting to AP...");
-        // esp_wifi_connect();
+    {
+        wifi_started = true;
+        ESP_LOGI(TAG, "Wi-Fi station started");
+
+        
+        if (connect_on_sta_start)
+        {
+            connect_on_sta_start = false;
+            ESP_LOGI(TAG, "Connecting to configured AP...");
+
+            esp_err_t err = esp_wifi_connect();
+            if (err != ESP_OK)
+            {
+                ESP_LOGE(TAG, "Initial Wi-Fi connection request failed: %s", esp_err_to_name(err));
+                wifi_reconnect_pending = true;
+                wifi_reconnect_time = xTaskGetTickCount() + pdMS_TO_TICKS(WIFI_RECONNECT_BASE_DELAY_MS);
+            }
+        }
         break;
+    }
     case (WIFI_EVENT_STA_STOP):
+        // set to false so our next action will be esp_wifi_start and now esp_wifi_conncet
+        wifi_started = false;
         ESP_LOGI(TAG, "Wi-Fi stopped");
         break;
     case (WIFI_EVENT_STA_CONNECTED):
@@ -211,6 +237,9 @@ static void wifi_event_cb(void *arg, esp_event_base_t event_base, int32_t event_
         break;
     case (WIFI_EVENT_STA_AUTHMODE_CHANGE):
         ESP_LOGI(TAG, "Wi-Fi authmode changed");
+        break;
+    case (WIFI_EVENT_HOME_CHANNEL_CHANGE):
+        ESP_LOGD(TAG, "Wi-Fi home channel changed");
         break;
     default:
         ESP_LOGI(TAG, "Wi-Fi event not handled");
@@ -368,21 +397,34 @@ void WiFi_Work(void *arg)
         if (read_ssid_result != 0 || read_pw_result != 0) {
             ESP_LOGW(TAG, "Could not load wifi details from NVS.");
         }
+        // Attempt to read form NVS with proper error handling if empty or error
         else {
-            ESP_LOGI(TAG, "Loaded wifi details form nvs.");
-            // If we have details saved, set mode and start so we can try to connect to wifi automatically on bot
-            ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-            ESP_ERROR_CHECK(esp_wifi_start());
-            // If we successfully started a connection attempt, 
-            if (WiFi_Connect(&w_data) == ESP_OK) {
-                //then we wait for the event queue to tell us if we succedesfully connected and got IP.
-                if (xQueueReceive(event_queue, &status, pdMS_TO_TICKS(10000)) == pdPASS)
+            ESP_LOGI(TAG, "Loaded Wi-Fi details from NVS.");
+
+            if (w_data.wifi_info.ssid[0] == '\0')
+            {
+                ESP_LOGW(TAG, "Stored Wi-Fi SSID is empty.");
+            }
+            else
+            {
+                esp_err_t err = esp_wifi_set_mode(WIFI_MODE_STA);
+                if (err != ESP_OK)
                 {
-                    //  and if we indeed did succed, tell the UI to update the Connected-status
-                    if (status == WIFI_STATUS_CONNECTED)
+                    ESP_LOGE(TAG, "Failed to set station mode: %s", esp_err_to_name(err));
+                }
+                else if ((err = WiFi_ApplyConfig(&w_data)) != ESP_OK)
+                {
+                    ESP_LOGE(TAG, "Stored Wi-Fi configuration could not be applied");
+                }
+                else
+                {
+                    // trigger new connection and attempt to start wifi
+                    connect_on_sta_start = true;
+                    err = esp_wifi_start();
+                    if (err != ESP_OK)
                     {
-                        w_data.status = WIFI_STATUS_CONNECTED;
-                        xQueueSend(wifi_result_queue, &w_data, 0);
+                        connect_on_sta_start = false;
+                        ESP_LOGE(TAG, "Failed to start Wi-Fi: %s", esp_err_to_name(err));
                     }
                 }
             }
@@ -392,6 +434,36 @@ void WiFi_Work(void *arg)
 
     while (1)
     {
+        // Check is there are any current events without blocking
+        if (xQueueReceive(event_queue, &status, 0) == pdPASS)
+        {
+            if (status == WIFI_STATUS_CONNECTED)
+            {
+                if (save_credentials_on_connect)
+                {
+                    int ssid_result = Config_WriteToNVS_WifiSSID(pending_wifi_info.ssid);
+                    int password_result = Config_WriteToNVS_WifiPassword(pending_wifi_info.password);
+
+                    if (ssid_result != 0 || password_result != 0)
+                    {
+                        ESP_LOGW(TAG, "Connected, but failed to save Wi-Fi credentials");
+                    }
+                    else
+                    {
+                        ESP_LOGI(TAG, "Wi-Fi credentials saved after successful connection");
+                    }
+
+                    save_credentials_on_connect = false;
+                }
+
+                
+                wifi_data result = {0};
+                result.status = WIFI_STATUS_CONNECTED;
+                result.wifi_info = active_wifi_info;
+                xQueueOverwrite(wifi_result_queue, &result);
+            }
+        }
+
         if (wifi_reconnect_pending && xTaskGetTickCount() >= wifi_reconnect_time)
         {
             wifi_reconnect_pending = false;
@@ -419,14 +491,11 @@ void WiFi_Work(void *arg)
                     }
                     break;
             case WIFI_CMD_CONNECT:
-                WiFi_Connect(&w_data);
-                if (xQueueReceive(event_queue, &status, pdMS_TO_TICKS(5000)))
+                pending_wifi_info = w_data.wifi_info;
+                save_credentials_on_connect = true;
+                if (WiFi_Connect(&w_data) != ESP_OK)
                 {
-                    if (status == WIFI_STATUS_CONNECTED)
-                    {
-                        w_data.status = status;
-                        xQueueSend(wifi_result_queue, &w_data, 0);
-                    }
+                    save_credentials_on_connect = false;
                 }
                 break;
             case WIFI_CMD_DISCONNECT:
@@ -467,26 +536,67 @@ void WiFi_Work(void *arg)
  * - `ESP_OK` on success
  * - `ESP_FAIL` if the connection request cannot be started
  */
-esp_err_t WiFi_Connect(wifi_data *w_data)
+static esp_err_t WiFi_ApplyConfig(const wifi_data *w_data)
 {
+    if (w_data == NULL || w_data->wifi_info.ssid[0] == '\0')
+    {
+        ESP_LOGE(TAG, "Cannot configure Wi-Fi: SSID is empty");
+        return ESP_ERR_INVALID_ARG;
+    }
+
     wifi_config_t wifi_config = {0};
 
     strlcpy((char *)wifi_config.sta.ssid, w_data->wifi_info.ssid, sizeof(wifi_config.sta.ssid));
     strlcpy((char *)wifi_config.sta.password, w_data->wifi_info.password, sizeof(wifi_config.sta.password));
-    esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
-    esp_err_t err = esp_wifi_connect();
+
+    esp_err_t err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to apply Wi-Fi configuration: %s", esp_err_to_name(err));
+        return err;
+    }
+
+    active_wifi_info = w_data->wifi_info;
+    return ESP_OK;
+}
+
+esp_err_t WiFi_Connect(wifi_data *w_data)
+{
+    esp_err_t err = esp_wifi_set_mode(WIFI_MODE_STA);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to set station mode: %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = WiFi_ApplyConfig(w_data);
+    if (err != ESP_OK)
+    {
+        return err;
+    }
+
+    if (!wifi_started)
+    {
+        connect_on_sta_start = true;
+        err = esp_wifi_start();
+        if (err != ESP_OK)
+        {
+            connect_on_sta_start = false;
+            ESP_LOGE(TAG, "Failed to start Wi-Fi: %s", esp_err_to_name(err));
+            return err;
+        }
+
+        return ESP_OK;
+    }
+
+    err = esp_wifi_connect();
 
     if (err != ESP_OK)
     {
-        return ESP_FAIL;
+        ESP_LOGE(TAG, "Wi-Fi connection request failed: %s", esp_err_to_name(err));
+        return err;
     }
 
-    // If we succesfully connected, we save the details so we automatically reconnect upon next boot/reboot
-    int write_ssid_result = Config_WriteToNVS_WifiSSID((char*)wifi_config.sta.ssid);
-    int write_pw_result = Config_WriteToNVS_WifiPassword((char*)wifi_config.sta.password);
-    ESP_LOGI(TAG, "ssid_result %d", write_ssid_result);
-    ESP_LOGI(TAG, "pw_result %d", write_pw_result);
-    
     return ESP_OK;
 }
 

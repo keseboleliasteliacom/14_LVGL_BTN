@@ -6,13 +6,18 @@
  */
 
 #include "Sensor_UI.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <time.h>
+#include "esp_timer.h"
 #include "lvgl_port.h"
 #include "../../screens/ui_Screen1.h"
 #include "../../../main/app_queues.h"
 //#include "../../../main/sensor/sensor.h"
 //#include "../../../main/hal/temperature_sensor.hpp";
 //#include "../../../main/hal/temperature_sensor_c_api.h";
-#include "../../../main/app_types.h";
+#include "../../../main/app_types.h"
 
 static Sensor_UI sensor_ui = {
     .arc_humidity_dyn = NULL,
@@ -21,10 +26,102 @@ static Sensor_UI sensor_ui = {
     .humidity_label_dyn = NULL,
     .pressure_label_dyn = NULL,
     .temperature_label_dyn = NULL,
+    .latest_data_label = NULL,
 };
 
 const static char* TAG = "Sensor_UI";
 
+
+typedef int64_t elapsed_seconds_t;
+
+static elapsed_seconds_t monotonic_diff(uint64_t now, uint64_t then)
+{
+    if (now < then)
+    {
+        return 0;
+    }
+
+    return (elapsed_seconds_t)(now - then);
+}
+
+static void format_elapsed(elapsed_seconds_t diff,
+                           char *buffer,
+                           size_t buffer_size)
+{
+    if (diff < 0)
+    {
+        diff = 0;
+    }
+
+    uint64_t seconds = (uint64_t)diff;
+
+    uint64_t days = seconds / 86400;
+    seconds %= 86400;
+
+    uint64_t hours = seconds / 3600;
+    seconds %= 3600;
+
+    uint64_t minutes = seconds / 60;
+    seconds %= 60;
+
+    if (days > 0) {
+        snprintf(buffer, buffer_size,
+                 "%llud %lluh %llum %llus ago",
+                 (unsigned long long)days,
+                 (unsigned long long)hours,
+                 (unsigned long long)minutes,
+                 (unsigned long long)seconds);
+    }
+    else if (hours > 0) {
+        snprintf(buffer, buffer_size,
+                 "%lluh %llum %llus ago",
+                 (unsigned long long)hours,
+                 (unsigned long long)minutes,
+                 (unsigned long long)seconds);
+    }
+    else if (minutes > 0) {
+        snprintf(buffer, buffer_size,
+                 "%llum %llus ago",
+                 (unsigned long long)minutes,
+                 (unsigned long long)seconds);
+    }
+    else {
+        snprintf(buffer, buffer_size,
+                 "%llus ago",
+                 (unsigned long long)seconds);
+    }
+}
+
+static void format_latest_data(const sensor_data_t *sensor_data,
+                               char *buffer,
+                               size_t buffer_size)
+{
+    if (sensor_data->last_update_seconds == 0)
+    {
+        snprintf(buffer, buffer_size, "Latest data: unavailable");
+        return;
+    }
+
+    char elapsed[64];
+    uint64_t now_seconds = (uint64_t)(esp_timer_get_time() / 1000000ULL);
+    format_elapsed(monotonic_diff(now_seconds, sensor_data->last_update_seconds),
+                   elapsed,
+                   sizeof(elapsed));
+
+    if (sensor_data->wall_time_valid)
+    {
+        char timestamp[32];
+        struct tm local_time;
+
+        localtime_r(&sensor_data->last_unix_time, &local_time);
+        strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &local_time);
+        snprintf(buffer, buffer_size, "Latest data: %s (%s)", timestamp, elapsed);
+    }
+    else
+    {
+        snprintf(buffer, buffer_size, "Latest data: %s", elapsed);
+    }
+}
 /**
  * @brief Creates the Home tab sensor widgets.
  *
@@ -58,6 +155,16 @@ void Sensor_UI_Initialize()
     lv_obj_set_align(sensor_ui.humidity_label_dyn, LV_ALIGN_CENTER);
     lv_label_set_text(sensor_ui.humidity_label_dyn, "99.999%");
     lv_obj_set_style_text_font(sensor_ui.humidity_label_dyn, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    sensor_ui.latest_data_label = lv_label_create(ui_TabPage_Home);
+    lv_obj_set_width(sensor_ui.latest_data_label, LV_SIZE_CONTENT);
+    lv_obj_set_height(sensor_ui.latest_data_label, LV_SIZE_CONTENT);
+    lv_obj_set_x(sensor_ui.latest_data_label, -11);
+    lv_obj_set_y(sensor_ui.latest_data_label, 133);
+    lv_obj_set_align(sensor_ui.latest_data_label, LV_ALIGN_CENTER);
+    lv_label_set_text(sensor_ui.latest_data_label, "Latest data: unavailable");
+
+
 
     sensor_ui.arc_temperature_dyn = lv_arc_create(ui_TabPage_Home);
     lv_obj_set_width(sensor_ui.arc_temperature_dyn, 226);
@@ -106,90 +213,42 @@ void Sensor_UI_Initialize()
  * See header for full contract documentation.
  */
 void Sensor_UI_Update(void)
-{    
-    //hal::TemperatureReading temp_reading;
+{
     sensor_data_t sensor_data;
-    sensor_data.temperature = 999;
-    sensor_data.humidity = 999;
-    sensor_data.pressure = 9999;
-    sensor_data.valid = false;
 
-    
-    // TemperatureReadingInC TempReadInC;
-    // HumidityReadingInC HumidityReadingInC;
-    // PressureReadingInC pressureReadingInC;
-    //if (Sensor_Queue != NULL && xQueueReceive(Sensor_Queue, &sensor_data, 0) == pdPASS)
-    if (Sensor_Queue != NULL && xQueueReceive(Sensor_Queue, &sensor_data, 0) == pdPASS)
-    /*
-    if (Sensor_Queue != NULL && xQueueReceive(Sensor_Queue, &TempReadInC, 0) == pdPASS
-        && Humidity_Queue != NULL && xQueueReceive(Humidity_Queue, &HumidityReadingInC, 0) == pdPASS
-        && Pressure_Queue != NULL && xQueueReceive(Pressure_Queue, &pressureReadingInC, 0) == pdPASS)
-    */
-        //if (Sensor_Queue != NULL && xQueueReceive(Sensor_Queue, &temp_reading, 0) == pdPASS)
+    if (Sensor_Queue == NULL || xQueueReceive(Sensor_Queue, &sensor_data, 0) != pdPASS)
     {
-        if (sensor_data.valid)
+        return;
+    }
+
+    if (sensor_data.valid)
+    {
+        char temperature[50];
+        char humidity[50];
+        char pressure[50];
+
+        snprintf(temperature, sizeof(temperature), "%2.1f", sensor_data.temperature);
+        snprintf(humidity, sizeof(humidity), "%2.1f%%", sensor_data.humidity);
+        snprintf(pressure, sizeof(pressure), "%.1f hPa", sensor_data.pressure);
+
+        if (lvgl_port_lock(-1))
         {
-            char temp[50];
-            char humidity[50];
-            char pressure[50];
+            lv_label_set_text(sensor_ui.temperature_label_dyn, temperature);
+            lv_label_set_text(sensor_ui.humidity_label_dyn, humidity);
+            lv_label_set_text(sensor_ui.pressure_label_dyn, pressure);
+            lv_label_set_text(sensor_ui.latest_data_label, "");
+            lvgl_port_unlock();
+        }
+    }
+    else
+    {
+        char latest_data[128];
+        format_latest_data(&sensor_data, latest_data, sizeof(latest_data));
 
-            //snprintf(temp, sizeof(temp), "%2.1f", sensor_data.temperature);
-            snprintf(temp, sizeof(temp), "%2.1f", sensor_data.temperature);
-            snprintf(humidity, sizeof(humidity), "%2.1f%%", sensor_data.humidity);
-            snprintf(pressure, sizeof(pressure), "%.1f pHa", sensor_data.pressure);
-
-            if (lvgl_port_lock(-1))
-            {
-                lv_label_set_text(sensor_ui.temperature_label_dyn, temp);
-                lv_label_set_text(sensor_ui.humidity_label_dyn, humidity);
-                lv_label_set_text(sensor_ui.pressure_label_dyn, pressure);
-                //lv_label_set_text(sensor_ui.pressure_label_dyn, barometric_preassure);
-                lvgl_port_unlock();
-            }
-            else {
-                if (lvgl_port_lock(-1))
-                {                        
-                    lv_label_set_text(sensor_ui.temperature_label_dyn, "--(invalid)");
-                    lv_label_set_text(sensor_ui.humidity_label_dyn, "--(invalid)");
-                    lv_label_set_text(sensor_ui.pressure_label_dyn, "--(invalid)");
-                    lvgl_port_unlock();
-                }
-            }
+        if (lvgl_port_lock(-1))
+        {
+            lv_label_set_text(sensor_ui.latest_data_label, latest_data);
+            lvgl_port_unlock();
         }
-        /*
-        //if (sensor_data.valid) {
-            char temp[50];
-            char relative_humidity[50];
-            char barometric_preassure[50];
-            // ESP_LOGI(TAG, "TempReadInC: %.f", TempReadInC.celcius);
-            //snprintf(temp, sizeof(temp), "%2.1f", temp_reading.celcius);
-            snprintf(temp, sizeof(temp), "%2.1f", TempReadInC.celcius);
-            snprintf(relative_humidity, sizeof(temp), "%2.1f%%", HumidityReadingInC.humidity);
-            //snprintf(temp, sizeof(temp), "%2.1f", sensor_data.temperature);
-            //snprintf(relative_humidity, sizeof(relative_humidity), "%2.1f%%", sensor_data.humidity);
-            snprintf(barometric_preassure, sizeof(barometric_preassure), "%.1f pHa", pressureReadingInC.pressure);
-            //snprintf(barometric_preassure, sizeof(barometric_preassure), "%.1fpHa", sensor_data.pressure);
-            if (lvgl_port_lock(-1))
-            {
-                lv_label_set_text(sensor_ui.temperature_label_dyn, temp);
-                lv_label_set_text(sensor_ui.humidity_label_dyn, relative_humidity);
-                lv_label_set_text(sensor_ui.pressure_label_dyn, barometric_preassure);
-                //lv_label_set_text(sensor_ui.pressure_label_dyn, barometric_preassure);
-                lvgl_port_unlock();
-            }
-        */
-        /*
-        }
-            else {
-                if (lvgl_port_lock(-1))
-                {
-                    
-                lv_label_set_text(sensor_ui.temperature_label_dyn, "--(invalid)");
-                lv_label_set_text(sensor_ui.humidity_label_dyn, "--(invalid)");
-                lv_label_set_text(sensor_ui.pressure_label_dyn, "--(invalid)");
-                lvgl_port_unlock();
-            }
-        }
-        */
     }
 }

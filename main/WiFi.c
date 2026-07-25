@@ -29,7 +29,7 @@
 
 // static const int WIFI_RETRY_ATTEMPT = 3;
 
-static bool sntp_synced = false;
+//static bool sntp_synced = false;    SNTP now owns sync state
 
 static int wifi_retry_count = 0;
 
@@ -108,12 +108,17 @@ static void ip_event_cb(void *arg, esp_event_base_t event_base, int32_t event_id
         
 
         
-        if (sntp_synced == false)
+        if (TimeSync_IsSynced() == false)
         {
+            // TODO: Do not block the IP event callback while waiting up to 10 seconds for SNTP.
+            // Move synchronization waiting to the Wi-Fi worker task or use an asynchronous
+            // SNTP completion callback so ESP-IDF event-loop processing remains responsive.
             esp_err_t sntp_result = TimeSync_Start();
-            if (sntp_result == ESP_OK)
-            {
-                sntp_synced = true;
+            if (sntp_result == ESP_OK) {
+                ESP_LOGI(TAG, "System time syncronized.");
+            }
+            else {
+                ESP_LOGW(TAG, "System time sync failed.");
             }
         }
         

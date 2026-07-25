@@ -1,6 +1,7 @@
 #include "Settings_UI.h"
 
 #include "../../screens/Main_UI.h"
+#include "../../../main/SNTP/time_sync.h"
 
 #include "esp_system.h"
 #include "esp_timer.h"
@@ -9,6 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+
 
 #include "TimeFormat.h" // from "Utils" folder"
 
@@ -158,5 +160,9 @@ void Settings_UI_Update(const app_state_t *app)
      * Add the time-synchronization label here when its public getter
      * has been finalized.
      */
+    lv_label_set_text(
+        ui_TimeValueLabel,
+        TimeSync_IsSynced() ? "Synchronized" : "Waiting"
+    );
 }
 

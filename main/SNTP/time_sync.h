@@ -7,6 +7,7 @@
 #include "esp_netif_sntp.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <stdbool.h>
 
 /**
  * @file time_sync.h

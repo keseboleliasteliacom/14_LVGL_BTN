@@ -6,7 +6,7 @@ idf_component_register(
     SRCS "HTTP.c" "../ui/ui.c" "../ui/ui_helpers.c" "../ui/screens/ui_Screen1.c" "HTTP.c" "WiFi.c" "main.c"
     "SNTP/time_sync.c"
     "fake/fake_config.cpp" "fake/fake_system_status.cpp" 
-    "leop/leop.cpp" "leop/fake_leop.cpp" 
+    "LEOP/leop.cpp" "LEOP/fake_leop.cpp"
     "sensor/sensor.cpp" "sensor/fake_sensor.cpp"
     "UART/UART.cpp" "UART/uart_diag_shell.cpp"
     "../ui/screens/Main_UI.c"
@@ -23,7 +23,7 @@ idf_component_register(
     "Memory/Spiffs.c" "Memory/NVS.c" 
     "Config/AppConfig.c" "Config/WifiConfig.c"
     "Utils/TimeFormat.c"
-    INCLUDE_DIRS "." "SNTP" "fake" "hal" "leop" "sensor" "UART" "Memory" "Config" "Utils"
+    INCLUDE_DIRS "." "SNTP" "fake" "hal" "LEOP" "sensor" "UART" "Memory" "Config" "Utils"
     WHOLE_ARCHIVE
     PRIV_REQUIRES can gpio rgb_lcd_port spiffs
     REQUIRES esp_lcd nvs_flash esp_event esp_wifi esp_http_client jansson espressif__bme280 espressif__i2c_bus

@@ -16,9 +16,23 @@ lv_obj_t *ui_TabPage_Electricity = NULL;
 lv_obj_t *ui_Chart_Electricity = NULL;
 lv_obj_t *ui_TabPage_Weather = NULL;
 lv_obj_t *ui_Chart_Weather = NULL;
-lv_obj_t *ui_TabPage_Settings = NULL;
-lv_obj_t *ui_Group_Settings = NULL;
+
 lv_obj_t *ui_TabPage_WiFi = NULL;
+lv_obj_t *ui_Group_WiFi = NULL;
+lv_obj_t *ui_TabPage_Settings = NULL;
+lv_obj_t *ui_SettingsContainer = NULL;
+//lv_obj_t *ui_Group_Settings = NULL;
+
+lv_obj_t *ui_UptimeInfoLabel = NULL;
+lv_obj_t *ui_UptimeValueLabel = NULL;
+lv_obj_t *ui_RestartInfoLabel = NULL;
+lv_obj_t *ui_RestartValueLabel = NULL;
+lv_obj_t *ui_SystemInfoLabel = NULL;
+lv_obj_t *ui_SystemValueLabel = NULL;
+lv_obj_t *ui_LastInfoLabel = NULL;
+lv_obj_t *ui_LastValueLabel = NULL;
+lv_obj_t *ui_TimeInfoLabel = NULL;
+lv_obj_t *ui_TimeValueLabel = NULL;
 
 /**
  * @brief Implementation of Main_UI_Initialize.
@@ -95,33 +109,247 @@ void Main_UI_Initialize()
     lv_obj_set_style_border_width(ui_TabPage_Weather, 0, 0);
 
 
+    // ui_TabPage_Settings = lv_tabview_add_tab(ui_Tab_Main, "SETTINGS");
+    // lv_obj_set_style_bg_color(ui_TabPage_Settings, lv_color_hex(0x1E1425), LV_PART_MAIN | LV_STATE_DEFAULT);
+    // lv_obj_set_style_bg_opa(ui_TabPage_Settings, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // ui_Group_Settings = lv_obj_create(ui_TabPage_Settings);
+
+    // lv_obj_set_width(ui_Group_Settings, 404);
+    // lv_obj_set_height(ui_Group_Settings, 380);
+    // lv_obj_set_x(ui_Group_Settings, -263);
+    // lv_obj_set_y(ui_Group_Settings, -5);
+    // lv_obj_set_align(ui_Group_Settings, LV_ALIGN_CENTER);
+
+    // // Match your "non-scrollable" behavior
+    // lv_obj_clear_flag(ui_Group_Settings,
+    //                   LV_OBJ_FLAG_SCROLLABLE |
+    //                       LV_OBJ_FLAG_SCROLL_ELASTIC |
+    //                       LV_OBJ_FLAG_SCROLL_MOMENTUM |
+    //                       LV_OBJ_FLAG_SCROLL_CHAIN);
+
+    // // Style (based on your tab button style)
+    // lv_obj_set_style_bg_color(ui_Group_Settings, lv_color_hex(0x6E10CE), LV_PART_MAIN | LV_STATE_DEFAULT);
+    // lv_obj_set_style_bg_opa(ui_Group_Settings, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // lv_obj_set_style_bg_grad_color(ui_Group_Settings, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    // lv_obj_set_style_bg_grad_dir(ui_Group_Settings, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // // Optional: cleaner edges (tabview had implicit styling)
+    // lv_obj_set_style_radius(ui_Group_Settings, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // lv_obj_set_style_border_width(ui_Group_Settings, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // lv_obj_set_style_border_color(ui_Group_Settings, lv_color_hex(0x6E10CE), LV_PART_MAIN | LV_STATE_DEFAULT);
+    ui_TabPage_WiFi = lv_tabview_add_tab(ui_Tab_Main, "WIFI");
+    lv_obj_set_style_bg_color(
+        ui_TabPage_WiFi,
+        lv_color_hex(0x1E1425),
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(
+        ui_TabPage_WiFi,
+        LV_OPA_COVER,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_Group_WiFi = lv_obj_create(ui_TabPage_WiFi);
+    lv_obj_set_width(ui_Group_WiFi, 404);
+    lv_obj_set_height(ui_Group_WiFi, 380);
+    lv_obj_set_x(ui_Group_WiFi, -263);
+    lv_obj_set_y(ui_Group_WiFi, -5);
+    lv_obj_set_align(ui_Group_WiFi, LV_ALIGN_CENTER);
+
+    lv_obj_clear_flag(
+        ui_Group_WiFi,
+        LV_OBJ_FLAG_SCROLLABLE |
+        LV_OBJ_FLAG_SCROLL_ELASTIC |
+        LV_OBJ_FLAG_SCROLL_MOMENTUM |
+        LV_OBJ_FLAG_SCROLL_CHAIN);
+
+    lv_obj_set_style_bg_color(
+        ui_Group_WiFi,
+        lv_color_hex(0x6E10CE),
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(
+        ui_Group_WiFi,
+        LV_OPA_COVER,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_color(
+        ui_Group_WiFi,
+        lv_color_hex(0x000000),
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_dir(
+        ui_Group_WiFi,
+        LV_GRAD_DIR_VER,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(
+        ui_Group_WiFi,
+        6,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(
+        ui_Group_WiFi,
+        2,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(
+        ui_Group_WiFi,
+        lv_color_hex(0x6E10CE),
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+
+
+    /*
+     * Device-information Settings tab
+     */
+
     ui_TabPage_Settings = lv_tabview_add_tab(ui_Tab_Main, "SETTINGS");
-    lv_obj_set_style_bg_color(ui_TabPage_Settings, lv_color_hex(0x1E1425), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_TabPage_Settings, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(
+        ui_TabPage_Settings,
+        lv_color_hex(0x1E1425),
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(
+        ui_TabPage_Settings,
+        LV_OPA_COVER,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    ui_Group_Settings = lv_obj_create(ui_TabPage_Settings);
+    ui_SettingsContainer = lv_obj_create(ui_TabPage_Settings);
+    lv_obj_remove_style_all(ui_SettingsContainer);
+    lv_obj_set_width(ui_SettingsContainer, 480);
+    lv_obj_set_height(ui_SettingsContainer, 412);
+    lv_obj_set_x(ui_SettingsContainer, -237);
+    lv_obj_set_y(ui_SettingsContainer, 0);
+    lv_obj_set_align(ui_SettingsContainer, LV_ALIGN_CENTER);
 
-    lv_obj_set_width(ui_Group_Settings, 404);
-    lv_obj_set_height(ui_Group_Settings, 380);
-    lv_obj_set_x(ui_Group_Settings, -263);
-    lv_obj_set_y(ui_Group_Settings, -5);
-    lv_obj_set_align(ui_Group_Settings, LV_ALIGN_CENTER);
+    lv_obj_clear_flag(
+        ui_SettingsContainer,
+        LV_OBJ_FLAG_CLICKABLE |
+        LV_OBJ_FLAG_SCROLLABLE);
 
-    // Match your "non-scrollable" behavior
-    lv_obj_clear_flag(ui_Group_Settings,
-                      LV_OBJ_FLAG_SCROLLABLE |
-                          LV_OBJ_FLAG_SCROLL_ELASTIC |
-                          LV_OBJ_FLAG_SCROLL_MOMENTUM |
-                          LV_OBJ_FLAG_SCROLL_CHAIN);
+    lv_obj_set_style_bg_color(
+        ui_SettingsContainer,
+        lv_color_hex(0x1E1425),
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(
+        ui_SettingsContainer,
+        LV_OPA_COVER,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    // Style (based on your tab button style)
-    lv_obj_set_style_bg_color(ui_Group_Settings, lv_color_hex(0x6E10CE), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_Group_Settings, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_grad_color(ui_Group_Settings, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_grad_dir(ui_Group_Settings, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    // Optional: cleaner edges (tabview had implicit styling)
-    lv_obj_set_style_radius(ui_Group_Settings, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(ui_Group_Settings, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(ui_Group_Settings, lv_color_hex(0x6E10CE), LV_PART_MAIN | LV_STATE_DEFAULT);
+    /*
+     * Uptime row
+     */
+
+    ui_UptimeInfoLabel = lv_label_create(ui_SettingsContainer);
+    lv_obj_set_size(ui_UptimeInfoLabel, 140, LV_SIZE_CONTENT);
+    lv_obj_set_pos(ui_UptimeInfoLabel, -150, -175);
+    lv_obj_set_align(ui_UptimeInfoLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_UptimeInfoLabel, "Uptime");
+    lv_obj_set_style_text_align(
+        ui_UptimeInfoLabel,
+        LV_TEXT_ALIGN_LEFT,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_UptimeValueLabel = lv_label_create(ui_SettingsContainer);
+    lv_obj_set_size(ui_UptimeValueLabel, 240, LV_SIZE_CONTENT);
+    lv_obj_set_pos(ui_UptimeValueLabel, 50, -175);
+    lv_obj_set_align(ui_UptimeValueLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_UptimeValueLabel, "Starting...");
+    lv_obj_set_style_text_align(
+        ui_UptimeValueLabel,
+        LV_TEXT_ALIGN_LEFT,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+
+
+    /*
+     * Last-restart row
+     */
+
+    ui_RestartInfoLabel = lv_label_create(ui_SettingsContainer);
+    lv_obj_set_size(ui_RestartInfoLabel, 140, LV_SIZE_CONTENT);
+    lv_obj_set_pos(ui_RestartInfoLabel, -150, -140);
+    lv_obj_set_align(ui_RestartInfoLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_RestartInfoLabel, "Last restart reason");
+    lv_obj_set_style_text_align(
+        ui_RestartInfoLabel,
+        LV_TEXT_ALIGN_LEFT,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_RestartValueLabel = lv_label_create(ui_SettingsContainer);
+    lv_obj_set_size(ui_RestartValueLabel, 300, LV_SIZE_CONTENT);
+    lv_obj_set_pos(ui_RestartValueLabel, 80, -140);
+    lv_obj_set_align(ui_RestartValueLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_RestartValueLabel, "Unknown");
+    lv_obj_set_style_text_align(
+        ui_RestartValueLabel,
+        LV_TEXT_ALIGN_LEFT,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+
+
+    /*
+     * System-status row
+     */
+
+    ui_SystemInfoLabel = lv_label_create(ui_SettingsContainer);
+    lv_obj_set_size(ui_SystemInfoLabel, 140, LV_SIZE_CONTENT);
+    lv_obj_set_pos(ui_SystemInfoLabel, -150, -105);
+    lv_obj_set_align(ui_SystemInfoLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_SystemInfoLabel, "System status");
+    lv_obj_set_style_text_align(
+        ui_SystemInfoLabel,
+        LV_TEXT_ALIGN_LEFT,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_SystemValueLabel = lv_label_create(ui_SettingsContainer);
+    lv_obj_set_size(ui_SystemValueLabel, 300, LV_SIZE_CONTENT);
+    lv_obj_set_pos(ui_SystemValueLabel, 80, -105);
+    lv_obj_set_align(ui_SystemValueLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_SystemValueLabel, "Starting...");
+    lv_obj_set_style_text_align(
+        ui_SystemValueLabel,
+        LV_TEXT_ALIGN_LEFT,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+
+
+    /*
+     * Last-data-update row
+     */
+
+    ui_LastInfoLabel = lv_label_create(ui_SettingsContainer);
+    lv_obj_set_size(ui_LastInfoLabel, 140, LV_SIZE_CONTENT);
+    lv_obj_set_pos(ui_LastInfoLabel, -150, -70);
+    lv_obj_set_align(ui_LastInfoLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_LastInfoLabel, "Last data update");
+    lv_obj_set_style_text_align(
+        ui_LastInfoLabel,
+        LV_TEXT_ALIGN_LEFT,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_LastValueLabel = lv_label_create(ui_SettingsContainer);
+    lv_obj_set_size(ui_LastValueLabel, 240, LV_SIZE_CONTENT);
+    lv_obj_set_pos(ui_LastValueLabel, 50, -70);
+    lv_obj_set_align(ui_LastValueLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_LastValueLabel, "No data yet");
+    lv_obj_set_style_text_align(
+        ui_LastValueLabel,
+        LV_TEXT_ALIGN_LEFT,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+
+
+    /*
+     * Time-synchronization row
+     */
+
+    ui_TimeInfoLabel = lv_label_create(ui_SettingsContainer);
+    lv_obj_set_size(ui_TimeInfoLabel, 140, LV_SIZE_CONTENT);
+    lv_obj_set_pos(ui_TimeInfoLabel, -150, -35);
+    lv_obj_set_align(ui_TimeInfoLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_TimeInfoLabel, "Time synchronized");
+    lv_obj_set_style_text_align(
+        ui_TimeInfoLabel,
+        LV_TEXT_ALIGN_LEFT,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_TimeValueLabel = lv_label_create(ui_SettingsContainer);
+    lv_obj_set_size(ui_TimeValueLabel, 240, LV_SIZE_CONTENT);
+    lv_obj_set_pos(ui_TimeValueLabel, 50, -35);
+    lv_obj_set_align(ui_TimeValueLabel, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_TimeValueLabel, "Waiting");
+    lv_obj_set_style_text_align(
+        ui_TimeValueLabel,
+        LV_TEXT_ALIGN_LEFT,
+        LV_PART_MAIN | LV_STATE_DEFAULT);
 }

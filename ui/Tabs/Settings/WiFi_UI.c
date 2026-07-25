@@ -36,7 +36,7 @@ void WiFi_UI_Set_Callbacks(void);
 void WiFi_UI_Initialize()
 {
 
-    wifi_ui.group_label = lv_label_create(ui_Group_Settings);
+    wifi_ui.group_label = lv_label_create(ui_Group_WiFi);
     lv_obj_set_width(wifi_ui.group_label, LV_SIZE_CONTENT);  /// 1
     lv_obj_set_height(wifi_ui.group_label, LV_SIZE_CONTENT); /// 1
     lv_obj_set_x(wifi_ui.group_label, -163);
@@ -44,7 +44,7 @@ void WiFi_UI_Initialize()
     lv_obj_set_align(wifi_ui.group_label, LV_ALIGN_CENTER);
     lv_label_set_text(wifi_ui.group_label, "WiFi");
 
-    wifi_ui.network_dropdown_dyn = lv_dropdown_create(ui_Group_Settings);
+    wifi_ui.network_dropdown_dyn = lv_dropdown_create(ui_Group_WiFi);
     lv_obj_set_width(wifi_ui.network_dropdown_dyn, 364);
     lv_obj_set_height(wifi_ui.network_dropdown_dyn, LV_SIZE_CONTENT); /// 1
     lv_obj_set_x(wifi_ui.network_dropdown_dyn, -4);
@@ -52,7 +52,7 @@ void WiFi_UI_Initialize()
     lv_obj_set_align(wifi_ui.network_dropdown_dyn, LV_ALIGN_CENTER);
     lv_obj_add_flag(wifi_ui.network_dropdown_dyn, LV_OBJ_FLAG_SCROLL_ON_FOCUS); /// Flags
 
-    wifi_ui.password_textarea_dyn = lv_textarea_create(ui_Group_Settings);
+    wifi_ui.password_textarea_dyn = lv_textarea_create(ui_Group_WiFi);
     lv_obj_set_width(wifi_ui.password_textarea_dyn, 368);
     lv_obj_set_height(wifi_ui.password_textarea_dyn, LV_SIZE_CONTENT); /// 1
     lv_obj_set_x(wifi_ui.password_textarea_dyn, -4);
@@ -62,7 +62,7 @@ void WiFi_UI_Initialize()
     lv_textarea_set_one_line(wifi_ui.password_textarea_dyn, true);
     lv_textarea_set_password_mode(wifi_ui.password_textarea_dyn, true);
 
-    wifi_ui.status_label_sta = lv_label_create(ui_Group_Settings);
+    wifi_ui.status_label_sta = lv_label_create(ui_Group_WiFi);
     lv_obj_set_width(wifi_ui.status_label_sta, LV_SIZE_CONTENT);  /// 1
     lv_obj_set_height(wifi_ui.status_label_sta, LV_SIZE_CONTENT); /// 1
     lv_obj_set_x(wifi_ui.status_label_sta, -308);
@@ -70,7 +70,7 @@ void WiFi_UI_Initialize()
     lv_obj_set_align(wifi_ui.status_label_sta, LV_ALIGN_BOTTOM_RIGHT);
     lv_label_set_text(wifi_ui.status_label_sta, "Status: ");
 
-    wifi_ui.status_label_dyn = lv_label_create(ui_Group_Settings);
+    wifi_ui.status_label_dyn = lv_label_create(ui_Group_WiFi);
     lv_obj_set_width(wifi_ui.status_label_dyn, LV_SIZE_CONTENT);  /// 1
     lv_obj_set_height(wifi_ui.status_label_dyn, LV_SIZE_CONTENT); /// 1
     lv_obj_set_x(wifi_ui.status_label_dyn, -200);
@@ -81,7 +81,7 @@ void WiFi_UI_Initialize()
     lv_obj_set_style_text_color(wifi_ui.status_label_dyn, lv_color_hex(0xFF0000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(wifi_ui.status_label_dyn, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    wifi_ui.scan_button_dyn = lv_btn_create(ui_Group_Settings);
+    wifi_ui.scan_button_dyn = lv_btn_create(ui_Group_WiFi);
     lv_obj_set_width(wifi_ui.scan_button_dyn, 50);
     lv_obj_set_height(wifi_ui.scan_button_dyn, 25);
     lv_obj_set_x(wifi_ui.scan_button_dyn, -109);

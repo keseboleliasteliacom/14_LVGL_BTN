@@ -160,7 +160,7 @@ void app_main()
 
     xTaskCreate(WiFi_Work, app.system_task_handlers.wifi_task.name, app.system_task_handlers.wifi_task.stack_size, NULL, 5, &wifi_task_handle);
 
-    xTaskCreate(ui_update_task, app.system_task_handlers.ui_task.name, app.system_task_handlers.ui_task.stack_size, NULL, 5, &ui_task_handle);
+    xTaskCreate(ui_update_task, app.system_task_handlers.ui_task.name, app.system_task_handlers.ui_task.stack_size, &app, 5, &ui_task_handle);
 
     xTaskCreate(UART_Work, &app.system_task_handlers.uart_task.name, app.system_task_handlers.uart_task.stack_size, &app, 4, &uart_task_handle);
 

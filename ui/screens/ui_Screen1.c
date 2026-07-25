@@ -14,11 +14,12 @@
 // Project name: SquareLine_Project
 
 #include "../ui.h"
-#include "../Tabs/Settings/WiFi_UI.h"
+#include "../Tabs/Wifi/WiFi_UI.h"
 #include "../Tabs/Home/Sensor_UI.h"
 #include "../Tabs/Electricity/Electricity_UI.h"
 #include "../Tabs/Electricity/Price_UI.h"
 #include "../Tabs/Weather/Weather_UI.h"
+#include "../Tabs/Settings/Settings_UI.h"
 
 
 // event funtions
@@ -34,8 +35,9 @@ static const char *TAG = "UI";
  * Polls the individual UI modules, then updates the LVGL-backed widgets while
  * holding the LVGL lock. Runs in task context and blocks on the lock and delay.
  */
-void ui_update_task(void)
+void ui_update_task(void *arg)
 {
+    const app_state_t *app = (const app_state_t*)arg;
     while (1)
     {
         WiFi_UI_Update();
@@ -46,6 +48,7 @@ void ui_update_task(void)
             //Weather_UI_Update();
             Weather_UI_Update_test();
             Price_UI_Update();
+            Settings_UI_Update(app);
 
             lvgl_port_unlock();
         }
@@ -63,6 +66,8 @@ void ui_Screen1_screen_init(void)
 {
 
     Main_UI_Initialize();
+
+    Settings_UI_Initialize();
 
     WiFi_UI_Initialize();
 

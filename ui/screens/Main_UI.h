@@ -4,6 +4,8 @@
 #include "../../main/app_queues.h"
 #include "../app_types.h"
 
+#include "lvgl.h"
+
 /**
  * @file Main_UI.h
  * @brief Public declarations for the main LVGL screen.

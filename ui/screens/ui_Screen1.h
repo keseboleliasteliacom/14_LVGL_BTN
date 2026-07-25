@@ -21,7 +21,7 @@ extern "C" {
  *
  * Runs periodic UI refresh work for the screen.
  */
-void ui_update_task(void);
+void ui_update_task(void *arg);
 
 /**
  * @brief Initializes Screen 1 UI objects.

@@ -19,7 +19,9 @@ extern "C" {
 /**
  * @brief Background UI update task for Screen 1.
  *
- * Runs periodic UI refresh work for the screen.
+ * Runs periodic UI refresh work for the screen in task context.
+ *
+ * @param[in] arg Task argument passed from the caller.
  */
 void ui_update_task(void *arg);
 

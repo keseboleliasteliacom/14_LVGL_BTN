@@ -48,6 +48,16 @@ void Sensor_Init_v2(app_state_t* app)
 
 }
 
+/**
+ * @brief Reads the BME280 sensor and publishes a snapshot to the queue.
+ *
+ * Updates the application sensor state only when all sensor reads succeed.
+ *
+ * @param[in,out] sensor Sensor state to update with the latest measurement.
+ * @param[in,out] environment_sensor BME280 sensor wrapper used for hardware access.
+ *
+ * @return `true` when all readings succeed, otherwise `false`.
+ */
 bool Sensor_Read_v3(sensor_data_t* sensor, hal::BME280SensorV2& environment_sensor)
 {
     hal::EnvironmentReading reading = hal::EnvironmentReading();

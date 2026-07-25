@@ -3,6 +3,26 @@
 
 #include "../../../main/app_types.h"
 
+/**
+ * @file Settings_UI.h
+ * @brief Public API for the Settings tab UI helpers.
+ *
+ * Provides the initialization and refresh functions used by the Settings tab
+ * after the LVGL labels have been created.
+ *
+ * @ingroup SETTINGS_UI
+ */
+
+/**
+ * @defgroup SETTINGS_UI SETTINGS_UI
+ * @brief Settings tab UI update helpers
+ *
+ * These helpers initialize and update the Settings tab labels. Call
+ * initialization after the UI objects have been created, and call update while
+ * holding the LVGL lock.
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,5 +46,7 @@ void Settings_UI_Update(const app_state_t *app);
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif

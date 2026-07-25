@@ -9,6 +9,22 @@ extern "C" {
 #endif
 
 /**
+ * @file TimeFormat.h
+ * @brief Public API for compact duration formatting.
+ *
+ * @ingroup TIME_FORMAT
+ */
+
+/**
+ * @defgroup TIME_FORMAT TIME_FORMAT
+ * @brief Compact duration formatting helpers.
+ *
+ * Formats a duration into a short human-readable string using days, hours,
+ * minutes, and seconds as needed.
+ * @{
+ */
+
+/**
  * @brief Formats a duration as compact, human-readable text.
  *
  * Examples:
@@ -27,6 +43,8 @@ int TimeFormat_FormatDuration(
     char *buffer,
     size_t buffer_size,
     uint64_t total_seconds);
+
+/** @} */
 
 #ifdef __cplusplus
 }

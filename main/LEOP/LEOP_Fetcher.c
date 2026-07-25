@@ -42,17 +42,41 @@ static bool status_has_been_published = false;
 static leop_connection_cb_t connection_callback = NULL;
 static void *connection_callback_ctx = NULL;
 
+/**
+ * @brief Registers the LEOP connection-state callback.
+ *
+ * The callback is invoked from LEOP worker task context when the published
+ * connection state changes.
+ */
 void LEOPFetcher_SetConnectionCallback(leop_connection_cb_t cb, void *ctx)
 {
     connection_callback = cb;
     connection_callback_ctx = ctx;
 }
 
+/**
+ * @brief Returns whether the current tick count has reached the deadline.
+ *
+ * @param[in] now Current tick count.
+ * @param[in] deadline Deadline tick count.
+ *
+ * @return `true` when the deadline has been reached or passed.
+ */
 static bool LEOPFetcher_DeadlineReached(TickType_t now, TickType_t deadline)
 {
     return (int32_t)(now - deadline) >= 0;
 }
 
+/**
+ * @brief Publishes the current LEOP connection status.
+ *
+ * The status is sent through the shared queue and mirrored to the optional
+ * callback from worker task context.
+ *
+ * @param[in] state Connection state to publish.
+ * @param[in] consecutive_failures Number of consecutive failures.
+ * @param[in] http_status_code Latest HTTP status code, if available.
+ */
 static void LEOPFetcher_PublishStatus(leop_connection_state_t state,
                                       uint8_t consecutive_failures,
                                       int http_status_code)
@@ -85,6 +109,11 @@ static void LEOPFetcher_PublishStatus(leop_connection_state_t state,
     }
 }
 
+/**
+ * @brief Publishes the latest LEOP data snapshots to the shared queues.
+ *
+ * @param[in] leop_data Source data to publish.
+ */
 static void LEOPFetcher_PublishData(const LEOPData *leop_data)
 {
     if (recommendation_queue != NULL)
@@ -101,6 +130,11 @@ static void LEOPFetcher_PublishData(const LEOPData *leop_data)
     }
 }
 
+/**
+ * @brief Loads cached LEOP data and publishes the resulting snapshots.
+ *
+ * @param[in,out] leop_data LEOP state to update from cache.
+ */
 static void LEOPFetcher_LoadCachedData(LEOPData *leop_data)
 {
     leop_data->recommendations.status.recommendation_fetched =
@@ -113,6 +147,13 @@ static void LEOPFetcher_LoadCachedData(LEOPData *leop_data)
     LEOPFetcher_PublishData(leop_data);
 }
 
+/**
+ * @brief Fetches all LEOP remote payloads.
+ *
+ * @param[in,out] leop_data LEOP state to update with fetched data.
+ *
+ * @return Per-source fetch success flags.
+ */
 static leop_fetch_result_t LEOPFetcher_FetchAll(LEOPData *leop_data)
 {
     leop_fetch_result_t result = {0};
@@ -136,6 +177,13 @@ static leop_fetch_result_t LEOPFetcher_FetchAll(LEOPData *leop_data)
     return result;
 }
 
+/**
+ * @brief Converts the configured fetch interval to RTOS ticks.
+ *
+ * @param[in] leop_data LEOP state containing the interval pointer.
+ *
+ * @return Fetch interval in ticks, clamped to the RTOS tick range.
+ */
 static TickType_t LEOPFetcher_FetchIntervalTicks(const LEOPData *leop_data)
 {
     uint32_t minutes = 1;

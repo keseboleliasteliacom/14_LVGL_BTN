@@ -19,6 +19,11 @@
 //#include "../../../main/hal/temperature_sensor_c_api.h";
 #include "../../../main/app_types.h"
 
+/**
+ * @brief Cached LVGL handles for the sensor tab.
+ *
+ * The pointers are initialized during UI setup and updated by the refresh path.
+ */
 static Sensor_UI sensor_ui = {
     .arc_humidity_dyn = NULL,
     .arc_pressure_dyn = NULL,
@@ -34,6 +39,14 @@ const static char* TAG = "Sensor_UI";
 
 typedef int64_t elapsed_seconds_t;
 
+/**
+ * @brief Computes a non-negative elapsed-time difference.
+ *
+ * @param[in] now Current monotonic time in seconds.
+ * @param[in] then Previous monotonic time in seconds.
+ *
+ * @return Elapsed seconds, or 0 if the timestamps are out of order.
+ */
 static elapsed_seconds_t monotonic_diff(uint64_t now, uint64_t then)
 {
     if (now < then)
@@ -44,6 +57,13 @@ static elapsed_seconds_t monotonic_diff(uint64_t now, uint64_t then)
     return (elapsed_seconds_t)(now - then);
 }
 
+/**
+ * @brief Formats an elapsed duration for display.
+ *
+ * @param[in] diff Elapsed time in seconds.
+ * @param[out] buffer Destination buffer for the formatted string.
+ * @param[in] buffer_size Size of @p buffer in bytes.
+ */
 static void format_elapsed(elapsed_seconds_t diff,
                            char *buffer,
                            size_t buffer_size)
@@ -92,6 +112,13 @@ static void format_elapsed(elapsed_seconds_t diff,
     }
 }
 
+/**
+ * @brief Builds the latest-data status text.
+ *
+ * @param[in] sensor_data Source sensor data snapshot.
+ * @param[out] buffer Destination buffer for the formatted string.
+ * @param[in] buffer_size Size of @p buffer in bytes.
+ */
 static void format_latest_data(const sensor_data_t *sensor_data,
                                char *buffer,
                                size_t buffer_size)
@@ -122,6 +149,7 @@ static void format_latest_data(const sensor_data_t *sensor_data,
         snprintf(buffer, buffer_size, "Latest data: %s", elapsed);
     }
 }
+
 /**
  * @brief Creates the Home tab sensor widgets.
  *

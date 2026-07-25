@@ -85,6 +85,7 @@ static const char *Settings_UI_GetSystemStatusText(const system_status_t *status
     return "Starting...";
 }
 
+// TODO - Fix this until after merging branches 
 static void Settings_UI_FormatLastUpdate(
     char *buffer,
     size_t buffer_size,

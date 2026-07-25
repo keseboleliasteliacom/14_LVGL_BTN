@@ -2,7 +2,7 @@
 #define ENVIRONMENT_SENSOR_HPP
 
 #include <stdint.h>
-#include "Hal_classes.h"
+#include "hal_classes.h"
 #include <time.h>
 
 /**

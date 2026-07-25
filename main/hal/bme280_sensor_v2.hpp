@@ -28,7 +28,6 @@
  * @{
  */
 
-
 namespace hal {
     /**
      * @brief BME280-based environment sensor wrapper.

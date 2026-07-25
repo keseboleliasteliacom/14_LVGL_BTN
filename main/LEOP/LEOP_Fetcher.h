@@ -53,7 +53,7 @@ typedef struct
 typedef void (*leop_connection_cb_t)(leop_connection_state_t state, void *ctx);
 
 /**
- * @brief Registers a callback for authoritative LEOP connection-state changes.
+ * @brief Registers a callback for LEOP connection-state changes.
  *
  * The callback runs in LEOP worker task context and must remain non-blocking.
  *
@@ -65,8 +65,8 @@ void LEOPFetcher_SetConnectionCallback(leop_connection_cb_t cb, void *ctx);
 /**
  * @brief Configuration for LEOP fetch timing.
  *
- * The interval is expected to reference the fetch interval in minutes owned by
- * the application state.
+ * The interval points to the fetch interval in minutes owned by the application
+ * state.
  */
 typedef struct{
     uint32_t* time_interval;

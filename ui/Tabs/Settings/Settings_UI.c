@@ -1,3 +1,10 @@
+/**
+ * @file Settings_UI.c
+ * @brief Implementation of the Settings tab UI update helpers.
+ *
+ * @ingroup SETTINGS_UI
+ */
+
 #include "Settings_UI.h"
 
 #include "../../screens/Main_UI.h"
@@ -20,10 +27,28 @@
  */
 
 
+/**
+ * @brief Returns a short text description of the current ESP reset reason.
+ */
 static const char *Settings_UI_GetRestartReasonText(void);
 
+/**
+ * @brief Returns the current system status text for the Settings tab.
+ *
+ * @param[in] status Pointer to the system status snapshot.
+ *
+ * @return Status text used by the UI.
+ */
 static const char *Settings_UI_GetSystemStatusText(const system_status_t *status);
 
+/**
+ * @brief Formats the last sensor update text for the Settings tab.
+ *
+ * @param[out] buffer Output buffer for the formatted text.
+ * @param[in] buffer_size Size of @p buffer in bytes.
+ * @param[in] last_update_seconds Timestamp of the last update.
+ * @param[in] uptime_seconds Current uptime in seconds.
+ */
 static void Settings_UI_FormatLastUpdate(
     char *buffer,
     size_t buffer_size,
@@ -37,6 +62,9 @@ static void Settings_UI_FormatLastUpdate(
 
 
 
+/**
+ * @brief Returns a short text description of the current ESP reset reason.
+ */
 static const char *Settings_UI_GetRestartReasonText(void)
 {
     switch (esp_reset_reason())
@@ -72,6 +100,13 @@ static const char *Settings_UI_GetRestartReasonText(void)
     return "Unknown";
 }
 
+/**
+ * @brief Returns the current system status text for the Settings tab.
+ *
+ * @param[in] status Pointer to the system status snapshot.
+ *
+ * @return Status text used by the UI.
+ */
 static const char *Settings_UI_GetSystemStatusText(const system_status_t *status)
 {
     // Todo - Fix system status once other feature branches are merged 
@@ -86,6 +121,14 @@ static const char *Settings_UI_GetSystemStatusText(const system_status_t *status
 }
 
 // TODO - Fix this until after merging branches 
+/**
+ * @brief Formats the last sensor update text for the Settings tab.
+ *
+ * @param[out] buffer Output buffer for the formatted text.
+ * @param[in] buffer_size Size of @p buffer in bytes.
+ * @param[in] last_update_seconds Timestamp of the last update.
+ * @param[in] uptime_seconds Current uptime in seconds.
+ */
 static void Settings_UI_FormatLastUpdate(
     char *buffer,
     size_t buffer_size,
@@ -106,6 +149,11 @@ static void Settings_UI_FormatLastUpdate(
 
 
 
+/**
+ * @brief Implementation of Settings_UI_Initialize.
+ *
+ * See header for full contract documentation.
+ */
 void Settings_UI_Initialize(void)
 {
     //Reset reason cannot change while the device is running, so it only needs to be calculated once.
@@ -114,6 +162,11 @@ void Settings_UI_Initialize(void)
         Settings_UI_GetRestartReasonText());
 }
 
+/**
+ * @brief Implementation of Settings_UI_Update.
+ *
+ * See header for full contract documentation.
+ */
 void Settings_UI_Update(const app_state_t *app)
 {
     if (app == NULL)
@@ -166,4 +219,3 @@ void Settings_UI_Update(const app_state_t *app)
         TimeSync_IsSynced() ? "Synchronized" : "Waiting"
     );
 }
-

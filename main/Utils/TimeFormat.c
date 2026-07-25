@@ -1,8 +1,20 @@
+/**
+ * @file TimeFormat.c
+ * @brief Implementation of the TimeFormat module.
+ *
+ * @ingroup TIME_FORMAT
+ */
+
 #include "TimeFormat.h"
 
 #include <inttypes.h>
 #include <stdio.h>
 
+/**
+ * @brief Implementation of TimeFormat_FormatDuration.
+ *
+ * See header for full contract documentation.
+ */
 int TimeFormat_FormatDuration(
     char *buffer,
     size_t buffer_size,

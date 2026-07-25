@@ -14,7 +14,11 @@ const static char* TAG = "SNTP";
 static atomic_bool s_time_synced = ATOMIC_VAR_INIT(false);
 static bool s_sntp_initialized = false;
 
-// Old version started SNTP and waited for sync, but did not remember if the sync succeded. It also returned the result of init instead of the result of the synchronization.
+/**
+ * @brief Implementation of TimeSync_Start.
+ *
+ * See header for full contract documentation.
+ */
 esp_err_t TimeSync_Start() {
     if (s_sntp_initialized == false)
     {
@@ -44,7 +48,11 @@ esp_err_t TimeSync_Start() {
     return sync_result;
 }
 
-
+/**
+ * @brief Implementation of TimeSync_IsSynced.
+ *
+ * See header for full contract documentation.
+ */
 bool TimeSync_IsSynced() {
     return atomic_load(&s_time_synced);
 }

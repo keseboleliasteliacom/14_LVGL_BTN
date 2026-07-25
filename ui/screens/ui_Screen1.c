@@ -30,6 +30,12 @@
 
 static const char *TAG = "UI";
 
+/**
+ * @brief Updates the LEOP connection label from the status queue.
+ *
+ * Consumes at most one queued status message per call and updates the label
+ * color and text when the shared UI objects are available.
+ */
 static void LEOP_UI_Update(void)
 {
     if (leop_status_queue == NULL || ui_LEOP_Connected_Label == NULL)

@@ -57,6 +57,8 @@ bool Sensor_Read_v3(sensor_data_t* sensor, hal::BME280SensorV2& environment_sens
     if (sensor_reading != hal::SensorError::Ok) {
         ESP_LOGW(TAG, "Something went wrong when reading data from sensor."); // TODO - add proper info to output
         sensor->valid = false;
+        sensor_data_t sensor_snapshot = *sensor;
+        xQueueOverwrite(Sensor_Queue, &sensor_snapshot);
         return false;
     }
     

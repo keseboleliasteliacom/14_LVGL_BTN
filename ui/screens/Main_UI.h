@@ -33,6 +33,7 @@ extern lv_obj_t * ui_Chart_Weather;
 extern lv_obj_t * ui_TabPage_Settings;
 extern lv_obj_t * ui_Group_Settings; 
 extern lv_obj_t * ui_TabPage_WiFi;
+extern lv_obj_t * ui_LEOP_Label;
 extern lv_obj_t * ui_LEOP_Connected_Label;
 
 /**

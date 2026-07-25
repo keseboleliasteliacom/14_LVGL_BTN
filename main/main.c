@@ -34,8 +34,8 @@
 #include "Config/AppConfig.h"
 
 
-#define WIFI_PASS "rockyunit953"
-#define WIFI_SSID "NETGEAR49"
+//#define WIFI_PASS "rockyunit953"
+//#define WIFI_SSID "NETGEAR49"
 
 
 static app_state_t app;
@@ -63,6 +63,22 @@ static void on_wifi_connection_changed(bool connected, void *ctx)
 {
     app_state_t *app = (app_state_t *)ctx;
     app->system_status.wifi_connected = connected;
+
+    if (leop_task_handle != NULL)
+    {
+        xTaskNotifyGive(leop_task_handle);
+    }
+}
+
+/**
+ * @brief Mirrors the authoritative LEOP state into shared diagnostics state.
+ */
+static void on_leop_connection_changed(leop_connection_state_t state, void *ctx)
+{
+    app_state_t *app = (app_state_t *)ctx;
+    app->system_status.leop_connected =
+        (state == LEOP_CONNECTION_CONNECTED ||
+         state == LEOP_CONNECTION_DEGRADED);
 }
 
 
@@ -176,6 +192,7 @@ void app_main()
     // Använd appens leop_data istället för en statisk lokal här.
     // TODO - Behöver dock lägga till mutex så småningom efter både UART och LEOP har access till samma resurs
     LEOPFetcher_Initialize(&app.leop_data, 3000);
+    LEOPFetcher_SetConnectionCallback(on_leop_connection_changed, &app);
     app.leop_data.leop_conf.time_interval = &app.config_data.fetch_interval_minutes;
     ESP_LOGI(TAG, "Leop data config time interval: %ld", *app.leop_data.leop_conf.time_interval);
 

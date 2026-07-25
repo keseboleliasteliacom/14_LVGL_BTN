@@ -19,6 +19,7 @@
 #include "../Tabs/Electricity/Electricity_UI.h"
 #include "../Tabs/Electricity/Price_UI.h"
 #include "../Tabs/Weather/Weather_UI.h"
+#include "../../main/LEOP/LEOP_Fetcher.h"
 
 
 // event funtions
@@ -27,6 +28,54 @@
 // build funtions
 
 static const char *TAG = "UI";
+
+static void LEOP_UI_Update(void)
+{
+    if (leop_status_queue == NULL || ui_LEOP_Connected_Label == NULL)
+    {
+        return;
+    }
+
+    leop_status_message_t message;
+    if (xQueueReceive(leop_status_queue, &message, 0) != pdPASS)
+    {
+        return;
+    }
+
+    const char *text = "Checking...";
+    lv_color_t color = lv_color_hex(0xFFFF00);
+
+    switch (message.state)
+    {
+    case LEOP_CONNECTION_NO_WIFI:
+        text = "No WiFi";
+        color = lv_color_hex(0xFF0000);
+        break;
+    case LEOP_CONNECTION_CHECKING:
+        text = "Checking...";
+        color = lv_color_hex(0xFFFF00);
+        break;
+    case LEOP_CONNECTION_CONNECTED:
+        text = "Connected";
+        color = lv_color_hex(0x00FF07);
+        break;
+    case LEOP_CONNECTION_DEGRADED:
+        text = "Degraded";
+        color = lv_color_hex(0xFFA500);
+        break;
+    case LEOP_CONNECTION_UNAVAILABLE:
+        text = "Not connected";
+        color = lv_color_hex(0xFF0000);
+        break;
+    default:
+        break;
+    }
+
+    lv_label_set_text(ui_LEOP_Connected_Label, text);
+    lv_obj_set_style_text_color(ui_LEOP_Connected_Label,
+                                color,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+}
 
 /**
  * @brief Background UI update task for Screen 1.
@@ -46,6 +95,7 @@ void ui_update_task(void)
             //Weather_UI_Update();
             Weather_UI_Update_test();
             Price_UI_Update();
+            LEOP_UI_Update();
 
             lvgl_port_unlock();
         }

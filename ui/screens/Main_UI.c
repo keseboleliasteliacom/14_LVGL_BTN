@@ -61,8 +61,8 @@ void Main_UI_Initialize()
     lv_obj_set_x(ui_LEOP_Connected_Label, 395);
     lv_obj_set_y(ui_LEOP_Connected_Label, -231);
     lv_obj_set_align(ui_LEOP_Connected_Label, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_LEOP_Connected_Label, "No Connection");
-    lv_obj_set_style_text_color(ui_LEOP_Connected_Label, lv_color_hex(0x00FF07), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_label_set_text(ui_LEOP_Connected_Label, "Checking...");
+    lv_obj_set_style_text_color(ui_LEOP_Connected_Label, lv_color_hex(0xFFFF00), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_LEOP_Connected_Label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
 

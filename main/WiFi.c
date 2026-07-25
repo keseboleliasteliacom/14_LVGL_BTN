@@ -210,6 +210,11 @@ static void wifi_event_cb(void *arg, esp_event_base_t event_base, int32_t event_
         wifi_started = false;
         ESP_LOGI(TAG, "Wi-Fi stopped");
         break;
+    // When station stop recieveing router beacons. 
+    // We are handling the reconnect already, but now we get warning prints instead of harder-to-read errors in console.
+    case (WIFI_EVENT_STA_BEACON_TIMEOUT):
+        ESP_LOGW(TAG, "Wi-Fi beascon timeout.");
+        break;
     case (WIFI_EVENT_STA_CONNECTED):
         //w_state.is_connected = true;
         ESP_LOGI(TAG, "Wi-Fi AP connected, waiting for IP...");

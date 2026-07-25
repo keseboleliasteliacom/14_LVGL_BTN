@@ -125,8 +125,12 @@ def changed_files(base: str, head: str) -> list[Path]:
         rel = Path(name)
         if rel.suffix.lower() not in ALLOWED_SUFFIXES:
             continue
-        abs_path = REPO_ROOT / rel
-        if abs_path.exists():
+        abs_path = (REPO_ROOT / rel).resolve()
+        try:
+            abs_path.relative_to(REPO_ROOT.resolve())
+        except ValueError:
+            continue
+        if abs_path.is_file():
             files.append(abs_path)
     return files
 
@@ -501,9 +505,13 @@ Normalized code diff excerpt from the rejected attempt:
     return retry_result, True
 
 
+def normalize_file_text(text: str) -> str:
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    return normalized if normalized.endswith("\n") else f"{normalized}\n"
+
+
 def write_file(path: Path, text: str) -> None:
-    normalized = text if text.endswith("\n") else f"{text}\n"
-    path.write_text(normalized, encoding="utf-8", newline="\n")
+    path.write_text(normalize_file_text(text), encoding="utf-8", newline="\n")
 
 
 def write_rejected_output(path: Path, text: str) -> Path:
@@ -605,8 +613,14 @@ def load_remaining_files_from_manifest(manifest_path: Path) -> list[Path]:
 
         rel = Path(str(entry.get("path") or "")).as_posix()
         abs_path = (REPO_ROOT / rel).resolve()
-        if not abs_path.exists():
+        try:
+            abs_path.relative_to(REPO_ROOT.resolve())
+        except ValueError as exc:
+            raise RuntimeError(f"Manifest file path is outside the repository: {rel}") from exc
+        if not abs_path.is_file():
             continue
+        if abs_path.suffix.lower() not in ALLOWED_SUFFIXES:
+            raise RuntimeError(f"Manifest file path has unsupported extension: {rel}")
         if abs_path not in seen:
             seen.add(abs_path)
             files.append(abs_path)
@@ -651,6 +665,17 @@ def process_files(
         rel = path.relative_to(REPO_ROOT).as_posix()
         paired_file = find_paired_file(path)
         paired_file_context = "No paired header/source file was found."
+
+        if not original.strip():
+            print(f"No changes for {rel}: file is empty or whitespace-only")
+            file_results.append(
+                FileResult(
+                    path=rel,
+                    status="no_change",
+                    details="Empty or whitespace-only file; no documentation required",
+                )
+            )
+            continue
 
         if len(original) > max_chars:
             print(f"Skipping {rel}: file exceeds MAX_CHARS_PER_FILE ({len(original)} > {max_chars})")
@@ -735,8 +760,8 @@ def process_files(
             print(f"Rejected {rel}: {details}")
             continue
 
-        original_normalized = original.replace("\r\n", "\n")
-        updated_normalized = updated.replace("\r\n", "\n")
+        original_normalized = normalize_file_text(original)
+        updated_normalized = normalize_file_text(updated)
         if original_normalized == updated_normalized:
             print(f"No documentation changes needed for {rel}")
             file_results.append(
@@ -832,6 +857,10 @@ def main() -> int:
     args = parser.parse_args()
     os.environ["DOXYGEN_AI_TEST_LABEL"] = args.test_label.strip()
     manifest_path = Path(args.manifest).resolve()
+    try:
+        manifest_path.relative_to(REPO_ROOT.resolve())
+    except ValueError as exc:
+        raise RuntimeError(f"Manifest path is outside the repository: {manifest_path}") from exc
 
     if args.remaining_only:
         files = load_remaining_files_from_manifest(manifest_path)

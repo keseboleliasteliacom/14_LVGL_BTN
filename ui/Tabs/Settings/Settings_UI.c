@@ -72,9 +72,9 @@ static const char *Settings_UI_GetRestartReasonText(void)
     return "Unknown";
 }
 
-static const char *Settings_UI_GetSystemStatusText(
-    const system_status_t *status)
+static const char *Settings_UI_GetSystemStatusText(const system_status_t *status)
 {
+    // Todo - Fix system status once other feature branches are merged 
 
     
     if (status == NULL)

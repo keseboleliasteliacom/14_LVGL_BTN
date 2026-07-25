@@ -97,19 +97,19 @@ void WiFi_UI_Initialize()
     wifi_ui.wifi_label = lv_label_create(ui_Screen1);
     lv_obj_set_width(wifi_ui.wifi_label, LV_SIZE_CONTENT);  /// 1
     lv_obj_set_height(wifi_ui.wifi_label, LV_SIZE_CONTENT); /// 1
-    lv_obj_set_x(wifi_ui.wifi_label, 408);
-    lv_obj_set_y(wifi_ui.wifi_label, -258);
+    lv_obj_set_x(wifi_ui.wifi_label, 290);
+    lv_obj_set_y(wifi_ui.wifi_label, -264);
     lv_obj_set_align(wifi_ui.wifi_label, LV_ALIGN_CENTER);
     lv_label_set_text(wifi_ui.wifi_label, "WiFi");
-    lv_obj_set_style_text_letter_space(wifi_ui.wifi_label, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(wifi_ui.wifi_label, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(wifi_ui.wifi_label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(wifi_ui.wifi_label, LV_TEXT_ALIGN_AUTO, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     wifi_ui.ssid_label = lv_label_create(ui_Screen1);
     lv_obj_set_width(wifi_ui.ssid_label, LV_SIZE_CONTENT);  /// 1
     lv_obj_set_height(wifi_ui.ssid_label, LV_SIZE_CONTENT); /// 1
-    lv_obj_set_x(wifi_ui.ssid_label, 410);
-    lv_obj_set_y(wifi_ui.ssid_label, -233);
+    lv_obj_set_x(wifi_ui.ssid_label, 395);
+    lv_obj_set_y(wifi_ui.ssid_label, -264);
     lv_obj_set_align(wifi_ui.ssid_label, LV_ALIGN_CENTER);
     lv_label_set_text(wifi_ui.ssid_label, "Not Connected");
     lv_obj_set_style_text_color(wifi_ui.ssid_label, lv_color_hex(0x00FF07), LV_PART_MAIN | LV_STATE_DEFAULT);

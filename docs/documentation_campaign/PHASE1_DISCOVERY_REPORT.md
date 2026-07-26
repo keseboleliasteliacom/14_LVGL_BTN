@@ -73,9 +73,9 @@ clients.
 
 ## High-impact limitations and contradictions
 
-1. The recommendation calculation produces a type/result but appears to discard
-   it and publish temperature in the recommendation field. Intended semantics
-   need an owner/code decision before the API definition can be finalized.
+1. The recommendation calculation produces a categorical result but discards
+   it and publishes the output of `average_WindowLow_percent` instead. The local
+   variable is misleadingly named `temp`; intended wire semantics remain unresolved.
 2. Property configuration contains 17 examples, but major runtime structures
    process at most five; several later entries also violate the integer-ID/full
    schema expected by code.

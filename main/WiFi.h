@@ -20,8 +20,8 @@
  * @file WiFi.h
  * @brief Public API for the Wi-Fi module.
  *
- * Provides the command, status, and data types used by the Wi-Fi worker task,
- * along with the module lifecycle and connection control functions.
+ * Defines the Wi-Fi worker-task interface, connection state, and command and
+ * result payloads used by the module.
  *
  * @defgroup WIFI WiFi
  * @brief Wi-Fi control and worker task interface.

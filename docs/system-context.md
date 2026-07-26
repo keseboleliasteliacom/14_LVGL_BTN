@@ -129,7 +129,7 @@ LEOP task performs the server requests; local queues and shared application
 state carry the newest values to consumers. See [firmware architecture](architecture.md)
 for task, queue, startup and ownership details. Server process and IPC details
 are maintained in Glennergy's
-[server architecture](https://github.com/keseboleliasteliacom/glennergy/blob/dev/Docs/architecture.md).
+[server architecture](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/architecture.md).
 
 ## Deployment and evidence boundary
 
@@ -211,7 +211,7 @@ security-reviewed before documentation can describe a final protocol.
   caching, and recovery.
 - [Current limitations](current-limitations.md) — current, partial, temporary,
   planned, and unverified behavior.
-- [Glennergy server architecture](https://github.com/keseboleliasteliacom/glennergy/blob/dev/Docs/architecture.md)
+- [Glennergy server architecture](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/architecture.md)
   — server processes, IPC, schedules, and data ownership.
 
 ## Maintenance

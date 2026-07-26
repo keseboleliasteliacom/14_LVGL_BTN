@@ -891,10 +891,24 @@ def process_files(
         total_usage.input_tokens += usage.input_tokens
         total_usage.output_tokens += usage.output_tokens
         total_usage.total_tokens += usage.total_tokens
+        estimated_cost = estimate_cost_usd(usage, input_cost_per_million, output_cost_per_million)
+        estimated_cost_sek = convert_usd_to_sek(estimated_cost, usd_to_sek)
 
         if not updated.strip():
             print(f"Skipping {rel}: model returned empty output")
-            file_results.append(FileResult(path=rel, status="skipped", model=actual_model, details="Model returned empty output"))
+            file_results.append(
+                FileResult(
+                    path=rel,
+                    status="skipped",
+                    model=actual_model,
+                    input_tokens=usage.input_tokens,
+                    output_tokens=usage.output_tokens,
+                    total_tokens=usage.total_tokens,
+                    estimated_cost_usd=estimated_cost,
+                    estimated_cost_sek=estimated_cost_sek,
+                    details="Model returned empty output",
+                )
+            )
             continue
 
         if code_changed(original, updated):
@@ -908,6 +922,8 @@ def process_files(
                     input_tokens=usage.input_tokens,
                     output_tokens=usage.output_tokens,
                     total_tokens=usage.total_tokens,
+                    estimated_cost_usd=estimated_cost,
+                    estimated_cost_sek=estimated_cost_sek,
                     details=details,
                 )
             )
@@ -933,6 +949,8 @@ def process_files(
                         input_tokens=usage.input_tokens,
                         output_tokens=usage.output_tokens,
                         total_tokens=usage.total_tokens,
+                        estimated_cost_usd=estimated_cost,
+                        estimated_cost_sek=estimated_cost_sek,
                         details=details,
                     )
                 )
@@ -952,6 +970,8 @@ def process_files(
                     input_tokens=usage.input_tokens,
                     output_tokens=usage.output_tokens,
                     total_tokens=usage.total_tokens,
+                    estimated_cost_usd=estimated_cost,
+                    estimated_cost_sek=estimated_cost_sek,
                     details="No changes were necessary",
                 )
             )
@@ -959,8 +979,6 @@ def process_files(
 
         write_file(path, updated_normalized)
         changed_count += 1
-        estimated_cost = estimate_cost_usd(usage, input_cost_per_million, output_cost_per_million)
-        estimated_cost_sek = convert_usd_to_sek(estimated_cost, usd_to_sek)
         file_results.append(
             FileResult(
                 path=rel,

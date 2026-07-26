@@ -13,6 +13,7 @@
 #include "esp_timer.h"
 #include "../app_queues.h"
 #include "../hal/bme280_sensor.hpp"
+#include "../hal/bme280_sensor_v2.hpp"
 
 /**
  * @brief Module tag used for ESP-IDF logging.
@@ -44,6 +45,46 @@ void Sensor_Init_v2(app_state_t* app)
     {
         ESP_LOGW(TAG, "Failed to create sensor queue!");
     }
+
+}
+
+/**
+ * @brief Reads the BME280 sensor and publishes a snapshot to the queue.
+ *
+ * Updates the application sensor state only when all sensor reads succeed.
+ *
+ * @param[in,out] sensor Sensor state to update with the latest measurement.
+ * @param[in,out] environment_sensor BME280 sensor wrapper used for hardware access.
+ *
+ * @return `true` when all readings succeed, otherwise `false`.
+ */
+bool Sensor_Read_v3(sensor_data_t* sensor, hal::BME280SensorV2& environment_sensor)
+{
+    hal::EnvironmentReading reading = hal::EnvironmentReading();
+
+    hal::SensorError sensor_reading = environment_sensor.read(reading);
+
+    if (sensor_reading != hal::SensorError::Ok) {
+        ESP_LOGW(TAG, "Something went wrong when reading data from sensor."); // TODO - add proper info to output
+        sensor->valid = false;
+        sensor_data_t sensor_snapshot = *sensor;
+        xQueueOverwrite(Sensor_Queue, &sensor_snapshot);
+        return false;
+    }
+    
+    sensor->temperature = reading.temperatureR.celcius;
+    sensor->humidity = reading.humidityR.humidity;
+    sensor->pressure = reading.pressureR.pressure;
+
+    sensor->valid = true;
+    sensor->last_update_seconds = esp_timer_get_time() / 1000000ULL;
+    sensor->last_unix_time = reading.unix_timestamp;
+    sensor->wall_time_valid = sensor->last_unix_time >= MIN_VALID_UNIX_TIME;
+
+    sensor_data_t sensor_snapshot = *sensor;
+    xQueueOverwrite(Sensor_Queue, &sensor_snapshot);
+
+    return true;
 
 }
 
@@ -114,11 +155,18 @@ void Sensor_Work(void* parameter) {
 
     Sensor_Init_v2(app);
     vTaskDelay(pdMS_TO_TICKS(3000));
-    hal::BME280Sensor environment_sensor = hal::BME280Sensor();
-    environment_sensor.bme280_sensor_init();
+    //hal::BME280Sensor environment_sensor = hal::BME280Sensor();
+    //environment_sensor.bme280_sensor_init();
+
+    hal::BME280SensorV2 environment_sensor_v2 = hal::BME280SensorV2();
+    if (!environment_sensor_v2.bme280_sensor_init()) {
+        ESP_LOGW(TAG, "BME280 was unavailable during initial startup; periodic reconnect attempts will continue.");
+    }
+    
     while (1) {
         sensor_read_interval = app->config_data.sensor_interval_ms;
-        Sensor_Read_v2(&app->sensor_data, environment_sensor);
+        //Sensor_Read_v2(&app->sensor_data, environment_sensor);
+        Sensor_Read_v3(&app->sensor_data, environment_sensor_v2);
         vTaskDelay(pdMS_TO_TICKS(sensor_read_interval));
     }
 }

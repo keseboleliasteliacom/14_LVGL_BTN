@@ -14,11 +14,13 @@
 // Project name: SquareLine_Project
 
 #include "../ui.h"
-#include "../Tabs/Settings/WiFi_UI.h"
+#include "../Tabs/Wifi/WiFi_UI.h"
 #include "../Tabs/Home/Sensor_UI.h"
 #include "../Tabs/Electricity/Electricity_UI.h"
 #include "../Tabs/Electricity/Price_UI.h"
 #include "../Tabs/Weather/Weather_UI.h"
+#include "../Tabs/Settings/Settings_UI.h"
+#include "../../main/LEOP/LEOP_Fetcher.h"
 
 
 // event funtions
@@ -29,13 +31,68 @@
 static const char *TAG = "UI";
 
 /**
+ * @brief Updates the LEOP connection label from the status queue.
+ *
+ * Consumes at most one queued status message per call and updates the label
+ * color and text when the shared UI objects are available.
+ */
+static void LEOP_UI_Update(void)
+{
+    if (leop_status_queue == NULL || ui_LEOP_Connected_Label == NULL)
+    {
+        return;
+    }
+
+    leop_status_message_t message;
+    if (xQueueReceive(leop_status_queue, &message, 0) != pdPASS)
+    {
+        return;
+    }
+
+    const char *text = "Checking...";
+    lv_color_t color = lv_color_hex(0xFFFF00);
+
+    switch (message.state)
+    {
+    case LEOP_CONNECTION_NO_WIFI:
+        text = "No WiFi";
+        color = lv_color_hex(0xFF0000);
+        break;
+    case LEOP_CONNECTION_CHECKING:
+        text = "Checking...";
+        color = lv_color_hex(0xFFFF00);
+        break;
+    case LEOP_CONNECTION_CONNECTED:
+        text = "Connected";
+        color = lv_color_hex(0x00FF07);
+        break;
+    case LEOP_CONNECTION_DEGRADED:
+        text = "Degraded";
+        color = lv_color_hex(0xFFA500);
+        break;
+    case LEOP_CONNECTION_UNAVAILABLE:
+        text = "Not connected";
+        color = lv_color_hex(0xFF0000);
+        break;
+    default:
+        break;
+    }
+
+    lv_label_set_text(ui_LEOP_Connected_Label, text);
+    lv_obj_set_style_text_color(ui_LEOP_Connected_Label,
+                                color,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
+/**
  * @brief Background UI update task for Screen 1.
  *
  * Polls the individual UI modules, then updates the LVGL-backed widgets while
  * holding the LVGL lock. Runs in task context and blocks on the lock and delay.
  */
-void ui_update_task(void)
+void ui_update_task(void *arg)
 {
+    const app_state_t *app = (const app_state_t*)arg;
     while (1)
     {
         WiFi_UI_Update();
@@ -46,6 +103,8 @@ void ui_update_task(void)
             //Weather_UI_Update();
             Weather_UI_Update_test();
             Price_UI_Update();
+            Settings_UI_Update(app);
+            LEOP_UI_Update();
 
             lvgl_port_unlock();
         }
@@ -63,6 +122,8 @@ void ui_Screen1_screen_init(void)
 {
 
     Main_UI_Initialize();
+
+    Settings_UI_Initialize();
 
     WiFi_UI_Initialize();
 

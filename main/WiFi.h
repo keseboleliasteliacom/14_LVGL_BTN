@@ -12,22 +12,25 @@
 #include "freertos/queue.h"
 #include <stdbool.h>
 
+
+#define WIFI_SSID_MAX_LEN 33
+#define WIFI_PASSWORD_MAX_LEN 65
+
 /**
  * @file WiFi.h
  * @brief Public API for the Wi-Fi module.
  *
- * Provides the command, status, and data types used by the Wi-Fi worker
- * task, along with the module lifecycle and connection control functions.
+ * Defines the Wi-Fi worker-task interface, connection state, and command and
+ * result payloads used by the module.
  *
  * @defgroup WIFI WiFi
  * @brief Wi-Fi control and worker task interface.
  *
- * The module initializes the ESP-IDF Wi-Fi stack, owns the worker task
- * command/result queues, and coordinates scan, connect, and disconnect
- * operations.
+ * The module initializes the ESP-IDF Wi-Fi stack, owns the worker task command
+ * and result queues, and coordinates scan, connect, and disconnect operations.
  *
- * @note Functions in this module are intended for task context. The worker
- * task blocks on queues and Wi-Fi operations may perform network I/O.
+ * @note Functions in this module are intended for task context. The worker task
+ * blocks on queues, and Wi-Fi operations may perform network I/O.
  * @{
  */
 
@@ -55,7 +58,7 @@ typedef enum
 /**
  * @brief Shared Wi-Fi connection state.
  *
- * The structure currently exposes whether the station is connected to an AP.
+ * Exposes whether the station is connected to an access point.
  */
 typedef struct 
 {
@@ -69,8 +72,8 @@ typedef struct
  */
 typedef struct
 {
-    char *ssid; /**< Pointer to the SSID string. */
-    char *password; /**< Pointer to the password string. */
+    char ssid[WIFI_SSID_MAX_LEN]; /**< SSID string. */
+    char password[WIFI_PASSWORD_MAX_LEN]; /**< Password string. */
 } wifi_info;
 
 /**
@@ -78,6 +81,8 @@ typedef struct
  *
  * Contains the requested command, the resulting status, scan output storage,
  * and the station credentials used for connection.
+ *
+ * @note The scan result buffer stores up to 10 access point records.
  */
 typedef struct
 {
@@ -87,6 +92,16 @@ typedef struct
     wifi_ap_record_t ap_info[10];
     wifi_info wifi_info;
 } wifi_data;
+
+typedef void (*wifi_connection_cb_t)(bool connected, void *ctx);
+
+/**
+ * @brief Registers a callback for Wi-Fi connection state changes.
+ *
+ * @param[in] cb Callback invoked when the connection state changes.
+ * @param[in] ctx Opaque context passed to the callback.
+ */
+void WiFi_SetConnectionCallback(wifi_connection_cb_t cb, void *ctx);
 
 /**
  * @brief Initializes the Wi-Fi module.

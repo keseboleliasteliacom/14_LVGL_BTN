@@ -17,6 +17,7 @@
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "../app_types.h"
+//#include "../WiFi.h"
 #include "UART.hpp"
 #include <ctime>
 
@@ -24,6 +25,9 @@
 #include "../LEOP/Recommendation.h"
 #include "../LEOP/Weather.h"
 #include "../LEOP/LEOP_Fetcher.h"
+
+#include "../Config/AppConfig.h"
+#include <stdint.h>
 
 
 
@@ -223,6 +227,15 @@ void handle_input(const std::string &input, app_state_t *state)
     }
     const std::string &cmd = tokens[0];
 
+    // todo - testing, to be removed
+    if (cmd == "reboot"){
+        std::cout << "restarting device.. " << std::endl;
+        std::cout.flush();
+        //vTaskDelay(pdMS_TO_TICKS(200));
+
+        esp_restart();
+    }
+
     if (tokens.size() == 2 && cmd == "help" && tokens[1] == "immersive")
     {
         handle_help(true);
@@ -269,7 +282,10 @@ void handle_input(const std::string &input, app_state_t *state)
  */
 void handle_status(app_state_t* state)
 {
-    std::cout << "Wifi: " << connected_text(state->system_status.wifi_connected) << std::endl;
+    //bool live_wifi_connected = WiFi_IsConnected();
+
+    std::cout << "Wifi(system): " << connected_text(state->system_status.wifi_connected) << std::endl;
+    //std::cout << "Wifi(live): " << connected_text(live_wifi_connected) << std::endl;
     std::cout << "LEOP: " << connected_text(state->system_status.leop_connected) << std::endl;
     std::cout << "Sensor: " << ok_text(state->system_status.sensor_ok) << std::endl;
     std::cout << "Update counter: " << state->system_status.update_counter << std::endl;
@@ -340,6 +356,11 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
         {            
             std::cout << "Now setting \"fetch_interval_minutes\" to \"" << int_value << "\"." << std::endl;
             state->config_data.fetch_interval_minutes = int_value;
+            // Also save the changed settings to NVS
+            int result = Config_WriteToNVS_FetchIntervalMinutes(int_value);
+            if (result != 0) {
+                ESP_LOGW(TAG, "Something failed when attempting to write \"new fetch_interval_minutes\" to NVS.");
+            }
         }
         else { 
             std::cout << "You must enter a int value between 1(1 minute) and 1440 minutes(1 day)." << std::endl;
@@ -355,6 +376,10 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
             {
                 std::cout << "Now setting \"sensor_interval_ms\" to \"" << int_value << "\"." << std::endl;
                 state->config_data.sensor_interval_ms = int_value;
+                int result = Config_WriteToNVS_SensorIntervalMs(int_value);
+                if (result != 0) {
+                    ESP_LOGW(TAG, "Something failed when attempting to write new \"sensor_interval_ms\" to NVS.");
+                }
             }
             else {
                 std::cout << "You must enter a int value between 1 000 and 60 000ms(1-60s)" << std::endl;
@@ -366,15 +391,25 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
     }
     else if (key == "test_mode")
     {
+        // TODO - add logic to not unecessecarily write new config if new value is same as old(true -> true)?
         if (value == "true")
         {
             std::cout << "Now setting \test_mode\" to \"true\"." << std::endl;
             state->config_data.test_mode = true;
+            int result = Config_WriteToNVS_TestMode(true);
+            if (result != 0) {
+                ESP_LOGW(TAG, "Something failed when attempting to write new \"test_mode=true\"  to NVS.");
+            }
+
         }
         else if (value == "false")
         {
             std::cout << "Now setting \test_mode\" to \"false\"." << std::endl;
             state->config_data.test_mode = false;
+            int result = Config_WriteToNVS_TestMode(false);
+            if (result != 0) {
+                ESP_LOGW(TAG, "Something failed when attempting to write new \"test_mode=false\" to NVS.");
+            }
         }
     }
     else

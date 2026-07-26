@@ -26,12 +26,47 @@
 extern QueueHandle_t recommendation_queue;
 extern QueueHandle_t weather_queue;
 extern QueueHandle_t price_queue;
+extern QueueHandle_t leop_status_queue;
+
+/**
+ * @brief Application-level LEOP connectivity state.
+ */
+typedef enum
+{
+    LEOP_CONNECTION_NO_WIFI,
+    LEOP_CONNECTION_CHECKING,
+    LEOP_CONNECTION_CONNECTED,
+    LEOP_CONNECTION_DEGRADED,
+    LEOP_CONNECTION_UNAVAILABLE,
+} leop_connection_state_t;
+
+/**
+ * @brief Latest LEOP connectivity result published to consumers.
+ */
+typedef struct
+{
+    leop_connection_state_t state;
+    uint8_t consecutive_failures;
+    int http_status_code;
+} leop_status_message_t;
+
+typedef void (*leop_connection_cb_t)(leop_connection_state_t state, void *ctx);
+
+/**
+ * @brief Registers a callback for LEOP connection-state changes.
+ *
+ * The callback runs in LEOP worker task context and must remain non-blocking.
+ *
+ * @param[in] cb Callback to invoke when the published state changes.
+ * @param[in] ctx Opaque callback context.
+ */
+void LEOPFetcher_SetConnectionCallback(leop_connection_cb_t cb, void *ctx);
 
 /**
  * @brief Configuration for LEOP fetch timing.
  *
- * The interval is expected to reference the fetch interval in minutes owned by
- * the application state.
+ * The interval points to the fetch interval in minutes owned by the application
+ * state.
  */
 typedef struct{
     uint32_t* time_interval;

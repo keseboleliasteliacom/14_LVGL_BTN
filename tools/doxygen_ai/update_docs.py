@@ -27,7 +27,6 @@ from typing import Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DOCS_DIR = REPO_ROOT / "docs"
-AI_CONTEXT_PATH = REPO_ROOT / "AI_CONTEXT.md"
 REJECTED_OUTPUT_DIR = REPO_ROOT / "tools" / "doxygen_ai" / "rejected"
 STATE_DIR = REPO_ROOT / "tools" / "doxygen_ai" / "state"
 DEFAULT_MANIFEST_PATH = STATE_DIR / "run_manifest.json"
@@ -35,11 +34,13 @@ ALLOWED_SUFFIXES = {".c", ".h", ".cpp", ".hpp", ".cc", ".hh"}
 HEADER_SUFFIXES = {".h", ".hpp", ".hh"}
 SOURCE_SUFFIXES = {".c", ".cpp", ".cc"}
 DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
+DEFAULT_REASONING_EFFORT = os.getenv("OPENAI_REASONING_EFFORT", "medium")
+REASONING_EFFORTS = ("none", "low", "medium", "high", "xhigh")
 DEFAULT_MAX_FILES = int(os.getenv("MAX_FILES_PER_RUN", "2"))
 DEFAULT_MAX_CHARS = int(os.getenv("MAX_CHARS_PER_FILE", "18000"))
 DEFAULT_MAX_OUTPUT_TOKENS = int(os.getenv("OPENAI_MAX_OUTPUT_TOKENS", "12000"))
-DEFAULT_INPUT_COST_PER_MILLION = float(os.getenv("OPENAI_INPUT_COST_PER_MILLION", "0.25"))
-DEFAULT_OUTPUT_COST_PER_MILLION = float(os.getenv("OPENAI_OUTPUT_COST_PER_MILLION", "2.00"))
+DEFAULT_INPUT_COST_PER_MILLION = float(os.getenv("OPENAI_INPUT_COST_PER_MILLION", "0.75"))
+DEFAULT_OUTPUT_COST_PER_MILLION = float(os.getenv("OPENAI_OUTPUT_COST_PER_MILLION", "4.50"))
 DEFAULT_USD_TO_SEK = float(os.getenv("OPENAI_USD_TO_SEK", "9.19981"))
 DEFAULT_TEST_LABEL = os.getenv("DOXYGEN_AI_TEST_LABEL", "").strip()
 
@@ -69,6 +70,18 @@ class FileResult:
     estimated_cost_usd: float = 0.0
     estimated_cost_sek: float = 0.0
     details: str = ""
+
+
+def combine_openai_results(previous: OpenAIResult, latest: OpenAIResult) -> OpenAIResult:
+    return OpenAIResult(
+        text=latest.text,
+        usage=Usage(
+            input_tokens=previous.usage.input_tokens + latest.usage.input_tokens,
+            output_tokens=previous.usage.output_tokens + latest.usage.output_tokens,
+            total_tokens=previous.usage.total_tokens + latest.usage.total_tokens,
+        ),
+        model=latest.model,
+    )
 
 
 def estimate_cost_usd(usage: Usage, input_cost_per_million: float, output_cost_per_million: float) -> float:
@@ -125,8 +138,12 @@ def changed_files(base: str, head: str) -> list[Path]:
         rel = Path(name)
         if rel.suffix.lower() not in ALLOWED_SUFFIXES:
             continue
-        abs_path = REPO_ROOT / rel
-        if abs_path.exists():
+        abs_path = (REPO_ROOT / rel).resolve()
+        try:
+            abs_path.relative_to(REPO_ROOT.resolve())
+        except ValueError:
+            continue
+        if abs_path.is_file():
             files.append(abs_path)
     return files
 
@@ -209,90 +226,52 @@ def build_prompt(
     header_template: str,
     source_template: str,
     main_template: str,
-    ai_context: str,
     paired_file_context: str,
 ) -> tuple[str, str]:
     file_kind = "header" if path.suffix.lower() in HEADER_SUFFIXES else "source"
     mode = "update_existing_docs" if has_doxygen(code) else "document_full_file"
     template = header_template if file_kind == "header" else main_template if is_entrypoint_or_test(path, code) else source_template
-    source_file_guidance = ""
+    system_prompt = """You are a documentation-only refactoring assistant for an embedded C/C++ repository.
 
-    if file_kind == "source" and not is_entrypoint_or_test(path, code):
-        source_file_guidance = """Additional source-file guidance:
-- Keep public function documentation in source files brief when the paired header already documents the public API contract.
-- For public non-static functions in source files, the default style should be brief-only documentation.
-- Preferred pattern for public non-static functions in source files:
-  /**
-   * @brief Implementation of <function name>.
-   *
-   * See header for full contract documentation.
-   */
-- Do not repeat @param, @return, @note, @warning, @pre, or @post blocks for public source-file functions unless they describe implementation-specific behavior that is not already documented in the header.
-- If a public source-file function can be documented correctly with `@brief Implementation of <function>.` and `See header for full contract documentation.`, prefer that simpler form.
-- Repeating header-level public API contract details in source files is undesirable output.
-- Internal or static helper functions may include additional tags, but only when they add meaningful, non-obvious information.
+LAYER 1 — IMMUTABLE TRANSFORMATION CONTRACT
+- Only Doxygen and ordinary comments may change. Every non-comment code token must remain unchanged and in the same order.
+- Preserve ordinary developer comments, TODOs, commented-out code/includes, logging, strings, identifiers, declarations, signatures, initialization, control flow, formatting intent, and line endings.
+- Do not add, remove, move, or rewrite any non-comment code, including declarations, prototypes, includes, macros, or runtime diagnostics.
+- Existing Doxygen may change when needed for accuracy, required coverage, or the repository's target style. Avoid synonym-only and formatting-only churn.
+- Documentation must describe only behavior supported by the code and must be written in English.
+- Return the complete updated target file only, without Markdown fences or explanations.
 """
 
-    system_prompt = f"""You are a documentation-only refactoring assistant for a C/C++ repository.
+    user_prompt = f"""LAYER 2 — CANONICAL DOCUMENTATION POLICY
 
-You must obey these rules:
-- Only add or update Doxygen comments and normal comments.
-- Do not change code logic, control flow, initialization, signatures, includes, ordering, or formatting unless required to insert comments.
-- Do not change line endings, indentation, spacing, or formatting-only details unless required to place comments.
-- Do not add new declarations, forward declarations, helper prototypes, variables, includes, macros, or any other non-comment lines.
-- Do not move existing declarations or introduce new prototypes to make documentation placement easier.
-- Do not change debug/log statements such as `printf`, `ESP_LOG*`, `ESP_ERROR_CHECK`, or similar runtime diagnostics.
-- Do not change string literals, identifiers, macro names, enum values, struct field names, function names, JSON keys, URLs, constants, or any other code tokens.
-- Treat all existing code tokens as immutable, including case-sensitive text inside string literals.
-- External/API-facing strings are especially sensitive. Copy JSON keys, URLs, protocol strings, log format strings, and other string literals byte-for-byte.
-- Never change string arguments passed to parser, lookup, formatting, or protocol functions such as `json_object_get(...)`, `json_string_value(...)`, `snprintf(...)`, logging calls, or similar APIs. These values must remain byte-for-byte identical.
-- Preserve TODOs, debug prints, commented-out code, commented-out includes, and ordinary developer comments.
-- Existing Doxygen comments may be rewritten, simplified, merged, or trimmed as needed to match the repository standard.
-- Do not remove or rewrite ordinary non-Doxygen comments unless needed to place equivalent documentation directly above the documented item.
-- Return the full updated file content only.
-- Do not wrap the result in Markdown fences.
-- All Doxygen text must be in English.
-- Suggestions, if any, must use exactly: // Suggestion: ...
-- Follow the repository's mandatory Doxygen rules and templates below.
+The following repository standard is authoritative. Apply each rule once; do not infer extra requirements from repetition.
 
-Repository AI context:
-{ai_context}
-
-Mandatory Doxygen rules:
 {docs_rules}
 
-Relevant template:
+Relevant target-style template:
 {template}
 
-Paired module file context:
-{paired_file_context}
+LAYER 3 — CURRENT FILE TASK
 
-{source_file_guidance}
-"""
-
-    user_prompt = f"""Task mode: {mode}
+Mode: {mode}
 Path: {path.relative_to(REPO_ROOT).as_posix()}
 
-Interpret the task mode as follows:
-- update_existing_docs: bring the file's documentation up to the repository standard, while preserving existing comments and code. This includes simplifying or trimming existing documentation when it is more verbose than the repository's target style examples. If the existing Doxygen is already sufficiently aligned with the repository standard, prefer no meaningful change over minor wording-only rewrites.
-- document_full_file: add complete repository-standard Doxygen coverage for the file, while preserving existing comments and code.
+Mode behavior:
+- update_existing_docs: correct incomplete, stale, inaccurate, or unnecessarily verbose Doxygen while preserving accurate documentation.
+- document_full_file: add all documentation required by the canonical policy.
 
-Before finalizing internally, validate that:
-- every required file/function/struct tag is present
-- the documentation matches the repository rules
-- the documentation style matches the target style examples, including reducing unnecessary boilerplate where appropriate
-- if the file is already sufficiently aligned with the standard, avoid minor synonym-only or cosmetic rewrites and prefer no meaningful change
-- simple debug/print helper declarations in headers stay lightweight by default, usually using only `@brief` and `@param` when applicable
-- do not expand simple debug/print helper declarations into full contract-style blocks unless extra tags add real value
-- for public source-file functions with a documented paired header, prefer the brief + see-header pattern unless implementation-specific notes are genuinely needed
-- struct field comments stay short by default unless a field is subtle or safety-critical
-- prefer short inline field comments over full multi-line field documentation blocks for ordinary struct fields
-- keep most explanatory detail at the struct level instead of repeating mini-sections for each field
-- code behavior is unchanged
+Paired module context (read-only):
+{paired_file_context}
 
-Return only the full updated file.
+Final self-check:
+1. Required coverage is complete.
+2. Documentation agrees with signatures, reachable behavior, side effects, and relevant embedded constraints.
+3. Accurate existing documentation is not cosmetically rewritten.
+4. Every non-comment code token is unchanged.
 
-Current file:
+Return only the complete updated target file.
+
+Target file contents:
 {code}
 """
     return system_prompt, user_prompt
@@ -405,6 +384,155 @@ def code_changed(original: str, updated: str) -> bool:
     return normalize_code_without_comments(original) != normalize_code_without_comments(updated)
 
 
+def mask_comments_strings_and_preprocessor(text: str) -> str:
+    """Mask non-code regions while preserving offsets and line breaks."""
+    result = list(text)
+    i = 0
+    n = len(text)
+    state = "code"
+
+    while i < n:
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < n else ""
+
+        if state == "line_comment":
+            if ch == "\n":
+                state = "code"
+            else:
+                result[i] = " "
+            i += 1
+            continue
+
+        if state == "block_comment":
+            if ch == "*" and nxt == "/":
+                result[i] = " "
+                result[i + 1] = " "
+                state = "code"
+                i += 2
+                continue
+            if ch != "\n":
+                result[i] = " "
+            i += 1
+            continue
+
+        if state in {"string", "char"}:
+            terminator = '"' if state == "string" else "'"
+            if ch == "\\" and i + 1 < n:
+                result[i] = " "
+                if text[i + 1] != "\n":
+                    result[i + 1] = " "
+                i += 2
+                continue
+            if ch == terminator:
+                result[i] = " "
+                state = "code"
+            elif ch != "\n":
+                result[i] = " "
+            i += 1
+            continue
+
+        if ch == "/" and nxt == "/":
+            result[i] = " "
+            result[i + 1] = " "
+            state = "line_comment"
+            i += 2
+            continue
+        if ch == "/" and nxt == "*":
+            result[i] = " "
+            result[i + 1] = " "
+            state = "block_comment"
+            i += 2
+            continue
+        if ch == '"':
+            result[i] = " "
+            state = "string"
+            i += 1
+            continue
+        if ch == "'":
+            result[i] = " "
+            state = "char"
+            i += 1
+            continue
+        i += 1
+
+    masked = "".join(result)
+    masked_lines = []
+    for line in masked.splitlines(keepends=True):
+        content = line[:-1] if line.endswith("\n") else line
+        newline = "\n" if line.endswith("\n") else ""
+        if content.lstrip().startswith("#"):
+            masked_lines.append(" " * len(content) + newline)
+        else:
+            masked_lines.append(line)
+    return "".join(masked_lines)
+
+
+def has_direct_doxygen_block(text: str, definition_start: int) -> bool:
+    prefix = text[:definition_start].rstrip()
+    if not prefix.endswith("*/"):
+        return False
+
+    block_start = prefix.rfind("/**")
+    if block_start < 0:
+        return False
+    return prefix.find("*/", block_start) == len(prefix) - 2
+
+
+def find_undocumented_public_function_definitions(text: str) -> list[str]:
+    """Find top-level non-static function definitions lacking direct Doxygen."""
+    masked = mask_comments_strings_and_preprocessor(text)
+    missing: list[str] = []
+    segment_start = 0
+    brace_depth = 0
+
+    for index, ch in enumerate(masked):
+        if ch == "{" and brace_depth == 0:
+            raw_segment = masked[segment_start:index]
+            leading = len(raw_segment) - len(raw_segment.lstrip())
+            signature = raw_segment.strip()
+
+            if signature and ")" in signature:
+                close_paren = signature.rfind(")")
+                depth = 1
+                open_paren = close_paren - 1
+                while open_paren >= 0 and depth > 0:
+                    if signature[open_paren] == ")":
+                        depth += 1
+                    elif signature[open_paren] == "(":
+                        depth -= 1
+                    open_paren -= 1
+
+                if depth == 0:
+                    open_paren += 1
+                    before_params = signature[:open_paren].rstrip()
+                    name_match = re.search(
+                        r"([A-Za-z_~][A-Za-z0-9_~]*(?:::[A-Za-z_~][A-Za-z0-9_~]*)*)$",
+                        before_params,
+                    )
+                    if name_match is not None:
+                        name = name_match.group(1)
+                        prefix = before_params[:name_match.start()]
+                        is_static = re.search(r"\bstatic\b", prefix) is not None
+                        if not is_static and name not in {"if", "for", "while", "switch"}:
+                            definition_start = segment_start + leading
+                            if not has_direct_doxygen_block(text, definition_start):
+                                missing.append(name)
+
+            brace_depth += 1
+            continue
+
+        if ch == "{" and brace_depth > 0:
+            brace_depth += 1
+        elif ch == "}" and brace_depth > 0:
+            brace_depth -= 1
+            if brace_depth == 0:
+                segment_start = index + 1
+        elif ch == ";" and brace_depth == 0:
+            segment_start = index + 1
+
+    return missing
+
+
 def code_diff_excerpt(original: str, updated: str, max_lines: int = 12) -> str:
     original_lines = normalize_code_without_comments(original).splitlines()
     updated_lines = normalize_code_without_comments(updated).splitlines()
@@ -422,7 +550,13 @@ def code_diff_excerpt(original: str, updated: str, max_lines: int = 12) -> str:
     return "\n".join(diff_lines[:max_lines])
 
 
-def call_openai(system_prompt: str, user_prompt: str, model: str, max_output_tokens: int) -> OpenAIResult:
+def call_openai(
+    system_prompt: str,
+    user_prompt: str,
+    model: str,
+    reasoning_effort: str,
+    max_output_tokens: int,
+) -> OpenAIResult:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY is required")
@@ -439,6 +573,7 @@ def call_openai(system_prompt: str, user_prompt: str, model: str, max_output_tok
                 "content": [{"type": "input_text", "text": user_prompt}],
             },
         ],
+        "reasoning": {"effort": reasoning_effort},
         "max_output_tokens": max_output_tokens,
     }
 
@@ -470,10 +605,11 @@ def call_openai_with_retry(
     system_prompt: str,
     user_prompt: str,
     model: str,
+    reasoning_effort: str,
     max_output_tokens: int,
     original: str,
 ) -> tuple[OpenAIResult, bool]:
-    first_result = call_openai(system_prompt, user_prompt, model, max_output_tokens)
+    first_result = call_openai(system_prompt, user_prompt, model, reasoning_effort, max_output_tokens)
     if not code_changed(original, first_result.text):
         return first_result, False
 
@@ -497,13 +633,43 @@ Do not alter any code tokens, including:
 Normalized code diff excerpt from the rejected attempt:
 {diff_excerpt}
 """
-    retry_result = call_openai(system_prompt, retry_user_prompt, model, max_output_tokens)
-    return retry_result, True
+    retry_result = call_openai(system_prompt, retry_user_prompt, model, reasoning_effort, max_output_tokens)
+    return combine_openai_results(first_result, retry_result), True
+
+
+def retry_missing_function_documentation(
+    system_prompt: str,
+    user_prompt: str,
+    model: str,
+    reasoning_effort: str,
+    max_output_tokens: int,
+    previous_result: OpenAIResult,
+    missing_functions: list[str],
+) -> OpenAIResult:
+    missing_list = "\n".join(f"- {name}" for name in missing_functions)
+    retry_user_prompt = f"""{user_prompt}
+
+Your previous output was rejected by a deterministic documentation coverage check.
+
+The following public function definitions are still missing a directly preceding Doxygen block:
+{missing_list}
+
+Regenerate the full file and add concise repository-standard Doxygen documentation directly above every listed function definition.
+For public source functions whose contract is already documented in the paired header, prefer the brief implementation + see-header pattern.
+Preserve every code token and all existing developer comments exactly.
+Do not make synonym-only, formatting-only, or unrelated documentation changes.
+"""
+    retry_result = call_openai(system_prompt, retry_user_prompt, model, reasoning_effort, max_output_tokens)
+    return combine_openai_results(previous_result, retry_result)
+
+
+def normalize_file_text(text: str) -> str:
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    return normalized if normalized.endswith("\n") else f"{normalized}\n"
 
 
 def write_file(path: Path, text: str) -> None:
-    normalized = text if text.endswith("\n") else f"{text}\n"
-    path.write_text(normalized, encoding="utf-8", newline="\n")
+    path.write_text(normalize_file_text(text), encoding="utf-8", newline="\n")
 
 
 def write_rejected_output(path: Path, text: str) -> Path:
@@ -520,6 +686,7 @@ def append_github_summary(
     total_estimated_cost_usd: float,
     total_estimated_cost_sek: float,
     requested_model: str,
+    reasoning_effort: str,
     test_label: str,
 ) -> None:
     summary_path = os.getenv("GITHUB_STEP_SUMMARY", "").strip()
@@ -535,6 +702,7 @@ def append_github_summary(
         "## Doxygen AI Summary",
         "",
         f"- Requested model: {requested_model}",
+        f"- Reasoning effort: {reasoning_effort}",
         f"- Test label: {test_label or '(none)'}",
         f"- Files considered: {len(file_results)}",
         f"- Files updated: {updated_count}",
@@ -565,12 +733,14 @@ def append_github_summary(
 def write_manifest(
     manifest_path: Path,
     requested_model: str,
+    reasoning_effort: str,
     test_label: str,
     file_results: list[FileResult],
 ) -> None:
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "requested_model": requested_model,
+        "reasoning_effort": reasoning_effort,
         "test_label": test_label,
         "files": [
             {
@@ -605,8 +775,14 @@ def load_remaining_files_from_manifest(manifest_path: Path) -> list[Path]:
 
         rel = Path(str(entry.get("path") or "")).as_posix()
         abs_path = (REPO_ROOT / rel).resolve()
-        if not abs_path.exists():
+        try:
+            abs_path.relative_to(REPO_ROOT.resolve())
+        except ValueError as exc:
+            raise RuntimeError(f"Manifest file path is outside the repository: {rel}") from exc
+        if not abs_path.is_file():
             continue
+        if abs_path.suffix.lower() not in ALLOWED_SUFFIXES:
+            raise RuntimeError(f"Manifest file path has unsupported extension: {rel}")
         if abs_path not in seen:
             seen.add(abs_path)
             files.append(abs_path)
@@ -617,6 +793,7 @@ def load_remaining_files_from_manifest(manifest_path: Path) -> list[Path]:
 def process_files(
     files: Iterable[Path],
     model: str,
+    reasoning_effort: str,
     max_chars: int,
     max_output_tokens: int,
     input_cost_per_million: float,
@@ -629,8 +806,6 @@ def process_files(
     header_template = load_text(DOCS_DIR / "template_H.h")
     source_template = load_text(DOCS_DIR / "template_C.c")
     main_template = load_text(DOCS_DIR / "template_Main.c")
-    ai_context = load_text(AI_CONTEXT_PATH)
-
     total_usage = Usage()
     changed_count = 0
     file_results: list[FileResult] = []
@@ -651,6 +826,17 @@ def process_files(
         rel = path.relative_to(REPO_ROOT).as_posix()
         paired_file = find_paired_file(path)
         paired_file_context = "No paired header/source file was found."
+
+        if not original.strip():
+            print(f"No changes for {rel}: file is empty or whitespace-only")
+            file_results.append(
+                FileResult(
+                    path=rel,
+                    status="no_change",
+                    details="Empty or whitespace-only file; no documentation required",
+                )
+            )
+            continue
 
         if len(original) > max_chars:
             print(f"Skipping {rel}: file exceeds MAX_CHARS_PER_FILE ({len(original)} > {max_chars})")
@@ -679,19 +865,42 @@ def process_files(
             header_template,
             source_template,
             main_template,
-            ai_context,
             paired_file_context,
         )
 
-        print(f"Processing {rel} with model {model}")
+        print(f"Processing {rel} with model {model} and reasoning effort {reasoning_effort}")
+        coverage_retried = False
         try:
             result, retried = call_openai_with_retry(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 model=model,
+                reasoning_effort=reasoning_effort,
                 max_output_tokens=max_output_tokens,
                 original=original,
             )
+
+            if (
+                path.suffix.lower() in SOURCE_SUFFIXES
+                and result.text.strip()
+                and not code_changed(original, result.text)
+            ):
+                missing_function_docs = find_undocumented_public_function_definitions(result.text)
+                if missing_function_docs:
+                    print(
+                        f"Retrying {rel}: missing direct Doxygen documentation for "
+                        f"{', '.join(missing_function_docs)}"
+                    )
+                    result = retry_missing_function_documentation(
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        model=model,
+                        reasoning_effort=reasoning_effort,
+                        max_output_tokens=max_output_tokens,
+                        previous_result=result,
+                        missing_functions=missing_function_docs,
+                    )
+                    coverage_retried = True
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
             file_results.append(FileResult(path=rel, status="rejected", details=f"HTTP {exc.code}"))
@@ -711,10 +920,24 @@ def process_files(
         total_usage.input_tokens += usage.input_tokens
         total_usage.output_tokens += usage.output_tokens
         total_usage.total_tokens += usage.total_tokens
+        estimated_cost = estimate_cost_usd(usage, input_cost_per_million, output_cost_per_million)
+        estimated_cost_sek = convert_usd_to_sek(estimated_cost, usd_to_sek)
 
         if not updated.strip():
             print(f"Skipping {rel}: model returned empty output")
-            file_results.append(FileResult(path=rel, status="skipped", model=actual_model, details="Model returned empty output"))
+            file_results.append(
+                FileResult(
+                    path=rel,
+                    status="skipped",
+                    model=actual_model,
+                    input_tokens=usage.input_tokens,
+                    output_tokens=usage.output_tokens,
+                    total_tokens=usage.total_tokens,
+                    estimated_cost_usd=estimated_cost,
+                    estimated_cost_sek=estimated_cost_sek,
+                    details="Model returned empty output",
+                )
+            )
             continue
 
         if code_changed(original, updated):
@@ -728,6 +951,8 @@ def process_files(
                     input_tokens=usage.input_tokens,
                     output_tokens=usage.output_tokens,
                     total_tokens=usage.total_tokens,
+                    estimated_cost_usd=estimated_cost,
+                    estimated_cost_sek=estimated_cost_sek,
                     details=details,
                 )
             )
@@ -735,8 +960,35 @@ def process_files(
             print(f"Rejected {rel}: {details}")
             continue
 
-        original_normalized = original.replace("\r\n", "\n")
-        updated_normalized = updated.replace("\r\n", "\n")
+        if path.suffix.lower() in SOURCE_SUFFIXES:
+            missing_function_docs = find_undocumented_public_function_definitions(updated)
+            if missing_function_docs:
+                rejected_path = write_rejected_output(path, updated)
+                missing_names = ", ".join(missing_function_docs)
+                details = (
+                    "Missing direct Doxygen documentation for public function "
+                    f"definition(s) after coverage_retry={coverage_retried}: {missing_names}; saved to "
+                    f"{rejected_path.relative_to(REPO_ROOT).as_posix()}"
+                )
+                file_results.append(
+                    FileResult(
+                        path=rel,
+                        status="rejected",
+                        model=actual_model,
+                        input_tokens=usage.input_tokens,
+                        output_tokens=usage.output_tokens,
+                        total_tokens=usage.total_tokens,
+                        estimated_cost_usd=estimated_cost,
+                        estimated_cost_sek=estimated_cost_sek,
+                        details=details,
+                    )
+                )
+                rejection_messages.append(f"{rel}: {details}")
+                print(f"Rejected {rel}: {details}")
+                continue
+
+        original_normalized = normalize_file_text(original)
+        updated_normalized = normalize_file_text(updated)
         if original_normalized == updated_normalized:
             print(f"No documentation changes needed for {rel}")
             file_results.append(
@@ -747,6 +999,8 @@ def process_files(
                     input_tokens=usage.input_tokens,
                     output_tokens=usage.output_tokens,
                     total_tokens=usage.total_tokens,
+                    estimated_cost_usd=estimated_cost,
+                    estimated_cost_sek=estimated_cost_sek,
                     details="No changes were necessary",
                 )
             )
@@ -754,8 +1008,6 @@ def process_files(
 
         write_file(path, updated_normalized)
         changed_count += 1
-        estimated_cost = estimate_cost_usd(usage, input_cost_per_million, output_cost_per_million)
-        estimated_cost_sek = convert_usd_to_sek(estimated_cost, usd_to_sek)
         file_results.append(
             FileResult(
                 path=rel,
@@ -772,7 +1024,8 @@ def process_files(
         print(
             f"Updated {rel} "
             f"(model={actual_model}, input_tokens={usage.input_tokens}, output_tokens={usage.output_tokens}, "
-            f"total_tokens={usage.total_tokens}, retried={retried}, estimated_cost_usd=${estimated_cost:.6f}, "
+            f"total_tokens={usage.total_tokens}, code_retried={retried}, coverage_retried={coverage_retried}, "
+            f"estimated_cost_usd=${estimated_cost:.6f}, "
             f"estimated_cost_sek={estimated_cost_sek:.6f} kr)"
         )
 
@@ -797,11 +1050,13 @@ def process_files(
         total_estimated_cost_usd=total_estimated_cost,
         total_estimated_cost_sek=total_estimated_cost_sek,
         requested_model=model,
+        reasoning_effort=reasoning_effort,
         test_label=os.getenv("DOXYGEN_AI_TEST_LABEL", "").strip(),
     )
     write_manifest(
         manifest_path=manifest_path,
         requested_model=model,
+        reasoning_effort=reasoning_effort,
         test_label=os.getenv("DOXYGEN_AI_TEST_LABEL", "").strip(),
         file_results=file_results,
     )
@@ -825,6 +1080,12 @@ def main() -> int:
     parser.add_argument("--max-chars", type=int, default=DEFAULT_MAX_CHARS)
     parser.add_argument("--max-output-tokens", type=int, default=DEFAULT_MAX_OUTPUT_TOKENS)
     parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument(
+        "--reasoning-effort",
+        choices=REASONING_EFFORTS,
+        default=DEFAULT_REASONING_EFFORT,
+        help="Responses API reasoning effort (default: %(default)s)",
+    )
     parser.add_argument("--test-label", default=DEFAULT_TEST_LABEL)
     parser.add_argument("--input-cost-per-million", type=float, default=DEFAULT_INPUT_COST_PER_MILLION)
     parser.add_argument("--output-cost-per-million", type=float, default=DEFAULT_OUTPUT_COST_PER_MILLION)
@@ -832,6 +1093,10 @@ def main() -> int:
     args = parser.parse_args()
     os.environ["DOXYGEN_AI_TEST_LABEL"] = args.test_label.strip()
     manifest_path = Path(args.manifest).resolve()
+    try:
+        manifest_path.relative_to(REPO_ROOT.resolve())
+    except ValueError as exc:
+        raise RuntimeError(f"Manifest path is outside the repository: {manifest_path}") from exc
 
     if args.remaining_only:
         files = load_remaining_files_from_manifest(manifest_path)
@@ -868,6 +1133,7 @@ def main() -> int:
     changed_count = process_files(
         limited_files,
         model=args.model,
+        reasoning_effort=args.reasoning_effort,
         max_chars=args.max_chars,
         max_output_tokens=args.max_output_tokens,
         input_cost_per_million=args.input_cost_per_million,

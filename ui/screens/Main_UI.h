@@ -4,6 +4,8 @@
 #include "../../main/app_queues.h"
 #include "../app_types.h"
 
+#include "lvgl.h"
+
 /**
  * @file Main_UI.h
  * @brief Public declarations for the main LVGL screen.
@@ -30,9 +32,24 @@ extern lv_obj_t * ui_TabPage_Home;
 extern lv_obj_t * ui_TabPage_Electricity;
 extern lv_obj_t * ui_TabPage_Weather;
 extern lv_obj_t * ui_Chart_Weather;
-extern lv_obj_t * ui_TabPage_Settings;
-extern lv_obj_t * ui_Group_Settings; 
 extern lv_obj_t * ui_TabPage_WiFi;
+extern lv_obj_t * ui_Group_WiFi;
+extern lv_obj_t * ui_LEOP_Label;
+extern lv_obj_t * ui_LEOP_Connected_Label;
+extern lv_obj_t * ui_TabPage_Settings;
+extern lv_obj_t * ui_SettingsContainer;
+//extern lv_obj_t * ui_Group_Settings; 
+
+extern lv_obj_t *ui_UptimeInfoLabel;
+extern lv_obj_t *ui_UptimeValueLabel;
+extern lv_obj_t *ui_RestartInfoLabel;
+extern lv_obj_t *ui_RestartValueLabel;
+extern lv_obj_t *ui_SystemInfoLabel;
+extern lv_obj_t *ui_SystemValueLabel;
+extern lv_obj_t *ui_LastInfoLabel;
+extern lv_obj_t *ui_LastValueLabel;
+extern lv_obj_t *ui_TimeInfoLabel;
+extern lv_obj_t *ui_TimeValueLabel;
 
 /**
  * @brief Initializes the main UI screen and its widgets.

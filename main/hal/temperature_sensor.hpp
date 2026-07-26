@@ -2,8 +2,9 @@
 #define TEMPERATURE_SENSOR_HPP
 
 #include <stdint.h>
-#include "Hal_classes.h"
+#include "hal_classes.h"
 #include <time.h>
+
 
 /**
  * @file temperature_sensor.hpp
@@ -27,11 +28,11 @@ namespace hal {
      * Contains the measured temperature and both timestamp forms used by the
      * HAL layer.
      */
-    struct TemperatureReading {
-        float celcius; /**< Temperature value in degrees Celsius. */
-        uint32_t monotonic_timestamp; /**< Monotonic timestamp associated with the reading. */
-        time_t unix_timestamp; /**< UNIX timestamp associated with the reading. */
-    };
+    // struct TemperatureReading {
+    //     float celcius; /**< Temperature value in degrees Celsius. */
+    //     uint32_t monotonic_timestamp; /**< Monotonic timestamp associated with the reading. */
+    //     time_t unix_timestamp; /**< UNIX timestamp associated with the reading. */
+    // };
 
     /**
      * @brief Abstract temperature sensor interface.

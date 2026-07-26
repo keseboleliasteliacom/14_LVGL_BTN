@@ -13,17 +13,18 @@ repository/module ownership rather than naming an individual who may later
 leave the project.
 
 The Glennergy-ESP repository owns shared system terminology and the
-cross-project contract. Glennergy owns server implementation, deployment, and
-operations guides. Each repository owns its root README and source-level
+consumer-facing integration contract. Glennergy owns the complete server HTTP
+API reference, server implementation, deployment, and operations guides. Each
+repository owns its root README and source-level
 Doxygen comments.
 
 ## Change-to-document map
 
 | Changed area | Primary owner | Required document review | Minimum checks |
 | --- | --- | --- | --- |
-| Server HTTP parser, routes, statuses, or serialization (`Server/`) | Glennergy server maintainer | ESP [interface contract](../interface-contract.md), [system context](../system-context.md), [limitations](../current-limitations.md), [connectivity](../connectivity.md); Glennergy README, `Docs/troubleshooting.md`, `Docs/security.md` | Producer/consumer schema comparison, examples parse, links, secret/address scan |
+| Server HTTP parser, routes, statuses, headers, errors, or serialization (`Server/`) | Glennergy server maintainer | Glennergy `Docs/http-api.md`, README, troubleshooting and security; ESP [interface contract](../interface-contract.md), [system context](../system-context.md), [limitations](../current-limitations.md), [connectivity](../connectivity.md) | Synchronize both HTTP documents; producer/consumer schema comparison, examples parse, links, secret/address scan |
 | ESP HTTP client, response structs, or JSON parser (`main/HTTP.*`, `main/JSONParser/`, `main/LEOP/*`) | Glennergy-ESP connectivity maintainer | [Interface contract](../interface-contract.md), [connectivity](../connectivity.md), [limitations](../current-limitations.md), [troubleshooting](../troubleshooting.md), [glossary](../glossary.md) | Compare all three routes and payloads against server; bounds/types/timestamp review |
-| Property identity, registration, authentication, or authorization in either repository | Cross-project maintainers; ESP documentation owner coordinates | [System context](../system-context.md), [interface contract](../interface-contract.md), [limitations](../current-limitations.md), [glossary](../glossary.md), [connectivity](../connectivity.md); Glennergy `Docs/property-configuration.md` and `Docs/security.md` | Threat/compatibility review, migration and failure cases, no invented planned schema |
+| Property identity, registration, authentication, or authorization in either repository | Cross-project maintainers | Glennergy `Docs/http-api.md`, `Docs/property-configuration.md`, `Docs/security.md`; ESP [system context](../system-context.md), [interface contract](../interface-contract.md), [limitations](../current-limitations.md), [glossary](../glossary.md), [connectivity](../connectivity.md) | Threat/compatibility review, migration and failure cases, synchronized contracts, no invented planned schema |
 | Recommendation algorithm or wire meaning (`Algorithm/average.*`, `Algorithm/main.c`) | Glennergy algorithm maintainer | [Interface contract](../interface-contract.md), [glossary](../glossary.md), [limitations](../current-limitations.md); Glennergy README/troubleshooting | Verify emitted value, type, range, units, and ESP interpretation; owner decision if semantics change |
 | Server process topology, schedules, IPC structs, paths, or SHM/semaphore ownership | Glennergy runtime maintainer | Glennergy `Docs/architecture.md`, `Docs/operations.md`, `Docs/troubleshooting.md`, `Docs/security.md`; ESP [system context](../system-context.md) and [interface contract](../interface-contract.md) where externally visible | Build all five binaries, ABI/layout review, systemd verification, Mermaid render |
 | Server property schema, parser, five-property limit, or seed JSON | Glennergy configuration maintainer | Glennergy `Docs/property-configuration.md`, README, troubleshooting; ESP [limitations](../current-limitations.md), [glossary](../glossary.md), and contract if IDs change | Validate both InputCache and Meteo parsers, seed examples, error propagation, capacity |
@@ -47,7 +48,8 @@ Doxygen comments.
 | --- | --- | --- |
 | Whole-system purpose and boundary | [System context](../system-context.md) | Repository READMEs summarize and link; they do not redefine the system |
 | Shared terms, identifiers, and units | [Glossary](../glossary.md) | Code identifiers may retain legacy spelling; prose uses preferred terms |
-| Current ESP↔Glennergy interface | [Interface contract](../interface-contract.md) | Component docs may show a short example but must link for exact schemas |
+| Server HTTP API | Glennergy `Docs/http-api.md` | Complete producer reference lives with the server |
+| ESP HTTP integration | [ESP interface contract](../interface-contract.md) | Repeats all firmware-relevant wire facts and adds parsing/cache/retry consequences |
 | Cross-project limitations and planned direction | [Current limitations](../current-limitations.md) | Plans must not be presented as implemented behavior |
 | Firmware implementation | Glennergy-ESP `docs/` guides | Server docs link only when cross-project context is needed |
 | Server implementation and operations | Glennergy `Docs/` guides | ESP owns no duplicate server operations manual |
@@ -61,7 +63,8 @@ For a documentation-affecting source change:
 1. Identify affected rows above during change planning.
 2. Reinspect authoritative `dev`; do not copy behavior from an old plan.
 3. Update the evidence register and material claim ledger when a claim changes.
-4. Update every canonical owner before adjusting summaries or examples.
+4. Update both HTTP contract documents together for shared wire facts, then
+   update every other canonical owner before adjusting summaries or examples.
 5. Run applicable checks from the validation matrix.
 6. Record any runtime, hardware, production, external-service, or rendering
    check that could not be performed.

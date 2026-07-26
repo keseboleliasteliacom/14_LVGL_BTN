@@ -19,8 +19,11 @@ being present in the repository does not by itself make it current.
   and planned behavior that should not be mistaken for completion.
 - [Shared glossary](glossary.md) — canonical project terms, identifiers, units
   and deliberately unresolved meanings.
-- [Cross-project interface contract](interface-contract.md) — exact current
-  HTTP routes, schemas, errors, compatibility limitations and planned direction.
+- [ESP HTTP interface contract](interface-contract.md) — every current endpoint
+  and behavior relevant to the firmware, plus parser, cache, retry and
+  compatibility consequences.
+- [Glennergy HTTP API reference](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/http-api.md)
+  — the complete server-side route, method, status, header and schema reference.
 
 ## Firmware guides
 
@@ -57,7 +60,7 @@ branch-review instruction when the Glennergy documentation is published.
 
 | Document | Current classification | Intended action |
 | --- | --- | --- |
-| [API_ENDPOINTS.md](API_ENDPOINTS.md) | Detailed but stale API draft; contains old error, queue, timing and deployment-address assumptions | Replace with the canonical interface contract; retain/banner or archive after review |
+| [API_ENDPOINTS.md](API_ENDPOINTS.md) | Detailed but stale API draft; contains old error, queue and timing assumptions | Replaced by the ESP interface contract and Glennergy HTTP API reference; retain/banner or archive after review |
 | [easy_api_doc.md](easy_api_doc.md) | Swedish duplicate overview with stale navigation/encoding | Redirect/banner or archive after unique information is checked |
 | [UART_COMMANDS.md](UART_COMMANDS.md) | Current canonical UART reference | Update when parser, output, persistence or safety behavior changes |
 | [ESP-IDF build workflow plan](ESP_IDF_BUILD_WORKFLOW_PLAN.md) | Roadmap containing planned CI/test capabilities | Keep clearly labelled as a plan; move implemented workflow into `development.md` |

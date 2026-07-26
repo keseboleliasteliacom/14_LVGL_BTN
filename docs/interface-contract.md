@@ -3,8 +3,8 @@
 | Metadata | Value |
 | --- | --- |
 | Status | Current implementation reference, with planned changes explicitly separated |
-| Audience | Glennergy and Glennergy-ESP developers and maintainers |
-| Canonical owner | Glennergy-ESP |
+| Audience | Glennergy-ESP developers, Glennergy maintainers, and integration reviewers |
+| Canonical owner | Glennergy-ESP for firmware consumption, parsing, cache, retry and compatibility behavior |
 | Applies to | Authoritative `dev`; stable-production differences are noted below |
 | Last verified | 2026-07-26 |
 | Glennergy-ESP `dev` | `b5a502afd9ca2ae374b3131b0031b8390f93b348` |
@@ -12,8 +12,18 @@
 
 This document describes the HTTP boundary that is implemented today between
 Glennergy (the LEOP server and JSON producer) and Glennergy-ESP (the consumer).
-It is a code-level interoperability reference, not a promise that the current
-API design is final.
+It includes every current endpoint and server behavior relevant to the
+firmware, plus the ESP's parsing, cache, retry, health and UI consequences.
+
+Glennergy owns the complete server-side
+[HTTP API reference](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/http-api.md),
+including producer routes, methods, statuses, headers, schemas and edge cases.
+The two documents intentionally overlap on wire facts so each repository is
+usable on its own. Any route, method, status, header, schema or error change
+must update both documents together.
+
+This is a code-level interoperability reference, not a promise that the
+current API design is final.
 
 ## Current interaction at a glance
 
@@ -305,7 +315,8 @@ For each such change:
 3. Test valid, empty, malformed, oversized and unknown-property responses.
 4. Verify all three payloads end to end without contacting production or real
    hardware unless separately authorized.
-5. Update this document's SHAs, compatibility table and planned/current labels.
+5. Update this consumer contract and Glennergy's server HTTP API reference,
+   including their SHAs, compatibility tables and planned/current labels.
 
 ## Verification evidence
 

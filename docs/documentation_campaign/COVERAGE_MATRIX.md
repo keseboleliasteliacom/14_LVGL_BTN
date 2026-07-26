@@ -6,7 +6,7 @@ Mermaid visual review pending.
 | Artifact/area | Audience | Current source | Target state | Evidence status | Validation status |
 | --- | --- | --- | --- | --- | --- |
 | Shared system context | All | Existing READMEs/plans and code | Canonical overview | Drafted and independently reviewed | Whitespace/link/secret scan pass; Mermaid render pending |
-| Cross-project interface | General and technical developers | Both HTTP implementations and old API docs | Overview plus exact current/planned contract | Drafted and independently corrected | Whitespace/link/secret scan and JSON-example parse pass; runtime/schema fixtures pending |
+| HTTP API and ESP integration | General and technical developers | Both HTTP implementations and old API docs | Complete server reference in Glennergy plus complete firmware-relevant consumer contract in ESP | Both documents drafted and synchronized | Whitespace/link/secret scan and JSON-example parse pass; runtime/schema fixtures pending |
 | Glennergy README | New developers/operators | `glennergy/README.md` | Approachable current entry point | Rewritten and independently reviewed | Whitespace/link/secret and safety review pass |
 | Glennergy-ESP README | New/embedded developers | `Glennergy-ESP/README.md` | Approachable current entry point | Rewritten and independently reviewed | Whitespace/link/secret and safety review pass |
 | Server architecture | Server developers/operators | Code, systemd, scripts and plans | Verified detailed document | Drafted and independently corrected | Whitespace/link/secret scan and semantic review pass; Mermaid render pending |

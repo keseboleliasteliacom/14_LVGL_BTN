@@ -34,8 +34,9 @@ The system has two cooperating projects:
 The ESP currently initiates read-only requests to the server. Planned two-way
 registration—where a device submits property information and Glennergy stores
 it—is not implemented. See the [system context](docs/system-context.md) for the
-complete product boundary and the [interface contract](docs/interface-contract.md)
-for the exact current exchange.
+complete product boundary and the [ESP interface contract](docs/interface-contract.md)
+for every endpoint and behavior relevant to the firmware. Glennergy also owns
+the complete [server HTTP API reference](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/http-api.md).
 
 ## Current features
 

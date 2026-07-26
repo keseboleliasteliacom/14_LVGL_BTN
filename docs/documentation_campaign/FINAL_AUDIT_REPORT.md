@@ -81,6 +81,23 @@ covered:
 - A credential-like literal in ESP source was not copied into documentation;
   removal and possible rotation require separate approved code work.
 
+## Post-acceptance HTTP documentation amendment
+
+After the initial campaign acceptance, the owner changed HTTP documentation
+ownership so both repositories are independently useful:
+
+- Glennergy now owns the complete server-side `Docs/http-api.md` reference.
+- Glennergy-ESP retains every endpoint and behavior relevant to the firmware in
+  `docs/interface-contract.md`, plus parser, cache, retry and compatibility
+  consequences.
+- Shared route, method, status, header, schema and error facts must be updated
+  in both documents together.
+
+The amendment reused the reviewed contract rather than reconstructing it. The
+shared wire sections were compared for exact synchronization; relative links,
+seven JSON examples, whitespace and targeted address/key scans passed. No
+source, endpoint, hardware or production system was changed or contacted.
+
 ## Acceptance rule
 
 This audit supports draft-PR publication and GitHub visual review. It does not authorize

@@ -4,6 +4,12 @@ managed_components/
 
 # Generated project files
 sdkconfig.old
+tools/doxygen_ai/rejected/
+
+.tmp_chrome_leopseq
+.tmp_chrome_leopstate
+.tmp_chrome_pinrender
+.tmp_chrome_queues
 
 # Local editor and machine-specific settings
 .vscode/

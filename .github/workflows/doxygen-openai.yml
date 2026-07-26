@@ -95,6 +95,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Clear rejected outputs from previous runs
+        shell: bash
+        run: |
+          rm -rf tools/doxygen_ai/rejected
+          mkdir -p tools/doxygen_ai/rejected
+
       - name: Download latest manifest for remaining-only rerun
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.rerun_mode == 'remaining_only'
         env:
@@ -230,6 +236,7 @@ jobs:
           name: doxygen-ai-rejected-outputs-${{ github.run_id }}
           path: tools/doxygen_ai/rejected
           if-no-files-found: ignore
+          retention-days: 14
 
       - name: Upload run manifest
         if: always()
@@ -238,6 +245,7 @@ jobs:
           name: doxygen-ai-manifest-${{ env.PR_KEY }}
           path: ${{ env.MANIFEST_PATH }}
           if-no-files-found: ignore
+          retention-days: 90
 
       - name: Create draft pull request with documentation updates
         if: always() && steps.documentation_changes.outputs.has_changes == 'true'

@@ -304,6 +304,11 @@ Before finalizing internally, validate that:
 - the documentation matches the repository rules
 - the documentation style matches the target style examples, including reducing unnecessary boilerplate where appropriate
 - cosmetic rewrites are avoided only after accuracy, implementation consistency, and mandatory coverage have been confirmed
+- every existing Doxygen block has been compared with the current implementation rather than trusted because it already exists
+- descriptions match the current control flow and do not present commented-out or removed behavior as active behavior
+- documented side effects, blocking, queue use, network or storage I/O, callback/task context, ownership, and failure behavior are supported by the implementation
+- parameter and return descriptions match the current signature and reachable return paths
+- stale documentation left behind by a refactor is corrected even when all required Doxygen blocks are already present
 - simple debug/print helper declarations in headers stay lightweight by default, usually using only `@brief` and `@param` when applicable
 - do not expand simple debug/print helper declarations into full contract-style blocks unless extra tags add real value
 - for public source-file functions with a documented paired header, prefer the brief + see-header pattern unless implementation-specific notes are genuinely needed

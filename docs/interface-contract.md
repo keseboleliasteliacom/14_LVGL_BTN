@@ -1,14 +1,7 @@
 # Glennergy LEOP interface contract
 
-| Metadata | Value |
-| --- | --- |
-| Status | Current implementation reference, with planned changes explicitly separated |
-| Audience | Glennergy-ESP developers, Glennergy maintainers, and integration reviewers |
-| Canonical owner | Glennergy-ESP for firmware consumption, parsing, cache, retry and compatibility behavior |
-| Applies to | Authoritative `dev`; stable-production differences are noted below |
-| Last verified | 2026-07-26 |
-| Glennergy-ESP `dev` | `b5a502afd9ca2ae374b3131b0031b8390f93b348` |
-| Glennergy `dev` | `42798bee227fcd621cbcb0b37c2b5da771210086` |
+> **Quick answer:** Glennergy-ESP performs three unauthenticated HTTP reads for
+> recommendation, weather and price, then parses and caches valid responses.
 
 This document describes the HTTP boundary that is implemented today between
 Glennergy (the LEOP server and JSON producer) and Glennergy-ESP (the consumer).
@@ -319,6 +312,21 @@ For each such change:
    including their SHAs, compatibility tables and planned/current labels.
 
 ## Verification evidence
+
+<details>
+<summary>Ownership and version metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Status | Current implementation reference, with planned changes explicitly separated |
+| Audience | Glennergy-ESP developers, Glennergy maintainers, and integration reviewers |
+| Canonical owner | Glennergy-ESP for firmware consumption, parsing, cache, retry and compatibility behavior |
+| Applies to | Authoritative `dev`; stable-production differences are noted below |
+| Last verified | 2026-07-26 |
+| Glennergy-ESP `dev` | `b5a502afd9ca2ae374b3131b0031b8390f93b348` |
+| Glennergy `dev` | `42798bee227fcd621cbcb0b37c2b5da771210086` |
+
+</details>
 
 Primary producer evidence in Glennergy:
 

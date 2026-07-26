@@ -10,12 +10,6 @@ remain temporary or unfinished. This README provides a safe starting point;
 the [documentation index](docs/README.md) links to the complete technical
 guides.
 
-| Project status | Reference |
-|---|---|
-| Authoritative implementation | `dev` at `b5a502a` |
-| Stable production line | `main` |
-| Documentation scope | Current `dev` behavior, with planned work labelled |
-
 `dev` is the source of truth for current development. `main` represents the
 stable production line, but may not contain every behavior described in the
 current `dev` documentation. Confirm a device's installed revision before
@@ -193,3 +187,14 @@ and [connectivity guide](docs/connectivity.md) before changing live settings.
 Start with the README and system context, then follow the guide matching your
 task. Detailed documents are intentionally kept separate so this entry point
 remains approachable for users, evaluators, and developers.
+
+<details>
+<summary>Documentation version and scope</summary>
+
+| Project status | Reference |
+| --- | --- |
+| Authoritative implementation | `dev` at `b5a502a` |
+| Stable production line | `main` |
+| Documentation scope | Current `dev` behavior, with planned work labelled |
+
+</details>

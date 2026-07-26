@@ -1,11 +1,7 @@
 # Development guide
 
-| Metadata | Value |
-| --- | --- |
-| Status | Current development workflow |
-| Target | ESP32-S3 |
-| ESP-IDF baseline | 5.3.5 |
-| Last verified | Glennergy-ESP `b5a502a` |
+> **In short:** Use ESP-IDF 5.3.5 to configure and build for ESP32-S3; flashing
+> and monitoring require a specifically authorized development board.
 
 This guide covers a local firmware edit-and-build workflow. Read the
 [firmware architecture](architecture.md) before changing task ownership,
@@ -144,6 +140,18 @@ hardware-in-the-loop work described in the build plan are planned validation
 levels, not current general coverage.
 
 ## Useful references
+
+<details>
+<summary>Verification metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Status | Current development workflow |
+| Target | ESP32-S3 |
+| ESP-IDF baseline | 5.3.5 |
+| Last verified | Glennergy-ESP `b5a502a` |
+
+</details>
 
 - [Documentation index](README.md)
 - [Hardware guide](hardware.md)

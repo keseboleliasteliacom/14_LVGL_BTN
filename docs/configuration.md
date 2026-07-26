@@ -1,10 +1,7 @@
 # Configuration guide
 
-| Metadata | Value |
-| --- | --- |
-| Status | Current implementation |
-| Storage | ESP-IDF NVS default partition |
-| Last verified | Glennergy-ESP `b5a502a` |
+> **In short:** The firmware loads application settings and Wi-Fi credentials
+> from the default ESP-IDF NVS partition, with defaults used when reads fail.
 
 The firmware loads application settings and Wi-Fi credentials from NVS. This
 page documents the implemented keys and mutation paths without exposing stored
@@ -167,6 +164,17 @@ are planned system work, not existing firmware configuration. Their current
 boundary is recorded in [current limitations](current-limitations.md).
 
 ## Source map
+
+<details>
+<summary>Verification metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Status | Current implementation |
+| Storage | ESP-IDF NVS default partition |
+| Last verified | Glennergy-ESP `b5a502a` |
+
+</details>
 
 - `main/main.c` — default/load order and live interval pointer.
 - `main/Config/AppConfig.*` — application defaults, keys, reads, and writes.

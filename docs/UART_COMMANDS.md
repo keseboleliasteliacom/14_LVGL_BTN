@@ -1,11 +1,7 @@
 # UART diagnostic shell
 
-| Metadata | Value |
-| --- | --- |
-| Status | Current implementation, including known defects |
-| Audience | Firmware developers and authorized device testers |
-| Last verified | Glennergy-ESP `b5a502a` |
-| Evidence | Static source inspection; no serial session was opened |
+> **In short:** UART0 provides read-only diagnostics, three persistent setting
+> changes and restart; it is a development shell, not a stable external API.
 
 The firmware exposes a small development shell on UART0. It is useful for
 inspecting the latest in-memory state and changing three configuration values.
@@ -188,6 +184,18 @@ checks and [development](development.md#flash-and-monitor-a-development-board)
 for the hardware authorization boundary.
 
 ## Implementation evidence and maintenance
+
+<details>
+<summary>Verification metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Status | Current implementation, including known defects |
+| Audience | Firmware developers and authorized device testers |
+| Last verified | Glennergy-ESP `b5a502a` |
+| Evidence | Static source inspection; no serial session was opened |
+
+</details>
 
 - `main/UART/UART.cpp`: UART setup, line editing, normalization, and worker;
 - `main/UART/uart_diag_shell.cpp`: command dispatch, validation, output, and

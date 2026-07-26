@@ -1,11 +1,7 @@
 # Glennergy glossary
 
-| Metadata | Value |
-| --- | --- |
-| Status | Current, with unresolved terms marked explicitly |
-| Canonical owner | Glennergy-ESP |
-| Audience | Readers and contributors across both repositories |
-| Last verified | Glennergy-ESP `b5a502a`; Glennergy `42798be` |
+> **In short:** Use these terms across both repositories; unresolved meanings
+> are labelled instead of guessed.
 
 This glossary defines the preferred English terms used by Glennergy and
 Glennergy-ESP documentation. Exact source-code identifiers retain their original
@@ -51,6 +47,18 @@ spelling even when the prose term differs.
 | Timestamp | Server timestamp string can include an offset; ESP retains at most 19 characters | Longer values lose the offset portion |
 
 ## Update triggers
+
+<details>
+<summary>Ownership and verification metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Status | Current, with unresolved terms marked explicitly |
+| Canonical owner | Glennergy-ESP |
+| Audience | Readers and contributors across both repositories |
+| Last verified | Glennergy-ESP `b5a502a`; Glennergy `42798be` |
+
+</details>
 
 Update this glossary when a public schema, unit, route term, process/module name,
 property identity model or preferred English term changes. New documentation

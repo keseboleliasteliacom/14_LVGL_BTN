@@ -1,5 +1,11 @@
 # Glennergy ESP32 API Endpoint Documentation
 
+> **Noncanonical historical draft:** This page contains stale assumptions and
+> is retained for review only. Use the current
+> [ESP interface contract](interface-contract.md) and Glennergy
+> [server API reference](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/http-api.md)
+> for implementation work.
+
 This document describes the HTTP interface used by the Glennergy ESP32 terminal when communicating with the LEOP server.
 
 Scope:

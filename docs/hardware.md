@@ -1,11 +1,7 @@
 # Hardware guide
 
-| Metadata | Value |
-| --- | --- |
-| Status | Source-derived board configuration; physical behavior unverified |
-| Firmware target | ESP32-S3 |
-| Repository-declared board | Waveshare ESP32-S3-Touch-LCD-4.3 |
-| Last verified | Glennergy-ESP `b5a502a` |
+> **In short:** The firmware targets a Waveshare ESP32-S3-Touch-LCD-4.3, but
+> this guide describes source configuration rather than observed hardware.
 
 This page describes the hardware configuration encoded in authoritative `dev`.
 It does not report a physical inspection, schematic review, or live-board test.
@@ -143,6 +139,18 @@ See [current limitations](current-limitations.md#testing-and-verification-limits
 for the boundary between source-derived claims and runtime evidence.
 
 ## Source map
+
+<details>
+<summary>Verification metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Status | Source-derived board configuration; physical behavior unverified |
+| Firmware target | ESP32-S3 |
+| Repository-declared board | Waveshare ESP32-S3-Touch-LCD-4.3 |
+| Last verified | Glennergy-ESP `b5a502a` |
+
+</details>
 
 - `sdkconfig.defaults` — target, flash, PSRAM, CPU, and LVGL defaults.
 - `dependencies.lock` — ESP-IDF 5.3.5 and managed-component versions.

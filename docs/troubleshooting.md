@@ -1,11 +1,7 @@
 # Troubleshooting Glennergy-ESP
 
-| Metadata | Value |
-| --- | --- |
-| Status | Current source-backed diagnostic guide |
-| Audience | Developers, maintainers, and authorized device testers |
-| Last verified | Glennergy-ESP `b5a502a` |
-| Evidence boundary | Static inspection; no hardware, serial port, or live endpoint used |
+> **In short:** Diagnose read-only first, separate cached data from live state,
+> and confirm the exact device before any flash, restart or erase action.
 
 Start with repository evidence and observations that do not change device or
 external state. A successful build proves compilation only; it does not prove
@@ -202,6 +198,18 @@ task stack figures are estimates. Do not use hidden `reboot` or persistent
 `config` commands during read-only triage.
 
 ## Escalation record
+
+<details>
+<summary>Verification metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Status | Current source-backed diagnostic guide |
+| Audience | Developers, maintainers, and authorized device testers |
+| Last verified | Glennergy-ESP `b5a502a` |
+| Evidence boundary | Static inspection; no hardware, serial port, or live endpoint used |
+
+</details>
 
 If static and authorized read-only checks do not resolve the issue, record:
 

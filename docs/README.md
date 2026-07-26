@@ -1,12 +1,5 @@
 # Glennergy-ESP documentation
 
-| Metadata | Value |
-| --- | --- |
-| Status | Current navigation index; migration from older documents is in progress |
-| Audience | Newcomers, developers, maintainers, operators, and evaluators |
-| Applies to | Authoritative `dev` documentation campaign |
-| Last verified | Glennergy-ESP `b5a502a`; Glennergy `42798be` |
-
 Start here to find the current source for a topic. Some older documents remain
 available as evidence or planning history while they are consolidated. A file
 being present in the repository does not by itself make it current.
@@ -121,6 +114,18 @@ review; they are not the primary onboarding path.
   requiring separate review before archival or deletion.
 
 ## Maintenance
+
+<details>
+<summary>Index verification metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Status | Current navigation index; migration from older documents is in progress |
+| Audience | Newcomers, developers, maintainers, operators, and evaluators |
+| Applies to | Authoritative `dev` documentation campaign |
+| Last verified | Glennergy-ESP `b5a502a`; Glennergy `42798be` |
+
+</details>
 
 Update this index whenever a canonical guide is added, replaced, archived or
 renamed. Before publication, every canonical document must be reachable from

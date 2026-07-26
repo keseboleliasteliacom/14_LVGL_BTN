@@ -71,6 +71,18 @@ class FileResult:
     details: str = ""
 
 
+def combine_openai_results(previous: OpenAIResult, latest: OpenAIResult) -> OpenAIResult:
+    return OpenAIResult(
+        text=latest.text,
+        usage=Usage(
+            input_tokens=previous.usage.input_tokens + latest.usage.input_tokens,
+            output_tokens=previous.usage.output_tokens + latest.usage.output_tokens,
+            total_tokens=previous.usage.total_tokens + latest.usage.total_tokens,
+        ),
+        model=latest.model,
+    )
+
+
 def estimate_cost_usd(usage: Usage, input_cost_per_million: float, output_cost_per_million: float) -> float:
     return (
         (usage.input_tokens / 1_000_000) * input_cost_per_million
@@ -657,7 +669,32 @@ Normalized code diff excerpt from the rejected attempt:
 {diff_excerpt}
 """
     retry_result = call_openai(system_prompt, retry_user_prompt, model, max_output_tokens)
-    return retry_result, True
+    return combine_openai_results(first_result, retry_result), True
+
+
+def retry_missing_function_documentation(
+    system_prompt: str,
+    user_prompt: str,
+    model: str,
+    max_output_tokens: int,
+    previous_result: OpenAIResult,
+    missing_functions: list[str],
+) -> OpenAIResult:
+    missing_list = "\n".join(f"- {name}" for name in missing_functions)
+    retry_user_prompt = f"""{user_prompt}
+
+Your previous output was rejected by a deterministic documentation coverage check.
+
+The following public function definitions are still missing a directly preceding Doxygen block:
+{missing_list}
+
+Regenerate the full file and add concise repository-standard Doxygen documentation directly above every listed function definition.
+For public source functions whose contract is already documented in the paired header, prefer the brief implementation + see-header pattern.
+Preserve every code token and all existing developer comments exactly.
+Do not make synonym-only, formatting-only, or unrelated documentation changes.
+"""
+    retry_result = call_openai(system_prompt, retry_user_prompt, model, max_output_tokens)
+    return combine_openai_results(previous_result, retry_result)
 
 
 def normalize_file_text(text: str) -> str:
@@ -864,6 +901,7 @@ def process_files(
         )
 
         print(f"Processing {rel} with model {model}")
+        coverage_retried = False
         try:
             result, retried = call_openai_with_retry(
                 system_prompt=system_prompt,
@@ -872,6 +910,27 @@ def process_files(
                 max_output_tokens=max_output_tokens,
                 original=original,
             )
+
+            if (
+                path.suffix.lower() in SOURCE_SUFFIXES
+                and result.text.strip()
+                and not code_changed(original, result.text)
+            ):
+                missing_function_docs = find_undocumented_public_function_definitions(result.text)
+                if missing_function_docs:
+                    print(
+                        f"Retrying {rel}: missing direct Doxygen documentation for "
+                        f"{', '.join(missing_function_docs)}"
+                    )
+                    result = retry_missing_function_documentation(
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        model=model,
+                        max_output_tokens=max_output_tokens,
+                        previous_result=result,
+                        missing_functions=missing_function_docs,
+                    )
+                    coverage_retried = True
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
             file_results.append(FileResult(path=rel, status="rejected", details=f"HTTP {exc.code}"))
@@ -938,7 +997,7 @@ def process_files(
                 missing_names = ", ".join(missing_function_docs)
                 details = (
                     "Missing direct Doxygen documentation for public function "
-                    f"definition(s): {missing_names}; saved to "
+                    f"definition(s) after coverage_retry={coverage_retried}: {missing_names}; saved to "
                     f"{rejected_path.relative_to(REPO_ROOT).as_posix()}"
                 )
                 file_results.append(
@@ -995,7 +1054,8 @@ def process_files(
         print(
             f"Updated {rel} "
             f"(model={actual_model}, input_tokens={usage.input_tokens}, output_tokens={usage.output_tokens}, "
-            f"total_tokens={usage.total_tokens}, retried={retried}, estimated_cost_usd=${estimated_cost:.6f}, "
+            f"total_tokens={usage.total_tokens}, code_retried={retried}, coverage_retried={coverage_retried}, "
+            f"estimated_cost_usd=${estimated_cost:.6f}, "
             f"estimated_cost_sek={estimated_cost_sek:.6f} kr)"
         )
 

@@ -24,7 +24,7 @@ spelling even when the prose term differs.
 | Meteo | The Glennergy weather-data producer | `Glennergy-Meteo`; production code under `API/Meteocpp` | Implemented; preserve executable/source names |
 | Spotpris | The Glennergy electricity spot-price producer | `Glennergy-Spotpris`; Swedish for spot price | Implemented; preserve executable/source names |
 | Algorithm | The Glennergy calculation process | `Glennergy-Algoritm`, `AlgoritmShared`; Swedish code spelling `Algoritm` | Use “Algorithm” in prose and exact spelling for identifiers |
-| Recommendation dataset | The 96-object API response requested with the current `recommendation` command | JSON fields `id`, `type`, `timestamp`, `temp` | Implemented; intended meaning of `type` remains unresolved |
+| Recommendation dataset | The normal 96-object API response for one matching positive property ID requested with the current `recommendation` command | JSON fields `id`, `type`, `timestamp`, `temp` | Implemented; intended meaning of `type` remains unresolved; ID `0` is a known unsafe exception |
 | Recommendation type | The `type` number in each recommendation object | `recommendation[].type` | Unknown intent; current algorithm discards a categorical result and publishes `average_WindowLow_percent` instead |
 | Weather dataset | The 96-object API response containing forecast temperature, weather code and UV index | JSON fields `timestamp`, `temp`, `weather_code`, `uv_index` | Implemented |
 | Price dataset | The 96-object API response containing electricity prices | JSON fields `timestamp`, `price SEK` | Implemented; the space in `price SEK` is part of the current contract |
@@ -33,9 +33,9 @@ spelling even when the prose term differs.
 | Live data | A response obtained from Glennergy during current connectivity | Category GET responses | Implemented |
 | Cached data | The latest successfully stored JSON category response used by the ESP while offline | SPIFFS files `Recommendations.json`, `Weather.json`, `Price.json` | Implemented |
 | Latest-value queue | A depth-one FreeRTOS queue whose previous value is overwritten by a newer snapshot | `xQueueOverwrite` flows | Implemented; not a durable event history |
-| Connected | All three LEOP category fetches succeeded, or the current health probe succeeded | `LEOP_STATUS_CONNECTED` | Implemented status |
-| Degraded | Only some LEOP category fetches succeeded | `LEOP_STATUS_DEGRADED` | Implemented status |
-| Unavailable | Repeated server health/fetch failures reached the current threshold | `LEOP_STATUS_UNAVAILABLE` | Implemented status |
+| Connected | All three LEOP category fetches succeeded, or the current health probe succeeded | `LEOP_CONNECTION_CONNECTED` | Implemented status |
+| Degraded | Only some LEOP category fetches succeeded | `LEOP_CONNECTION_DEGRADED` | Implemented status |
+| Unavailable | Repeated server health/fetch failures reached the current threshold | `LEOP_CONNECTION_UNAVAILABLE` | Implemented status |
 | Stable production | Behavior represented by the stable remote `main` branch | `origin/main` snapshots in the campaign manifest | Owner-defined lifecycle term |
 | Authoritative implementation | Current development behavior represented by `dev` | `dev` snapshots in the campaign manifest | Owner-defined lifecycle term |
 

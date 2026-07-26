@@ -61,6 +61,40 @@ flowchart TD
     P --> Q[Publish task handles to app_state]
 ```
 
+The same bring-up order is shown below as calls made by `app_main()`. Creating
+a task makes it eligible for scheduling; the diagram does not assert that one
+created task finishes initialization before the next `app_main()` statement.
+
+```mermaid
+sequenceDiagram
+    participant Main as app_main
+    participant NVS as NVS and AppConfig
+    participant HW as Touch, LCD, and LVGL port
+    participant WiFi as Wi-Fi subsystem
+    participant FS as SPIFFS
+    participant UI as LVGL UI
+    participant RTOS as FreeRTOS scheduler
+    participant LEOP as LEOP fetcher
+
+    Main->>Main: Set timezone and call tzset()
+    Main->>NVS: NVS_Init()
+    Main->>NVS: Set defaults, then load available NVS values
+    Main->>Main: Populate task names and configured stack sizes
+    Main->>HW: Initialize GT911 touch
+    Main->>Main: Delay 2 seconds
+    Main->>HW: Initialize RGB LCD and enable backlight
+    Main->>HW: Initialize LVGL port
+    Main->>WiFi: Initialize subsystem and register state callback
+    Main->>FS: Mount SPIFFS
+    Main->>UI: Acquire LVGL lock and call ui_init()
+    Main->>RTOS: Create Wi-Fi, UI, UART, and Sensor tasks
+    Note over Main,RTOS: Created tasks may run as soon as the scheduler selects them
+    Main->>LEOP: Initialize data containers and four queues
+    Main->>LEOP: Register state callback and live interval pointer
+    Main->>RTOS: Create LEOP task
+    Main->>Main: Copy five task handles into app_state
+```
+
 This sequence describes code order, not proof that every peripheral or task
 successfully starts on physical hardware. Some initialization calls are guarded
 by `ESP_ERROR_CHECK` and abort on error, while several return values—most
@@ -191,6 +225,40 @@ belong in the hardware and troubleshooting documentation.
 The older `BME280Sensor` V1 code remains compiled/referenced in the module but
 its active instantiation and read call are commented out. It is not the current
 sensor path.
+
+```mermaid
+sequenceDiagram
+    participant Sensor as Sensor task
+    participant BME as BME280SensorV2
+    participant State as app_state.sensor_data
+    participant Queue as Sensor_Queue (depth 1)
+    participant UI as UI update task
+    participant LVGL as Home-tab LVGL widgets
+
+    Sensor->>Queue: Create depth-one Sensor_Queue
+    Sensor->>Sensor: Delay 3 seconds after task start
+    Sensor->>BME: Initialize and probe 0x77, then 0x76
+    loop At the current sensor_interval_ms
+        Sensor->>BME: Read temperature, humidity, and pressure
+        BME-->>Sensor: Reading or SensorError
+        Sensor->>State: Write current fields and validity directly
+        Sensor->>Queue: xQueueOverwrite(copied sensor snapshot)
+        Note over State,Queue: The queue copy does not synchronize direct app_state access
+        UI->>Queue: Non-blocking receive during the UI update cycle
+        alt A copied snapshot is available
+            UI->>LVGL: Update widgets while the LVGL port lock is held
+        else No copied snapshot is available
+            UI->>UI: Leave current Home-tab widgets unchanged
+        end
+    end
+```
+
+The sequence shows the implemented producer/consumer path, not a timing or
+hardware guarantee. Failed reads publish an invalid copied snapshot; the Home
+tab then retains its previous numeric values and updates only the latest-data
+message. `app_state_t` has no common mutex, while the LVGL port lock protects
+widget access rather than the shared sensor structure. Other UI paths have
+additional locking limitations described below.
 
 ### LEOP
 

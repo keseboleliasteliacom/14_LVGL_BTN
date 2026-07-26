@@ -70,8 +70,8 @@ written to SPIFFS before schema validation, so a malformed or incompatible body
 can overwrite the previous cache. Offline display succeeds only if the stored
 body can later be parsed. Exact schemas, response behavior, parsing limitations,
 fetch cadence and cache rules belong in the
-[interface contract](interface-contract.md). A dedicated connectivity guide is
-planned but not yet part of this checkpoint.
+[interface contract](interface-contract.md). Wi-Fi, health, retry and cache
+details are maintained in the [connectivity guide](connectivity.md).
 
 ## System boundary
 
@@ -126,10 +126,10 @@ and the HTTP server.
 
 On the device, the firmware runs Wi-Fi, UI, UART, Sensor, and LEOP tasks. The
 LEOP task performs the server requests; local queues and shared application
-state carry the newest values to consumers. The planned firmware architecture
-guide will describe task, queue, startup and ownership details. Server process
-and IPC details will be canonical in Glennergy's planned
-`Docs/architecture.md`.
+state carry the newest values to consumers. See [firmware architecture](architecture.md)
+for task, queue, startup and ownership details. Server process and IPC details
+are maintained in Glennergy's
+[server architecture](https://github.com/keseboleliasteliacom/glennergy/blob/dev/Docs/architecture.md).
 
 ## Deployment and evidence boundary
 
@@ -205,14 +205,14 @@ security-reviewed before documentation can describe a final protocol.
   schemas, errors, and producer/consumer compatibility.
 - [Shared glossary](glossary.md) — project terms, legacy identifiers, units,
   and unresolved terminology.
-- Firmware architecture (planned `architecture.md`) — startup, tasks, queues,
-  shared state, and module ownership.
-- Connectivity and cache behavior (planned `connectivity.md`) — polling,
-  health states, caching, and recovery.
+- [Firmware architecture](architecture.md) — startup, tasks, queues, shared
+  state, and module ownership.
+- [Connectivity and cache behavior](connectivity.md) — polling, health states,
+  caching, and recovery.
 - [Current limitations](current-limitations.md) — current, partial, temporary,
   planned, and unverified behavior.
-- Glennergy planned `Docs/architecture.md` — server processes, IPC, schedules,
-  and data ownership in the Glennergy repository.
+- [Glennergy server architecture](https://github.com/keseboleliasteliacom/glennergy/blob/dev/Docs/architecture.md)
+  — server processes, IPC, schedules, and data ownership.
 
 ## Maintenance
 

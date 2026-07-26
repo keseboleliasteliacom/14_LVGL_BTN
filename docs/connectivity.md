@@ -72,8 +72,7 @@ sequenceDiagram
         WT->>NVS: Read ssid and pw
         alt Both exist and SSID is nonempty
             WT->>IDF: Apply station config and start Wi-Fi
-            IDF-->>WT: STA_START callback path
-            IDF->>IDF: esp_wifi_connect()
+            IDF->>IDF: STA_START callback calls esp_wifi_connect()
         else Missing, unreadable, or empty
             WT->>WT: Log and wait for UI command
         end
@@ -157,6 +156,91 @@ status message is not queued and its updated failure count/status code is not
 delivered. The full fetch deadline remains independent of the faster health
 retry deadline.
 
+### Current full-fetch and health sequence
+
+The server exchange below is intentionally abstract. Exact temporary routes,
+response fields, status behavior, and producer/consumer limitations belong in
+the [interface contract](interface-contract.md).
+
+```mermaid
+sequenceDiagram
+    participant LEOP as LEOPFetcher_Work
+    participant HTTP as HTTP client
+    participant SERVER as Glennergy / LEOP server
+    participant CACHE as SPIFFS category cache
+    participant PARSER as Category parser
+    participant UI as Latest-value UI queues
+
+    alt Full-fetch deadline reached
+        LEOP->>HTTP: GET recommendation
+        HTTP->>SERVER: Current recommendation request
+        SERVER-->>HTTP: HTTP response or transport failure
+        HTTP-->>LEOP: Body, status, and transport result
+        opt Response body exists
+            LEOP->>CACHE: Attempt generic-JSON write to Recommendations.json
+            LEOP->>PARSER: Parse recommendation schema
+            PARSER-->>LEOP: Recommendation success or failure
+        end
+
+        LEOP->>HTTP: GET weather
+        HTTP->>SERVER: Current weather request
+        SERVER-->>HTTP: HTTP response or transport failure
+        HTTP-->>LEOP: Body, status, and transport result
+        opt Response body exists
+            LEOP->>CACHE: Attempt generic-JSON write to Weather.json
+            LEOP->>PARSER: Parse weather schema
+            PARSER-->>LEOP: Weather success or failure
+        end
+
+        LEOP->>HTTP: GET price
+        HTTP->>SERVER: Current price request
+        SERVER-->>HTTP: HTTP response or transport failure
+        HTTP-->>LEOP: Body, status, and transport result
+        opt Response body exists
+            LEOP->>CACHE: Attempt generic-JSON write to Price.json
+            LEOP->>PARSER: Parse price schema
+            PARSER-->>LEOP: Price success or failure
+        end
+
+        LEOP-->>UI: Publish all three current containers
+        alt All three category parses succeeded
+            LEOP->>LEOP: Publish CONNECTED and reset failures
+            LEOP->>LEOP: Schedule health probe after 60 seconds
+        else One or two category parses succeeded
+            LEOP->>LEOP: Publish DEGRADED and reset failures
+            LEOP->>LEOP: Schedule health probe after 60 seconds
+        else All three categories failed
+            LEOP->>LEOP: Increment consecutive failures
+            opt Failure count reached 3
+                LEOP->>LEOP: Publish UNAVAILABLE
+            end
+            LEOP->>LEOP: Schedule probe/retry after 10 seconds
+        end
+    else Health deadline reached before full-fetch deadline
+        LEOP->>HTTP: Probe recommendation route, 5-second timeout
+        HTTP->>SERVER: Current recommendation request
+        SERVER-->>HTTP: HTTP status or transport failure
+        alt Transport completed with HTTP 2xx
+            HTTP-->>LEOP: Probe success
+            LEOP->>LEOP: Publish CONNECTED and reset failures
+            LEOP->>LEOP: Schedule next probe after 60 seconds
+        else Transport failure or non-2xx
+            HTTP-->>LEOP: Probe failure and available status
+            LEOP->>LEOP: Increment consecutive failures
+            opt Failure count reached 3
+                LEOP->>LEOP: Publish UNAVAILABLE
+            end
+            LEOP->>LEOP: Schedule retry after 10 seconds
+        end
+    end
+```
+
+Each category cache attempt happens before that category's schema parse. There
+is no online cache fallback when a category fails. Publishing all three
+containers after the fetch can therefore expose a mixture of newly parsed,
+previous, empty, or failed-status data. A successful health probe changes
+connection state but does not refresh all three datasets.
+
 ```mermaid
 stateDiagram-v2
     [*] --> NO_WIFI
@@ -164,11 +248,13 @@ stateDiagram-v2
     CHECKING --> CONNECTED: all full fetches succeed
     CHECKING --> DEGRADED: partial full-fetch success
     CHECKING --> UNAVAILABLE: three total failures
+    CHECKING --> NO_WIFI: Wi-Fi lost
     CONNECTED --> DEGRADED: later partial full-fetch success
     DEGRADED --> CONNECTED: successful full fetch or 2xx probe
     CONNECTED --> UNAVAILABLE: three total/probe failures
     DEGRADED --> UNAVAILABLE: three total/probe failures
     UNAVAILABLE --> CONNECTED: successful full fetch or 2xx probe
+    UNAVAILABLE --> DEGRADED: later partial full-fetch success
     CONNECTED --> NO_WIFI: Wi-Fi lost
     DEGRADED --> NO_WIFI: Wi-Fi lost
     UNAVAILABLE --> NO_WIFI: Wi-Fi lost
@@ -199,6 +285,60 @@ load again.
 Online category failures do not automatically fall back to the previous cache.
 Cache loading is tied to the no-Wi-Fi branch. Cache success also does not mean
 the server is connected: the published connection state remains `NO_WIFI`.
+
+### Connection-loss and cache-recovery sequence
+
+```mermaid
+sequenceDiagram
+    participant IDF as ESP-IDF event callback
+    participant APP as app_state / Wi-Fi state
+    participant LEOP as LEOPFetcher_Work
+    participant SPIFFS as SPIFFS cache
+    participant SERVER as Glennergy / LEOP server
+    participant UI as UI snapshot queues
+
+    IDF->>APP: Clear connected state
+    IDF-->>LEOP: Notify task from registered state callback
+    LEOP->>LEOP: Observe no Wi-Fi and publish NO_WIFI on state change
+    alt Cache not yet loaded in this offline period
+        LEOP->>SPIFFS: Load recommendation, weather and price JSON
+        SPIFFS-->>LEOP: Per-file success or failure
+        LEOP-->>UI: Publish current category containers
+        LEOP->>LEOP: Mark offline cache attempt complete
+    else Cache already attempted in this offline period
+        LEOP->>LEOP: Do not reload cache
+    end
+    loop While Wi-Fi remains unavailable
+        LEOP->>LEOP: Wait up to 1 second or until notified
+    end
+
+    IDF->>APP: Set connected state after GOT_IP
+    IDF-->>LEOP: Notify task
+    LEOP->>LEOP: Clear offline-period guard and publish CHECKING
+    alt Full-fetch deadline has been reached
+        loop Recommendation, weather, then price
+            LEOP->>SERVER: HTTP GET category
+            SERVER-->>LEOP: Response body or transport failure
+            opt A response body exists
+                LEOP->>SPIFFS: Attempt generic-JSON cache write
+                LEOP->>LEOP: Parse category schema after cache attempt
+            end
+        end
+        LEOP-->>UI: Publish all current category containers
+    else Full-fetch deadline is still in the future
+        LEOP->>SERVER: Run due recommendation-route health probe
+        Note over LEOP,SERVER: The scheduled full fetch occurs when its independent deadline is reached
+    end
+```
+
+Loss of Wi-Fi does not guarantee that every cache file loads successfully; the
+one-time guard records that the offline attempt occurred. Reconnection also
+does not guarantee an immediate full fetch when its existing deadline has not
+arrived. During a later full fetch, syntactically valid JSON can be written to
+the category cache before category-specific parsing succeeds. A parse failure
+does not trigger automatic fallback to the previous cache, and the current
+containers published to the UI can therefore contain a mix of new, old,
+empty, or failed-status data.
 
 ## Planned two-way registration
 

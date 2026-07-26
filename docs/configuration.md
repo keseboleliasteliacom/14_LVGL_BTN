@@ -80,6 +80,38 @@ logs, issues, or commits. NVS persistence is storage, not a claim that the
 credentials are encrypted or access-controlled for the product threat model.
 See [connectivity](connectivity.md) for the connection flow.
 
+## Persistence flow
+
+```mermaid
+flowchart TD
+    Boot[app_main boot] --> Defaults[Assign all compiled defaults in RAM]
+    Defaults --> Load[Read config/leop_min, test_mode and sensor_ms from NVS]
+    Load --> PerKey{Each key read succeeds?}
+    PerKey -->|Yes| Override[Override that RAM field with stored value]
+    PerKey -->|No| Keep[Log warning and keep that field's default]
+
+    UART[Accepted UART config command] --> RamFirst[Change live app.config_data field first]
+    RamFirst --> CommitSetting[Write typed config key and commit]
+    CommitSetting --> SettingResult{Write and commit succeed?}
+    SettingResult -->|Yes| Persisted[RAM and stored setting agree]
+    SettingResult -->|No| Split[Log warning; RAM remains changed and stored value may differ]
+
+    UI[Wi-Fi UI connect request] --> Pending[Keep SSID and password as pending RAM values]
+    Pending --> GotIP{Station obtains an IP address?}
+    GotIP -->|No| NoSave[Do not save pending credentials]
+    GotIP -->|Yes| SaveSSID[Write and commit wifi/ssid]
+    SaveSSID --> SavePW[Separately write and commit wifi/pw]
+    SavePW --> PairResult{Both commits succeed?}
+    PairResult -->|Yes| PairSaved[Stored credential pair updated]
+    PairResult -->|No| Partial[Log warning; pair may be partially updated]
+```
+
+The three branches are related storage flows, not one transaction. Application
+settings are loaded per key, UART changes RAM before persistence, and the Wi-Fi
+SSID/password commits are separate. The diagram therefore does not promise
+rollback, atomicity across values, or recovery of an interrupted credential
+pair.
+
 ## NVS initialization and automatic erase
 
 `app_main()` calls `NVS_Init()` before loading settings. If ESP-IDF reports

@@ -2,7 +2,7 @@
 
 | Metadata | Value |
 | --- | --- |
-| Status | Coverage assessment complete; owner acceptance and Mermaid rendering decision pending |
+| Status | Accepted locally; publication and GitHub Mermaid visual review pending |
 | Campaign target | Approximately 90% final documentation for approximately 95% complete code |
 | Authoritative source | Glennergy-ESP `b5a502a`; Glennergy `42798be` |
 | Stable comparison | ESP `origin/main` `daf35c5`; Glennergy `origin/main` `61761b5` |
@@ -38,11 +38,11 @@ environment. These are visible validation gaps, not implied passes.
 | Setup and development | [ESP development](../development.md), Glennergy `Docs/development.md` | Covered with build-versus-deploy/flash boundaries | Campaign environment did not execute all documented toolchains/commands |
 | Configuration and persistence | [ESP configuration](../configuration.md), [UART reference](../UART_COMMANDS.md), Glennergy `Docs/property-configuration.md` | Covered, including defaults, keys, ranges, parser disagreement and error propagation | Registration/property-write design remains unresolved |
 | Deployment and operations | Glennergy `Docs/operations.md`, `Docs/security.md` | Covered from scripts, Makefiles and units with destructive actions gated | No production host, Nginx, TLS, DNS, firewall, backup or rollback was exercised |
-| Runtime flow and sequence diagrams | System context, both architecture guides, connectivity and configuration | Mermaid sources cover the major confirmed current flows | Mermaid CLI unavailable; render/readability acceptance pending |
+| Runtime flow and sequence diagrams | System context, both architecture guides, connectivity and configuration | Mermaid sources cover the major confirmed current flows | Local renderer unavailable; owner accepted GitHub PR visual review |
 | Troubleshooting | [ESP troubleshooting](../troubleshooting.md), Glennergy `Docs/troubleshooting.md` | Covered with read-only-first diagnosis and mutation gates | Runtime exercises remain intentionally unperformed |
 | Current limitations and future direction | [Current limitations](../current-limitations.md), [interface contract](../interface-contract.md), relevant guides | Covered and current/planned distinction independently reviewed | Recommendation meaning, identity, registration, auth and route migration remain design work |
 | Navigation and source-of-truth control | [ESP documentation index](../README.md), Glennergy `Docs/README.md`, [disposition register](DOCUMENT_DISPOSITION.md) | Canonical locations defined and most guides linked | Competing older documents still need final banners/archive decisions; disposition register status must be finalized |
-| Maintenance handoff | [Maintenance map](MAINTENANCE_MAP.md), validation/evidence/claim registers | Drafted | Automation and owner acceptance pending |
+| Maintenance handoff | [Maintenance map](MAINTENANCE_MAP.md), validation/evidence/claim registers | Complete for this campaign | Future automation remains optional |
 | Independent final verification | [Final audit report](FINAL_AUDIT_REPORT.md) plus claim-level and artifact-specific reviews | Critical/high tracked-documentation gate passed after focused retest | Owner acceptance remains pending |
 
 ## Audience journeys
@@ -126,7 +126,7 @@ workflow changes require revalidation through the maintenance map.
 
 | Deferred check | Reason | Acceptance effect | Future trigger |
 | --- | --- | --- | --- |
-| Mermaid rendering and visual inspection | Mermaid CLI/runtime unavailable locally | Diagram source exists but render gate is not passed | Install/enable renderer, render every Mermaid block, inspect labels/layout |
+| Mermaid rendering and visual inspection | Mermaid CLI/runtime unavailable locally | Static semantics passed; owner accepted deferral | Inspect every diagram in GitHub PR rendering before merge |
 | Complete ESP-IDF clean build/test execution | Toolchain availability and campaign scope | Static build instructions are not execution proof | CI/local ESP-IDF environment available; run clean build and focused tests |
 | Server build and full command execution | Cross-platform/tool availability and no production mutation | Command text/source reviewed; not every command observed | Linux CI/dev host available; run safe build/check targets |
 | Interface runtime/schema fixtures | No controlled integrated server/device harness | Static compatibility coverage only | Add server/client fixture tests for routes, statuses, bounds and schemas |
@@ -155,15 +155,13 @@ compiled endpoint configuration, stale narrative files, generated artifacts,
 and historical plans remain cleanup/disposition work. Documentation coverage is
 not authorization to delete, rewrite, rotate, deploy, or modify `dev` source.
 
-## Remaining acceptance work
+## Remaining publication work
 
-Before campaign acceptance:
+Before merging the documentation:
 
-1. Render and inspect Mermaid diagrams, or obtain explicit owner acceptance of
-   the documented rendering deferral.
-2. Confirm navigation, secret/address scans, whitespace and links on the final
-   committed set.
-3. Obtain project-owner acceptance before publication/PR completion.
+1. Push the documentation branches and open draft PRs.
+2. Inspect Mermaid diagrams through GitHub PR rendering.
+3. Review the final branch diffs and CI results before merge.
 
-Until those steps are complete, this report is a draft assessment rather than
-a completion certificate.
+The local documentation campaign is accepted. Publication and merge remain
+separate repository-review steps.

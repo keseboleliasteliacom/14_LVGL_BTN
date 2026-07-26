@@ -2,7 +2,7 @@
 
 | Metadata | Value |
 | --- | --- |
-| Status | Tracked-documentation critical/high gate passed; owner acceptance pending |
+| Status | Accepted locally; tracked-documentation critical/high gate passed |
 | Audit scope | Canonical and changed tracked Markdown in Glennergy-ESP and Glennergy |
 | ESP source snapshot | `b5a502afd9ca2ae374b3131b0031b8390f93b348` |
 | Glennergy source snapshot | `42798bee227fcd621cbcb0b37c2b5da771210086` |
@@ -12,8 +12,9 @@
 
 The final focused retest found zero unresolved critical or high factual,
 safety, secret-handling, or publication findings in the tracked documentation
-set. This satisfies the campaign's critical/high audit gate. Final project-owner
-acceptance and the Mermaid rendering decision remain open.
+set. This satisfies the campaign's critical/high audit gate. The project owner
+accepted deferring actual Mermaid rendering to GitHub PR review and authorized
+sanitizing the excluded untracked decision document.
 
 ## Review method
 
@@ -60,17 +61,18 @@ covered:
 | Private-key/credential-value scan of canonical docs | Pass |
 | JSON example parsing | Pass for four detected JSON blocks |
 | Mermaid source semantic/fence review | Pass by static inspection |
-| Mermaid rendered output | Not executed; renderer unavailable locally |
+| Mermaid rendered output | Deferred by owner to GitHub PR review; renderer unavailable locally |
 | Firmware/server builds and runtime fixtures | Not executed in this documentation-only campaign |
 | Hardware, live endpoint and production-host tests | Not executed and not implied |
 
 ## Known exclusions and deferred work
 
-- An unrelated untracked, user-owned ESP planning document remains untouched
-  and is known to contain the deployment address. It must remain excluded from
-  staging/publication unless the owner separately approves sanitizing it.
+- An unrelated untracked, user-owned ESP planning document was sanitized with
+  owner approval without printing the address. It remains outside the campaign
+  commits pending a separate content/inclusion review.
 - Mermaid diagrams have not been rendered by a local CLI. Static syntax and
-  semantic review passed, but visual rendering acceptance is pending.
+  semantic review passed; the owner accepted visual review through GitHub's PR
+  rendering instead.
 - Stable `origin/main` remains the production code reference; no live
   production deployment was inspected.
 - Registration, UUID-like identity, authentication, authorization, endpoint
@@ -81,7 +83,6 @@ covered:
 
 ## Acceptance rule
 
-This audit supports publication after the project owner accepts the remaining
-rendering/exclusion decisions and final branch diff. It does not authorize
+This audit supports draft-PR publication and GitHub visual review. It does not authorize
 source cleanup, production operations, hardware access, deletion, direct `dev`
 changes, or disclosure of excluded values.

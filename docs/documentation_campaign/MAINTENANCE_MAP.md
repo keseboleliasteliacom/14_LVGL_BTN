@@ -2,7 +2,7 @@
 
 | Metadata | Value |
 | --- | --- |
-| Status | Maintenance handoff complete; project-owner acceptance pending |
+| Status | Maintenance handoff accepted for the local documentation campaign |
 | Canonical cross-project owner | Glennergy-ESP |
 | Source baseline | Glennergy-ESP `b5a502a`; Glennergy `42798be` |
 | Audience | Maintainers, reviewers, and documentation contributors |

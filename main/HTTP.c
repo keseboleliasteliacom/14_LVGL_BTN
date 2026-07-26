@@ -125,6 +125,8 @@ esp_err_t HTTPClient_GET(const char *url, HTTPResponse *http_response)
 
 /**
  * @brief Performs an HTTP probe without retaining the response body.
+ *
+ * See header for full contract documentation.
  */
 esp_err_t HTTPClient_Probe(const char *url, int timeout_ms, int *status_code)
 {

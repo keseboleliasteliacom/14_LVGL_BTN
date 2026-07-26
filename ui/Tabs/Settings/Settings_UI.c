@@ -144,11 +144,6 @@ static void Settings_UI_FormatLastUpdate(
     snprintf(buffer, buffer_size, "No data yet");
 }
 
-
-
-
-
-
 /**
  * @brief Implementation of Settings_UI_Initialize.
  *

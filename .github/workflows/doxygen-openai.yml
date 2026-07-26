@@ -14,6 +14,10 @@ on:
         description: "OpenAI model to use for this run"
         required: false
         default: "gpt-5.4-mini"
+      reasoning_effort:
+        description: "Reasoning effort: none, low, medium, high, or xhigh"
+        required: false
+        default: "medium"
       rerun_mode:
         description: "Use 'all' to process selected file_paths, or 'remaining_only' to rerun previously rejected/deferred files"
         required: false
@@ -46,6 +50,7 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_MODEL: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.model || 'gpt-5.4-mini' }}
+      OPENAI_REASONING_EFFORT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.reasoning_effort || 'medium' }}
       MAX_FILES_PER_RUN: "25"
       MAX_CHARS_PER_FILE: "30000"
       OPENAI_MAX_OUTPUT_TOKENS: "100000"
@@ -205,9 +210,9 @@ jobs:
         id: update_docs
         run: |
           if [ "${RERUN_MODE}" = "remaining_only" ]; then
-            python tools/doxygen_ai/update_docs.py --remaining-only --manifest "${MANIFEST_PATH}" --model "${OPENAI_MODEL}" --test-label "${TEST_LABEL}"
+            python tools/doxygen_ai/update_docs.py --remaining-only --manifest "${MANIFEST_PATH}" --model "${OPENAI_MODEL}" --reasoning-effort "${OPENAI_REASONING_EFFORT}" --test-label "${TEST_LABEL}"
           else
-            python tools/doxygen_ai/update_docs.py --files "${MANUAL_FILE_PATHS}" --manifest "${MANIFEST_PATH}" --model "${OPENAI_MODEL}" --test-label "${TEST_LABEL}"
+            python tools/doxygen_ai/update_docs.py --files "${MANUAL_FILE_PATHS}" --manifest "${MANIFEST_PATH}" --model "${OPENAI_MODEL}" --reasoning-effort "${OPENAI_REASONING_EFFORT}" --test-label "${TEST_LABEL}"
           fi
 
       - name: Detect eligible documentation changes

@@ -27,7 +27,6 @@ from typing import Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DOCS_DIR = REPO_ROOT / "docs"
-AI_CONTEXT_PATH = REPO_ROOT / "AI_CONTEXT.md"
 REJECTED_OUTPUT_DIR = REPO_ROOT / "tools" / "doxygen_ai" / "rejected"
 STATE_DIR = REPO_ROOT / "tools" / "doxygen_ai" / "state"
 DEFAULT_MANIFEST_PATH = STATE_DIR / "run_manifest.json"
@@ -35,11 +34,13 @@ ALLOWED_SUFFIXES = {".c", ".h", ".cpp", ".hpp", ".cc", ".hh"}
 HEADER_SUFFIXES = {".h", ".hpp", ".hh"}
 SOURCE_SUFFIXES = {".c", ".cpp", ".cc"}
 DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
+DEFAULT_REASONING_EFFORT = os.getenv("OPENAI_REASONING_EFFORT", "medium")
+REASONING_EFFORTS = ("none", "low", "medium", "high", "xhigh")
 DEFAULT_MAX_FILES = int(os.getenv("MAX_FILES_PER_RUN", "2"))
 DEFAULT_MAX_CHARS = int(os.getenv("MAX_CHARS_PER_FILE", "18000"))
 DEFAULT_MAX_OUTPUT_TOKENS = int(os.getenv("OPENAI_MAX_OUTPUT_TOKENS", "12000"))
-DEFAULT_INPUT_COST_PER_MILLION = float(os.getenv("OPENAI_INPUT_COST_PER_MILLION", "0.25"))
-DEFAULT_OUTPUT_COST_PER_MILLION = float(os.getenv("OPENAI_OUTPUT_COST_PER_MILLION", "2.00"))
+DEFAULT_INPUT_COST_PER_MILLION = float(os.getenv("OPENAI_INPUT_COST_PER_MILLION", "0.75"))
+DEFAULT_OUTPUT_COST_PER_MILLION = float(os.getenv("OPENAI_OUTPUT_COST_PER_MILLION", "4.50"))
 DEFAULT_USD_TO_SEK = float(os.getenv("OPENAI_USD_TO_SEK", "9.19981"))
 DEFAULT_TEST_LABEL = os.getenv("DOXYGEN_AI_TEST_LABEL", "").strip()
 
@@ -225,101 +226,52 @@ def build_prompt(
     header_template: str,
     source_template: str,
     main_template: str,
-    ai_context: str,
     paired_file_context: str,
 ) -> tuple[str, str]:
     file_kind = "header" if path.suffix.lower() in HEADER_SUFFIXES else "source"
     mode = "update_existing_docs" if has_doxygen(code) else "document_full_file"
     template = header_template if file_kind == "header" else main_template if is_entrypoint_or_test(path, code) else source_template
-    source_file_guidance = ""
+    system_prompt = """You are a documentation-only refactoring assistant for an embedded C/C++ repository.
 
-    if file_kind == "source" and not is_entrypoint_or_test(path, code):
-        source_file_guidance = """Additional source-file guidance:
-- Keep public function documentation in source files brief when the paired header already documents the public API contract.
-- For public non-static functions in source files, the default style should be brief-only documentation.
-- Preferred pattern for public non-static functions in source files:
-  /**
-   * @brief Implementation of <function name>.
-   *
-   * See header for full contract documentation.
-   */
-- Do not repeat @param, @return, @note, @warning, @pre, or @post blocks for public source-file functions unless they describe implementation-specific behavior that is not already documented in the header.
-- If a public source-file function can be documented correctly with `@brief Implementation of <function>.` and `See header for full contract documentation.`, prefer that simpler form.
-- Repeating header-level public API contract details in source files is undesirable output.
-- Internal or static helper functions may include additional tags, but only when they add meaningful, non-obvious information.
+LAYER 1 — IMMUTABLE TRANSFORMATION CONTRACT
+- Only Doxygen and ordinary comments may change. Every non-comment code token must remain unchanged and in the same order.
+- Preserve ordinary developer comments, TODOs, commented-out code/includes, logging, strings, identifiers, declarations, signatures, initialization, control flow, formatting intent, and line endings.
+- Do not add, remove, move, or rewrite any non-comment code, including declarations, prototypes, includes, macros, or runtime diagnostics.
+- Existing Doxygen may change when needed for accuracy, required coverage, or the repository's target style. Avoid synonym-only and formatting-only churn.
+- Documentation must describe only behavior supported by the code and must be written in English.
+- Return the complete updated target file only, without Markdown fences or explanations.
 """
 
-    system_prompt = f"""You are a documentation-only refactoring assistant for a C/C++ repository.
+    user_prompt = f"""LAYER 2 — CANONICAL DOCUMENTATION POLICY
 
-You must obey these rules:
-- Only add or update Doxygen comments and normal comments.
-- Do not change code logic, control flow, initialization, signatures, includes, ordering, or formatting unless required to insert comments.
-- Do not change line endings, indentation, spacing, or formatting-only details unless required to place comments.
-- Do not add new declarations, forward declarations, helper prototypes, variables, includes, macros, or any other non-comment lines.
-- Do not move existing declarations or introduce new prototypes to make documentation placement easier.
-- Do not change debug/log statements such as `printf`, `ESP_LOG*`, `ESP_ERROR_CHECK`, or similar runtime diagnostics.
-- Do not change string literals, identifiers, macro names, enum values, struct field names, function names, JSON keys, URLs, constants, or any other code tokens.
-- Treat all existing code tokens as immutable, including case-sensitive text inside string literals.
-- External/API-facing strings are especially sensitive. Copy JSON keys, URLs, protocol strings, log format strings, and other string literals byte-for-byte.
-- Never change string arguments passed to parser, lookup, formatting, or protocol functions such as `json_object_get(...)`, `json_string_value(...)`, `snprintf(...)`, logging calls, or similar APIs. These values must remain byte-for-byte identical.
-- Preserve TODOs, debug prints, commented-out code, commented-out includes, and ordinary developer comments.
-- Existing Doxygen comments may be rewritten, simplified, merged, or trimmed as needed to match the repository standard.
-- Do not remove or rewrite ordinary non-Doxygen comments unless needed to place equivalent documentation directly above the documented item.
-- Return the full updated file content only.
-- Do not wrap the result in Markdown fences.
-- All Doxygen text must be in English.
-- Suggestions, if any, must use exactly: // Suggestion: ...
-- Follow the repository's mandatory Doxygen rules and templates below.
+The following repository standard is authoritative. Apply each rule once; do not infer extra requirements from repetition.
 
-Repository AI context:
-{ai_context}
-
-Mandatory Doxygen rules:
 {docs_rules}
 
-Relevant template:
+Relevant target-style template:
 {template}
 
-Paired module file context:
-{paired_file_context}
+LAYER 3 — CURRENT FILE TASK
 
-{source_file_guidance}
-"""
-
-    user_prompt = f"""Task mode: {mode}
+Mode: {mode}
 Path: {path.relative_to(REPO_ROOT).as_posix()}
 
-Interpret the task mode as follows:
-- update_existing_docs: bring the file's documentation up to the repository standard, while preserving existing comments and code. This includes simplifying or trimming existing documentation when it is more verbose than the repository's target style examples.
-- document_full_file: add complete repository-standard Doxygen coverage for the file, while preserving existing comments and code.
+Mode behavior:
+- update_existing_docs: correct incomplete, stale, inaccurate, or unnecessarily verbose Doxygen while preserving accurate documentation.
+- document_full_file: add all documentation required by the canonical policy.
 
-Anti-churn policy:
-- If the existing documentation is accurate, satisfies every mandatory coverage rule, and remains consistent with the current implementation, do not rewrite it only for synonyms, word order, tone, or other cosmetic preferences.
-- Minimizing changes never takes priority over correctness or required coverage.
-- A documentation change is meaningful and required when any function, type, field, or file-level item required by the repository standard is undocumented; documentation contradicts the current implementation; parameters, return behavior, ownership, blocking, execution context, side effects, or important failure behavior are materially inaccurate; documentation describes behavior removed or changed by a refactor; or mandatory tags are missing.
-- Resolve every meaningful correctness or coverage issue even when the required text change is small.
+Paired module context (read-only):
+{paired_file_context}
 
-Before finalizing internally, validate that:
-- every required file/function/struct tag is present
-- the documentation matches the repository rules
-- the documentation style matches the target style examples, including reducing unnecessary boilerplate where appropriate
-- cosmetic rewrites are avoided only after accuracy, implementation consistency, and mandatory coverage have been confirmed
-- every existing Doxygen block has been compared with the current implementation rather than trusted because it already exists
-- descriptions match the current control flow and do not present commented-out or removed behavior as active behavior
-- documented side effects, blocking, queue use, network or storage I/O, callback/task context, ownership, and failure behavior are supported by the implementation
-- parameter and return descriptions match the current signature and reachable return paths
-- stale documentation left behind by a refactor is corrected even when all required Doxygen blocks are already present
-- simple debug/print helper declarations in headers stay lightweight by default, usually using only `@brief` and `@param` when applicable
-- do not expand simple debug/print helper declarations into full contract-style blocks unless extra tags add real value
-- for public source-file functions with a documented paired header, prefer the brief + see-header pattern unless implementation-specific notes are genuinely needed
-- struct field comments stay short by default unless a field is subtle or safety-critical
-- prefer short inline field comments over full multi-line field documentation blocks for ordinary struct fields
-- keep most explanatory detail at the struct level instead of repeating mini-sections for each field
-- code behavior is unchanged
+Final self-check:
+1. Required coverage is complete.
+2. Documentation agrees with signatures, reachable behavior, side effects, and relevant embedded constraints.
+3. Accurate existing documentation is not cosmetically rewritten.
+4. Every non-comment code token is unchanged.
 
-Return only the full updated file.
+Return only the complete updated target file.
 
-Current file:
+Target file contents:
 {code}
 """
     return system_prompt, user_prompt
@@ -598,7 +550,13 @@ def code_diff_excerpt(original: str, updated: str, max_lines: int = 12) -> str:
     return "\n".join(diff_lines[:max_lines])
 
 
-def call_openai(system_prompt: str, user_prompt: str, model: str, max_output_tokens: int) -> OpenAIResult:
+def call_openai(
+    system_prompt: str,
+    user_prompt: str,
+    model: str,
+    reasoning_effort: str,
+    max_output_tokens: int,
+) -> OpenAIResult:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY is required")
@@ -615,6 +573,7 @@ def call_openai(system_prompt: str, user_prompt: str, model: str, max_output_tok
                 "content": [{"type": "input_text", "text": user_prompt}],
             },
         ],
+        "reasoning": {"effort": reasoning_effort},
         "max_output_tokens": max_output_tokens,
     }
 
@@ -646,10 +605,11 @@ def call_openai_with_retry(
     system_prompt: str,
     user_prompt: str,
     model: str,
+    reasoning_effort: str,
     max_output_tokens: int,
     original: str,
 ) -> tuple[OpenAIResult, bool]:
-    first_result = call_openai(system_prompt, user_prompt, model, max_output_tokens)
+    first_result = call_openai(system_prompt, user_prompt, model, reasoning_effort, max_output_tokens)
     if not code_changed(original, first_result.text):
         return first_result, False
 
@@ -673,7 +633,7 @@ Do not alter any code tokens, including:
 Normalized code diff excerpt from the rejected attempt:
 {diff_excerpt}
 """
-    retry_result = call_openai(system_prompt, retry_user_prompt, model, max_output_tokens)
+    retry_result = call_openai(system_prompt, retry_user_prompt, model, reasoning_effort, max_output_tokens)
     return combine_openai_results(first_result, retry_result), True
 
 
@@ -681,6 +641,7 @@ def retry_missing_function_documentation(
     system_prompt: str,
     user_prompt: str,
     model: str,
+    reasoning_effort: str,
     max_output_tokens: int,
     previous_result: OpenAIResult,
     missing_functions: list[str],
@@ -698,7 +659,7 @@ For public source functions whose contract is already documented in the paired h
 Preserve every code token and all existing developer comments exactly.
 Do not make synonym-only, formatting-only, or unrelated documentation changes.
 """
-    retry_result = call_openai(system_prompt, retry_user_prompt, model, max_output_tokens)
+    retry_result = call_openai(system_prompt, retry_user_prompt, model, reasoning_effort, max_output_tokens)
     return combine_openai_results(previous_result, retry_result)
 
 
@@ -725,6 +686,7 @@ def append_github_summary(
     total_estimated_cost_usd: float,
     total_estimated_cost_sek: float,
     requested_model: str,
+    reasoning_effort: str,
     test_label: str,
 ) -> None:
     summary_path = os.getenv("GITHUB_STEP_SUMMARY", "").strip()
@@ -740,6 +702,7 @@ def append_github_summary(
         "## Doxygen AI Summary",
         "",
         f"- Requested model: {requested_model}",
+        f"- Reasoning effort: {reasoning_effort}",
         f"- Test label: {test_label or '(none)'}",
         f"- Files considered: {len(file_results)}",
         f"- Files updated: {updated_count}",
@@ -770,12 +733,14 @@ def append_github_summary(
 def write_manifest(
     manifest_path: Path,
     requested_model: str,
+    reasoning_effort: str,
     test_label: str,
     file_results: list[FileResult],
 ) -> None:
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "requested_model": requested_model,
+        "reasoning_effort": reasoning_effort,
         "test_label": test_label,
         "files": [
             {
@@ -828,6 +793,7 @@ def load_remaining_files_from_manifest(manifest_path: Path) -> list[Path]:
 def process_files(
     files: Iterable[Path],
     model: str,
+    reasoning_effort: str,
     max_chars: int,
     max_output_tokens: int,
     input_cost_per_million: float,
@@ -840,8 +806,6 @@ def process_files(
     header_template = load_text(DOCS_DIR / "template_H.h")
     source_template = load_text(DOCS_DIR / "template_C.c")
     main_template = load_text(DOCS_DIR / "template_Main.c")
-    ai_context = load_text(AI_CONTEXT_PATH)
-
     total_usage = Usage()
     changed_count = 0
     file_results: list[FileResult] = []
@@ -901,17 +865,17 @@ def process_files(
             header_template,
             source_template,
             main_template,
-            ai_context,
             paired_file_context,
         )
 
-        print(f"Processing {rel} with model {model}")
+        print(f"Processing {rel} with model {model} and reasoning effort {reasoning_effort}")
         coverage_retried = False
         try:
             result, retried = call_openai_with_retry(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 model=model,
+                reasoning_effort=reasoning_effort,
                 max_output_tokens=max_output_tokens,
                 original=original,
             )
@@ -931,6 +895,7 @@ def process_files(
                         system_prompt=system_prompt,
                         user_prompt=user_prompt,
                         model=model,
+                        reasoning_effort=reasoning_effort,
                         max_output_tokens=max_output_tokens,
                         previous_result=result,
                         missing_functions=missing_function_docs,
@@ -1085,11 +1050,13 @@ def process_files(
         total_estimated_cost_usd=total_estimated_cost,
         total_estimated_cost_sek=total_estimated_cost_sek,
         requested_model=model,
+        reasoning_effort=reasoning_effort,
         test_label=os.getenv("DOXYGEN_AI_TEST_LABEL", "").strip(),
     )
     write_manifest(
         manifest_path=manifest_path,
         requested_model=model,
+        reasoning_effort=reasoning_effort,
         test_label=os.getenv("DOXYGEN_AI_TEST_LABEL", "").strip(),
         file_results=file_results,
     )
@@ -1113,6 +1080,12 @@ def main() -> int:
     parser.add_argument("--max-chars", type=int, default=DEFAULT_MAX_CHARS)
     parser.add_argument("--max-output-tokens", type=int, default=DEFAULT_MAX_OUTPUT_TOKENS)
     parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument(
+        "--reasoning-effort",
+        choices=REASONING_EFFORTS,
+        default=DEFAULT_REASONING_EFFORT,
+        help="Responses API reasoning effort (default: %(default)s)",
+    )
     parser.add_argument("--test-label", default=DEFAULT_TEST_LABEL)
     parser.add_argument("--input-cost-per-million", type=float, default=DEFAULT_INPUT_COST_PER_MILLION)
     parser.add_argument("--output-cost-per-million", type=float, default=DEFAULT_OUTPUT_COST_PER_MILLION)
@@ -1160,6 +1133,7 @@ def main() -> int:
     changed_count = process_files(
         limited_files,
         model=args.model,
+        reasoning_effort=args.reasoning_effort,
         max_chars=args.max_chars,
         max_output_tokens=args.max_output_tokens,
         input_cost_per_million=args.input_cost_per_million,

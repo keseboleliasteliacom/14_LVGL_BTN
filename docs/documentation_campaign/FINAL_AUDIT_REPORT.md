@@ -94,9 +94,11 @@ ownership so both repositories are independently useful:
   in both documents together.
 
 The amendment reused the reviewed contract rather than reconstructing it. The
-shared wire sections were compared for exact synchronization; relative links,
-seven JSON examples, whitespace and targeted address/key scans passed. No
-source, endpoint, hardware or production system was changed or contacted.
+server copy was then reduced to producer-owned API behavior while the ESP copy
+retained consumer details. Shared routes, statuses, schemas and edge cases were
+cross-checked; relative links, JSON examples, whitespace and targeted
+address/key scans passed. No source, endpoint, hardware or production system
+was changed or contacted.
 
 ## Acceptance rule
 

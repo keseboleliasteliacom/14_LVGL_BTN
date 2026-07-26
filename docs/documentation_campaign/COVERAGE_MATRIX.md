@@ -8,8 +8,8 @@ Status: Initial target set; Phase 1 inventory pending.
 | Cross-project interface | General and technical developers | Both HTTP implementations and old API docs | Overview plus exact current/planned contract | Drafted and independently corrected | Whitespace/link/secret scan pass; runtime/schema fixtures pending |
 | Glennergy README | New developers/operators | `glennergy/README.md` | Approachable current entry point | Audited | Design pending |
 | Glennergy-ESP README | New/embedded developers | `Glennergy-ESP/README.md` | Approachable current entry point | Audited; replacement high priority | Design pending |
-| Server architecture | Server developers/operators | Code, systemd, scripts and plans | Verified detailed document | Discovery complete | Design pending |
-| Firmware architecture | Embedded developers | Code, tasks, queues and UI | Verified detailed document | Discovery complete | Design pending |
+| Server architecture | Server developers/operators | Code, systemd, scripts and plans | Verified detailed document | Drafted and independently corrected | Whitespace/link/secret scan and semantic review pass; Mermaid render pending |
+| Firmware architecture | Embedded developers | Code, tasks, queues and UI | Verified detailed document | Drafted and independently corrected | Whitespace/link/secret scan and semantic review pass; Mermaid render pending |
 | Setup/build/deployment | Developers/operators | Scripts and workflows | Verified commands and prerequisites | Discovery complete | Command execution pending |
 | Configuration | Developers/operators | Code and examples | Safe overview plus reference | Discovery complete; ID/capacity decisions pending | Design pending |
 | Runtime diagrams | Mixed | Code paths and existing assets | Rendered diagrams as code | Flows traced | Design/render pending |

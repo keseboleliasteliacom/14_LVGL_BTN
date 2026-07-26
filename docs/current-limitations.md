@@ -73,6 +73,20 @@ without a common mutex. Depth-one queues provide snapshots for selected UI
 flows, but they do not protect every shared-state access. This is an implemented
 concurrency limitation, not evidence that a race has been reproduced.
 
+### Task-name arguments
+
+UART and Sensor task creation currently pass the address of their task-name
+pointer rather than the string pointer expected by `xTaskCreate`. Their intended
+metadata names are `UART` and `Sensor`, but the runtime task names can be invalid
+or garbage until those calls are corrected.
+
+### LVGL locking
+
+Most tab updates run under the UI task's LVGL lock. The Wi-Fi connected-result
+branch currently changes labels and colors without acquiring that lock. This is
+a concrete unlocked widget-update path, not merely an unverified concurrency
+risk.
+
 ## Current interface limitations
 
 ### Transitional endpoint structure

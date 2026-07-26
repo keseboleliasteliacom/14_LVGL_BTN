@@ -1,11 +1,7 @@
 # User interface guide
 
-| Metadata | Value |
-| --- | --- |
-| Status | Current UI with partial and known-defective behavior |
-| Audience | Users, evaluators, firmware developers, and maintainers |
-| Last verified | Glennergy-ESP `b5a502a` |
-| Evidence | Static source inspection; display and touch unverified on hardware |
+> **In short:** The UI has five tabs. Home, Electricity, Weather and WiFi show
+> current snapshots; Settings currently has three working fields out of five.
 
 The firmware presents one main LVGL screen with five tabs: **Home**,
 **Electricity**, **Weather**, **WiFi**, and **Settings**. A persistent header
@@ -15,6 +11,16 @@ connection state.
 This guide describes what current code intends to display. It does not claim
 that layout, touch coordinates, colors, timing, or peripheral behavior have
 been observed on a physical panel.
+
+## Tab overview
+
+| Tab | Main purpose | Important limitation |
+| --- | --- | --- |
+| Home | Local BME280 temperature, humidity and pressure | Freshness depends on sensor validity |
+| Electricity | Recommendation snapshot | Recommendation meaning remains unresolved |
+| Weather | Forecast snapshot | Timestamp and UV compatibility gaps apply |
+| WiFi | Scan and connect | Connected styling may remain after disconnect |
+| Settings | Uptime, restart and time-sync status | System Status and Last Update are placeholders |
 
 ## Header status
 
@@ -173,6 +179,18 @@ See [current limitations](current-limitations.md) for the cross-project backlog,
 ownership, and [troubleshooting](troubleshooting.md) for safe diagnosis.
 
 ## Implementation evidence
+
+<details>
+<summary>Verification metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Audience | Users, evaluators, firmware developers, and maintainers |
+| Applies to | Glennergy-ESP `dev` at `b5a502a` |
+| Evidence | Static source and generated UI inspection |
+| Not verified | Display, touch, layout, timing, or other physical-hardware behavior |
+
+</details>
 
 - `ui/screens/Main_UI.c`: screen, header, five tabs, and Settings rows;
 - `ui/screens/ui_Screen1.c`: initialization and update orchestration;

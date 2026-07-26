@@ -1,13 +1,7 @@
 # Glennergy-ESP firmware architecture
 
-| Metadata | Value |
-| --- | --- |
-| Status | Current implementation with known limitations |
-| Audience | Firmware developers, maintainers, and technical reviewers |
-| Canonical owner | Glennergy-ESP |
-| Applicability | Authoritative `dev`; stable-production differences require separate validation |
-| Last source verification | Glennergy-ESP `b5a502a` |
-| Evidence type | Static source inspection; no runtime or hardware validation |
+> **In short:** Five FreeRTOS tasks coordinate Wi-Fi, UI, UART, the BME280
+> sensor and LEOP fetching around shared application state and depth-one queues.
 
 Glennergy-ESP is ESP-IDF firmware for an ESP32-S3-based display unit. It reads
 the local BME280 environment sensor, manages Wi-Fi, fetches LEOP data from the
@@ -19,6 +13,11 @@ For the whole-system boundary, see [System context](system-context.md). For the
 current HTTP contract, see [Glennergy interface contract](interface-contract.md).
 Known partial and planned behavior is collected in
 [Current limitations](current-limitations.md).
+
+If you only need the mental model, read **Application tasks**, **Queues and
+notifications**, and **Failure and recovery boundaries**. Startup order,
+module internals and source evidence are reference sections for implementation
+work.
 
 ## Startup and initialization
 
@@ -348,6 +347,18 @@ evidence; they do not prove that every task, queue, failure path, configuration,
 or peripheral behavior documented here is running in production.
 
 ## Maintenance and verification
+
+<details>
+<summary>Verification metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Audience | Firmware developers and maintainers |
+| Applies to | Glennergy-ESP `dev` at `b5a502a` |
+| Evidence | Static source inspection and documentation checks |
+| Not verified | Runtime, physical hardware, serial devices, real VPS, or production services |
+
+</details>
 
 Re-check this document when any of these change:
 

@@ -11,6 +11,19 @@ Start here to find the current source for a topic. Some older documents remain
 available as evidence or planning history while they are consolidated. A file
 being present in the repository does not by itself make it current.
 
+## Choose your path
+
+| You are looking forâ€¦ | Start with | Then continue to |
+| --- | --- | --- |
+| A quick project introduction | [Project README](../README.md) | [System context](system-context.md) and [current limitations](current-limitations.md) |
+| Firmware implementation details | [Development guide](development.md) | [Architecture](architecture.md), [hardware](hardware.md), and [configuration](configuration.md) |
+| HTTP integration details | [ESP interface contract](interface-contract.md) | [Connectivity](connectivity.md) and the [server API reference](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/http-api.md) |
+| UI or serial-console behavior | [UI guide](ui-guide.md) | [UART command reference](UART_COMMANDS.md) |
+| A problem to diagnose | [Troubleshooting](troubleshooting.md) | The relevant implementation guide above |
+
+You do not need to read every document in order. Each detailed guide begins
+with its normal-use model before moving into limitations and source evidence.
+
 ## Start here
 
 - [System context](system-context.md) — how Glennergy and Glennergy-ESP form one

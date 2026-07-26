@@ -1,18 +1,12 @@
 # Glennergy system context
 
-| Metadata | Value |
-| --- | --- |
-| Status | Current system overview with planned work clearly separated |
-| Audience | Newcomers, developers, operators, maintainers, and evaluators |
-| Canonical owner | Glennergy-ESP (for cross-project system documentation) |
-| Applies to | Authoritative `dev` snapshots listed below |
-| Last verified: Glennergy-ESP | `b5a502afd9ca2ae374b3131b0031b8390f93b348` |
-| Last verified: Glennergy | `42798bee227fcd621cbcb0b37c2b5da771210086` |
-| Stable-production references | Glennergy-ESP `daf35c538d84586576f8286c2d543eb1c3c89e6a`; Glennergy `61761b5eda30bee417a0b6e33e10fb061e18db26` |
+> **In short:** Glennergy is the LEOP server; Glennergy-ESP is the display
+> firmware. The current connection is read-only HTTP initiated by the ESP.
 
 This document explains how the two repositories form one system. It is an
-orientation guide, not the detailed HTTP contract or a replacement for either
-repository's architecture documentation.
+orientation guide. Start here for the overall picture, then follow links to the
+API or repository-specific architecture only when you need implementation
+detail.
 
 The implementation statements below were verified against the authoritative
 `dev` snapshots. The stable-production commits are recorded for traceability,
@@ -215,6 +209,19 @@ security-reviewed before documentation can describe a final protocol.
   — server processes, IPC, schedules, and data ownership.
 
 ## Maintenance
+
+<details>
+<summary>Verification metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Owner | Glennergy-ESP documentation |
+| Applies to | Authoritative `dev` branches in both repositories |
+| Glennergy-ESP snapshot | `b5a502a` |
+| Glennergy snapshot | `42798be` |
+| Verification boundary | Static repository inspection; no production or hardware access |
+
+</details>
 
 Recheck this document when either repository adds a system component, changes
 communication direction or transport, changes the deployment boundary,

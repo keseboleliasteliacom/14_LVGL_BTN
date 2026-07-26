@@ -1,10 +1,7 @@
 # Connectivity and data-flow guide
 
-| Metadata | Value |
-| --- | --- |
-| Status | Current firmware behavior |
-| Transport | Wi-Fi station and plain HTTP GET |
-| Last verified | Glennergy-ESP `b5a502a`; Glennergy `42798be` |
+> **In short:** Wi-Fi events wake the LEOP task; it fetches three datasets,
+> publishes the latest snapshots and attempts one cache load per offline period.
 
 Glennergy-ESP connects as a Wi-Fi station and initiates read-only HTTP requests
 to Glennergy, which acts as the LEOP server. Exact request grammar and payloads
@@ -14,6 +11,17 @@ behavior.
 
 Public documentation intentionally uses `<LEOP_BASE_URL>` and does not include
 the configured VPS address.
+
+## Quick model
+
+1. Wi-Fi obtains an IP address and wakes the LEOP task.
+2. LEOP fetches recommendation, weather and price in sequence.
+3. Results become connected, degraded or unavailable state.
+4. Received JSON may be cached before category validation.
+5. After Wi-Fi loss, each cache is attempted once for that offline period.
+
+Read the detailed queue and timing sections only when debugging scheduling,
+reconnects, health checks or stale data.
 
 ## Runtime contexts and queues
 
@@ -359,6 +367,17 @@ before implementation. It is not an extension of the current unauthenticated
 GET behavior.
 
 ## Source map
+
+<details>
+<summary>Verification metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Transport | ESP-initiated HTTP reads over the current LEOP interface |
+| Applies to | Glennergy-ESP `dev` at `b5a502a` |
+| Verification boundary | Static source inspection; no live network, VPS, or hardware testing |
+
+</details>
 
 - `main/WiFi.*` — station lifecycle, queues, event callbacks, credential flow,
   and reconnect scheduling.

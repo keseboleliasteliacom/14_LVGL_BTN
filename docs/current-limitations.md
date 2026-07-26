@@ -1,16 +1,27 @@
 # Current limitations and planned completion work
 
-| Metadata | Value |
-| --- | --- |
-| Status | Current implementation and approved future direction |
-| Canonical owner | Glennergy-ESP |
-| Audience | All readers |
-| Last verified | Glennergy-ESP `b5a502a`; Glennergy `42798be` |
+> **In short:** The system is close to complete, but identity/registration,
+> endpoint shape, recommendation meaning and parts of the UI are not final.
 
 Glennergy is close to its intended implementation, but several features and
 interfaces remain partial, temporary or unresolved. This page prevents those
 gaps from being mistaken for completed behavior. It is not an authorization to
 change or delete source code.
+
+## Limitations at a glance
+
+| Area | What to know first |
+| --- | --- |
+| Property selection | The ESP uses temporary integer property ID `2`; UUID-like device identity and registration are planned |
+| Capacity | Five properties is a temporary test limit |
+| Recommendation | The numeric `type` field exists, but its intended meaning is unresolved |
+| UI | Three of five Settings fields work; Wi-Fi status can remain visually connected after loss |
+| HTTP | Current routes are backwards, unauthenticated and plain HTTP |
+| Compatibility | Timestamp, UV type, cache validation and bounds behavior have known gaps |
+| Verification | Full hardware, production and stable end-to-end behavior was not tested in this campaign |
+
+The sections below explain each item precisely and distinguish confirmed
+behavior from planned work.
 
 ## Temporary behavior
 
@@ -178,6 +189,17 @@ documentation campaign’s cleanup register. A candidate is not considered safe
 to delete merely because static reference searches did not find an active call.
 
 ## Update triggers
+
+<details>
+<summary>Verification metadata</summary>
+
+| Item | Value |
+| --- | --- |
+| Audience | Users, evaluators, developers, and maintainers |
+| Applies to | Glennergy-ESP `dev` at `b5a502a` and Glennergy `dev` at `42798be` |
+| Verification boundary | Static repository inspection; unresolved behavior remains explicitly unresolved |
+
+</details>
 
 Update this page whenever one of these limitations is fixed, reclassified,
 reproduced at runtime, or replaced by an approved design. Move resolved items

@@ -30,12 +30,16 @@ being present in the repository does not by itself make it current.
   authorized flash/monitor boundaries.
 - [Hardware guide](hardware.md) — source-derived board, display/touch, I2C and
   BME280 configuration with unverified hardware behavior labeled.
-- `configuration.md` — planned canonical NVS, Wi-Fi and interval reference.
-- [UART command reference](UART_COMMANDS.md) — existing reference; persistence
-  and command details are being reconciled with current code.
-- `connectivity.md` — planned canonical Wi-Fi, LEOP, cache and health-state guide.
-- `ui-guide.md` — planned screen, status and Settings-field guide.
-- `troubleshooting.md` — planned read-only-first diagnostic guide.
+- [Configuration](configuration.md) — NVS namespaces, keys, defaults, Wi-Fi
+  credential storage and UART persistence behavior.
+- [UART command reference](UART_COMMANDS.md) — exact current commands,
+  validation, persistence, output intent and safety boundaries.
+- [Connectivity](connectivity.md) — Wi-Fi, LEOP, cache, health-state and retry
+  lifecycles.
+- [UI guide](ui-guide.md) — current tabs, status indicators, Settings fields and
+  known display/locking limitations.
+- [Troubleshooting](troubleshooting.md) — read-only-first firmware diagnosis and
+  gates for hardware-affecting tests.
 
 Paths shown without links are approved campaign artifacts that have not yet
 been accepted. Older files should not be used as substitutes for missing
@@ -55,7 +59,7 @@ branch-review instruction when the Glennergy documentation is published.
 | --- | --- | --- |
 | [API_ENDPOINTS.md](API_ENDPOINTS.md) | Detailed but stale API draft; contains old error, queue, timing and deployment-address assumptions | Replace with the canonical interface contract; retain/banner or archive after review |
 | [easy_api_doc.md](easy_api_doc.md) | Swedish duplicate overview with stale navigation/encoding | Redirect/banner or archive after unique information is checked |
-| [UART_COMMANDS.md](UART_COMMANDS.md) | Useful reference with stale persistence and command details | Update in place from current parser/NVS evidence |
+| [UART_COMMANDS.md](UART_COMMANDS.md) | Current canonical UART reference | Update when parser, output, persistence or safety behavior changes |
 | [ESP-IDF build workflow plan](ESP_IDF_BUILD_WORKFLOW_PLAN.md) | Roadmap containing planned CI/test capabilities | Keep clearly labelled as a plan; move implemented workflow into `development.md` |
 | Presentation assets | Rendered architecture/pin/queue/LEOP snapshots | Preserve as presentation snapshots until canonical Mermaid diagrams replace or validate them |
 

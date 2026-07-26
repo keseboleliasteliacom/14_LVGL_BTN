@@ -16,3 +16,8 @@ code where possible and must not be silently presented as code-confirmed facts.
 | ON-009 | Wi-Fi UI | `WifiValueLabel` does not change colour by status like `LeopValueLabel` | Nuanced code confirmation | It changes red→green on connection but does not update back on disconnect |
 | ON-010 | Cleanup | Both repositories contain obsolete comments and suspected unused material | Cleanup candidates | Static/reference analysis; no deletion implied |
 | ON-011 | Completion target | Aim for roughly 90% final documentation while code is roughly 95% complete | Campaign success target | Track through coverage matrix |
+| ON-012 | Recommendation semantics | Leave the intended meaning of `recommendation[].type` unresolved for now | Approved unknown | Describe current code behavior and likely inconsistency without asserting intended meaning |
+| ON-013 | Property capacity | Five properties is a temporary test limit | Owner decision | Document current limit and avoid presenting it as final capacity |
+| ON-014 | Device/property identity | Future identity should use a UUID or similar value unique to each ESP32-S3 unit | Planned direction | Current incrementing integer IDs are temporary and unauthenticated; exact UUID source, registration and authorization remain undesigned |
+| ON-015 | Canonical cross-project docs | Glennergy-ESP owns canonical cross-project documentation | Owner decision | Glennergy links to canonical ESP system/interface docs |
+| ON-016 | Production endpoint publication | Keep the real VPS address out of public docs for now | Owner decision | Use `<LEOP_BASE_URL>` and `https://leop.example.com` placeholders |

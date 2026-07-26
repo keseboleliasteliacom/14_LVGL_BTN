@@ -14,7 +14,9 @@ Status: Phase 1 candidates; unresolved terms require owner decisions.
 | Meteo | Weather-data producer; C++ implementation is production | Confirmed |
 | Spotpris | Swedish electricity spot-price producer | Confirmed |
 | Algorithm / Algoritm | Calculation process; identifiers retain Swedish spelling in places | Prefer “Algorithm” in prose; preserve identifiers exactly |
-| Recommendation | API dataset/field whose intended score/type semantics are unresolved | Decision required before final definition |
+| Recommendation | API dataset/field whose intended score/type semantics remain deliberately unresolved | Current implementation evidence must be stated without inventing intent |
+| Device identity | Planned UUID-like identifier unique to each ESP32-S3 unit | Exact source, provisioning, property mapping and authorization are not designed |
+| Property ID | Current API uses temporary unauthenticated incrementing integers | Distinguish from planned device identity |
 | Electricity area | Swedish price zone `SE1` through `SE4` | Confirmed |
 | Quarter-hour sample | One 15-minute interval; current result arrays contain 96 samples | Confirmed |
 | Live data | Data fetched from the server during current connectivity | Confirmed concept |

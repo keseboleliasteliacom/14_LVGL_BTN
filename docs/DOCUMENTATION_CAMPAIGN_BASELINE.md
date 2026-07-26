@@ -391,6 +391,11 @@ rewriting the baseline.
 | 2026-07-26 | Require approval for direct action on `dev` | Protect authoritative development history | Project owner |
 | 2026-07-26 | Target roughly 90% final documentation for roughly 95% complete code | Document useful current truth without waiting for backlog completion | Project owner |
 | 2026-07-26 | Use English and layered documentation for mixed audiences | Keep entry points accessible while retaining technical depth | Project owner |
+| 2026-07-26 | Leave recommendation-result semantics unresolved | Current algorithm behavior appears inconsistent; documentation must describe evidence without inventing intent | Project owner |
+| 2026-07-26 | Treat five properties as a temporary test limit | Avoid presenting an implementation constraint as the final product capacity | Project owner |
+| 2026-07-26 | Plan a UUID-like identity unique to each ESP32-S3 unit | Replace temporary unauthenticated incrementing integers with a device-linked identity direction; exact design remains open | Project owner |
+| 2026-07-26 | Keep canonical cross-project documentation in Glennergy-ESP | Give shared system/interface material one repository owner | Project owner |
+| 2026-07-26 | Omit the real VPS address from public documentation | Use placeholders now; publication can be reconsidered later | Project owner |
 
 ## Pause and Rollback Rules
 

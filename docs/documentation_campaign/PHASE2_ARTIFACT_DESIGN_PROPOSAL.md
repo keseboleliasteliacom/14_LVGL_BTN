@@ -1,6 +1,6 @@
 # Phase 2 Artifact Design Proposal
 
-Status: Draft design; owner decisions pending  
+Status: Draft design updated with owner decisions
 Purpose: Define document boundaries before any user-facing rewrite
 
 ## Design rules
@@ -35,9 +35,10 @@ single-owner artifacts:
 | Documentation maintenance map | Contributors | Canonical ownership, code-to-doc update triggers, validation commands, generated/history policy | Each canonical artifact has an update trigger and reviewer expectation |
 | Final coverage/audit report | Maintainers/evaluators | Objective-by-objective coverage, validation evidence, deferred gaps, severity/disposition log | No unresolved critical/high factual or safety finding |
 
-The proposed default placement is Glennergy `Docs/` for system context, glossary
-and interface ownership because Glennergy owns the service contract. Placement
-remains an owner decision; content boundaries do not.
+Canonical cross-project system context, glossary and interface documentation
+will live in Glennergy-ESP `docs/`, per owner decision. Glennergy owns its
+server-specific architecture, property configuration, operations and security
+details and links to the canonical cross-project documents.
 
 ## Proposed information architecture
 
@@ -48,7 +49,7 @@ remains an owner decision; content boundaries do not.
 | README | New developers, operators, evaluators | Explain the server, its relation to ESP, quick build/deploy/operate path, and documentation navigation | `README.md` | Current README, Makefiles, systemd, deploy/verify scripts | Link check; safe command review; newcomer review | Approachable without hiding production model; links to exact details; no stale tmux/cron guidance |
 | Documentation index | All documentation users | Provide one map of current, reference, historical and generated docs | `Docs/README.md` | Documentation inventory | Link and classification audit | Every canonical document reachable; plans/archives labelled |
 | Server architecture | Server developers and maintainers | Describe five processes, data ownership, IPC, schedules, concurrency and failure behavior | `Docs/architecture.md` | EV-001 through EV-004 and server discovery | Code-backed review; Mermaid render | All processes/IPC paths and ownership shown; ABI sensitivity stated |
-| Interface contract | Server and embedded developers | Define current routes, schemas, types, limits, errors, timing and planned transition | Proposed `Docs/interface-contract.md` | EV-005 through EV-016 | Cross-repo producer/consumer review; example validation | Current and planned APIs visibly separated; exact keys/types/errors documented; unresolved semantics labelled |
+| Interface contract link/summary | Server and embedded developers | Summarize server ownership and link to the canonical ESP-hosted interface contract | `Docs/interface-contract.md` or a README/index section | Canonical ESP contract and server route implementation | Cross-repo link and duplication audit | No independent competing schema copy; server-specific implementation links remain useful |
 | Property configuration | Server developers/operators | Define production/example paths, schema, validation and current capacity | `Docs/property-configuration.md` | EV-023 through EV-025 | Parser/schema cross-check; safe example validation | Does not claim invalid seed entries work; ID/capacity decision reflected |
 | Operations and deployment | Operators/maintainers | Consolidate build, install, update, verify, rollback, logs, uninstall and security boundary | `Docs/operations.md` | README, Makefiles, scripts, systemd | Shell review; Linux command verification where available | Deployment and verification distinguished; destructive commands clearly marked |
 | Server troubleshooting | Operators/developers | Diagnose service, timer, IPC, data freshness and API failures | `Docs/troubleshooting.md` | Failure paths, journald and verify script | Scenario review | Starts read-only; escalation/recovery ownership clear |
@@ -72,12 +73,9 @@ remains an owner decision; content boundaries do not.
 
 ### Cross-project presentation
 
-The proposed default is for Glennergy to own the canonical interface contract
-because the server owns the routes and response schemas. Glennergy-ESP would
-contain a short client-specific page or section that links to the canonical
-contract and documents only firmware-specific consumption/cache behavior.
-
-This remains unapproved until the owner chooses canonical ownership.
+Glennergy-ESP owns the canonical interface contract and shared system context.
+Glennergy links to those artifacts and keeps only server-specific implementation,
+property-configuration and operational details canonical locally.
 
 The shared system context has one canonical detailed artifact. Both READMEs may
 contain audience-specific summaries, but exact schemas, route semantics and
@@ -163,12 +161,14 @@ Unresolved product decisions do not block the entire campaign:
 
 ## Decisions required before affected artifacts are finalized
 
-1. Intended meaning of `recommendation[].type` or approval to leave it explicitly unresolved.
-2. Whether the five-property limit is intentional or temporary.
-3. Future property-ID ownership/allocation direction.
-4. Canonical repository for the cross-project interface contract.
-5. Approval of placeholder-only public endpoint examples.
+1. `recommendation[].type` remains explicitly unresolved; current behavior must
+   be documented without asserting intended semantics.
+2. Five properties is a temporary test limit.
+3. Future identity direction is UUID-like and unique per ESP32-S3 unit; exact
+   identity/auth/registration design remains open.
+4. Glennergy-ESP owns canonical cross-project documentation.
+5. Public examples use placeholders and omit the real VPS address.
 
-No drafting task should silently choose these answers. Unaffected architecture,
-development, operations, UI and current-limitation sections may proceed once the
-overall artifact design is approved.
+No drafting task may add specificity beyond these decisions without new evidence
+or owner approval. The open UUID/auth/registration questions block only final
+future-protocol claims, not documentation of the implemented system.

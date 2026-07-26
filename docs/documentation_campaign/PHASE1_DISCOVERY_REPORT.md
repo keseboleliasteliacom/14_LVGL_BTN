@@ -1,6 +1,6 @@
 # Phase 1 Discovery Review Package
 
-Status: Discovery complete; material owner decisions pending  
+Status: Discovery complete; owner decisions recorded
 Source snapshots: see `CHECKPOINT_MANIFEST.md`
 
 ## Executive summary
@@ -140,19 +140,20 @@ This remains a Phase 2 design subject, but discovery supports:
 8. Add clearly conceptual planned endpoint-migration and registration diagrams.
 9. Independently verify all artifacts and produce a remaining-coverage report.
 
-## Decisions required before Phase 2
+## Owner decisions recorded for Phase 2
 
-1. What should `recommendation[].type` represent, given the current algorithm
-   appears to discard its computed type and publish temperature?
-2. Is five the intended near-term maximum property count, or merely a temporary
-   implementation limit?
-3. Should future property IDs remain server-recognized integers, and should the
-   server allocate them during registration?
-4. Where should the canonical cross-project system context and interface
-   contract live: Glennergy, Glennergy-ESP, or duplicated copies with one named
-   canonical owner?
-5. Should the real production API hostname/address remain absent from public
-   docs by default? The campaign recommendation is yes: use placeholders.
+1. `recommendation[].type` intent remains unresolved. Documentation describes
+   current evidence and the likely inconsistency without inventing semantics.
+2. Five properties is a temporary test limit, not final product capacity.
+3. Current incrementing integer IDs are temporary and unauthenticated. Future
+   identity should use a UUID or similar identifier unique to each ESP32-S3
+   unit. Exact identity source, property relationship, registration and
+   authorization remain future design questions.
+4. Glennergy-ESP owns canonical cross-project system and interface documentation.
+   Glennergy contains server-specific details and links to the canonical copy.
+5. Public documentation uses endpoint placeholders and omits the real VPS
+   address unless the owner changes this policy later.
 
-The future authentication, idempotency and schema details for registration can
-be designed later. They do not block documenting the implemented system.
+The future authentication, UUID derivation/provisioning, idempotency and schema
+details for registration can be designed later. They do not block documenting
+the implemented system.

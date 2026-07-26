@@ -34,7 +34,8 @@ ALLOWED_SUFFIXES = {".c", ".h", ".cpp", ".hpp", ".cc", ".hh"}
 HEADER_SUFFIXES = {".h", ".hpp", ".hh"}
 SOURCE_SUFFIXES = {".c", ".cpp", ".cc"}
 DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
-DEFAULT_REASONING_EFFORT = os.getenv("OPENAI_REASONING_EFFORT", "medium")
+DEFAULT_REASONING_EFFORT = os.getenv("OPENAI_REASONING_EFFORT", "low")
+DEFAULT_RETRY_REASONING_EFFORT = os.getenv("OPENAI_RETRY_REASONING_EFFORT", "medium")
 REASONING_EFFORTS = ("none", "low", "medium", "high", "xhigh")
 DEFAULT_MAX_FILES = int(os.getenv("MAX_FILES_PER_RUN", "2"))
 DEFAULT_MAX_CHARS = int(os.getenv("MAX_CHARS_PER_FILE", "18000"))
@@ -64,6 +65,7 @@ class FileResult:
     path: str
     status: str
     model: str = ""
+    reasoning_effort: str = ""
     input_tokens: int = 0
     output_tokens: int = 0
     total_tokens: int = 0
@@ -606,6 +608,7 @@ def call_openai_with_retry(
     user_prompt: str,
     model: str,
     reasoning_effort: str,
+    retry_reasoning_effort: str,
     max_output_tokens: int,
     original: str,
 ) -> tuple[OpenAIResult, bool]:
@@ -633,7 +636,7 @@ Do not alter any code tokens, including:
 Normalized code diff excerpt from the rejected attempt:
 {diff_excerpt}
 """
-    retry_result = call_openai(system_prompt, retry_user_prompt, model, reasoning_effort, max_output_tokens)
+    retry_result = call_openai(system_prompt, retry_user_prompt, model, retry_reasoning_effort, max_output_tokens)
     return combine_openai_results(first_result, retry_result), True
 
 
@@ -641,7 +644,7 @@ def retry_missing_function_documentation(
     system_prompt: str,
     user_prompt: str,
     model: str,
-    reasoning_effort: str,
+    retry_reasoning_effort: str,
     max_output_tokens: int,
     previous_result: OpenAIResult,
     missing_functions: list[str],
@@ -659,7 +662,7 @@ For public source functions whose contract is already documented in the paired h
 Preserve every code token and all existing developer comments exactly.
 Do not make synonym-only, formatting-only, or unrelated documentation changes.
 """
-    retry_result = call_openai(system_prompt, retry_user_prompt, model, reasoning_effort, max_output_tokens)
+    retry_result = call_openai(system_prompt, retry_user_prompt, model, retry_reasoning_effort, max_output_tokens)
     return combine_openai_results(previous_result, retry_result)
 
 
@@ -687,6 +690,7 @@ def append_github_summary(
     total_estimated_cost_sek: float,
     requested_model: str,
     reasoning_effort: str,
+    retry_reasoning_effort: str,
     test_label: str,
 ) -> None:
     summary_path = os.getenv("GITHUB_STEP_SUMMARY", "").strip()
@@ -702,7 +706,8 @@ def append_github_summary(
         "## Doxygen AI Summary",
         "",
         f"- Requested model: {requested_model}",
-        f"- Reasoning effort: {reasoning_effort}",
+        f"- Initial reasoning effort: {reasoning_effort}",
+        f"- Targeted retry reasoning effort: {retry_reasoning_effort}",
         f"- Test label: {test_label or '(none)'}",
         f"- Files considered: {len(file_results)}",
         f"- Files updated: {updated_count}",
@@ -715,13 +720,13 @@ def append_github_summary(
         f"- Estimated cost (USD): ${total_estimated_cost_usd:.6f}",
         f"- Estimated cost (SEK): {total_estimated_cost_sek:.6f} kr",
         "",
-        "| File | Status | Model | Input | Output | Total | USD | SEK | Details |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| File | Status | Model | Reasoning | Input | Output | Total | USD | SEK | Details |",
+        "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
 
     for result in file_results:
         lines.append(
-            f"| {result.path} | {result.status} | {result.model or '-'} | "
+            f"| {result.path} | {result.status} | {result.model or '-'} | {result.reasoning_effort or '-'} | "
             f"{result.input_tokens} | {result.output_tokens} | {result.total_tokens} | "
             f"${result.estimated_cost_usd:.6f} | {result.estimated_cost_sek:.6f} kr | {result.details or '-'} |"
         )
@@ -734,6 +739,7 @@ def write_manifest(
     manifest_path: Path,
     requested_model: str,
     reasoning_effort: str,
+    retry_reasoning_effort: str,
     test_label: str,
     file_results: list[FileResult],
 ) -> None:
@@ -741,12 +747,14 @@ def write_manifest(
     payload = {
         "requested_model": requested_model,
         "reasoning_effort": reasoning_effort,
+        "retry_reasoning_effort": retry_reasoning_effort,
         "test_label": test_label,
         "files": [
             {
                 "path": result.path,
                 "status": result.status,
                 "model": result.model,
+                "reasoning_effort": result.reasoning_effort,
                 "input_tokens": result.input_tokens,
                 "output_tokens": result.output_tokens,
                 "total_tokens": result.total_tokens,
@@ -794,6 +802,7 @@ def process_files(
     files: Iterable[Path],
     model: str,
     reasoning_effort: str,
+    retry_reasoning_effort: str,
     max_chars: int,
     max_output_tokens: int,
     input_cost_per_million: float,
@@ -868,7 +877,10 @@ def process_files(
             paired_file_context,
         )
 
-        print(f"Processing {rel} with model {model} and reasoning effort {reasoning_effort}")
+        print(
+            f"Processing {rel} with model {model}, initial reasoning effort {reasoning_effort}, "
+            f"and targeted retry effort {retry_reasoning_effort}"
+        )
         coverage_retried = False
         try:
             result, retried = call_openai_with_retry(
@@ -876,6 +888,7 @@ def process_files(
                 user_prompt=user_prompt,
                 model=model,
                 reasoning_effort=reasoning_effort,
+                retry_reasoning_effort=retry_reasoning_effort,
                 max_output_tokens=max_output_tokens,
                 original=original,
             )
@@ -895,7 +908,7 @@ def process_files(
                         system_prompt=system_prompt,
                         user_prompt=user_prompt,
                         model=model,
-                        reasoning_effort=reasoning_effort,
+                        retry_reasoning_effort=retry_reasoning_effort,
                         max_output_tokens=max_output_tokens,
                         previous_result=result,
                         missing_functions=missing_function_docs,
@@ -916,6 +929,12 @@ def process_files(
         updated = result.text
         usage = result.usage
         actual_model = result.model
+        retry_count = int(retried) + int(coverage_retried)
+        effort_path = (
+            reasoning_effort
+            if retry_count == 0
+            else f"{reasoning_effort} -> {retry_reasoning_effort} ({retry_count} targeted retry{'s' if retry_count != 1 else ''})"
+        )
 
         total_usage.input_tokens += usage.input_tokens
         total_usage.output_tokens += usage.output_tokens
@@ -930,6 +949,7 @@ def process_files(
                     path=rel,
                     status="skipped",
                     model=actual_model,
+                    reasoning_effort=effort_path,
                     input_tokens=usage.input_tokens,
                     output_tokens=usage.output_tokens,
                     total_tokens=usage.total_tokens,
@@ -948,6 +968,7 @@ def process_files(
                     path=rel,
                     status="rejected",
                     model=actual_model,
+                    reasoning_effort=effort_path,
                     input_tokens=usage.input_tokens,
                     output_tokens=usage.output_tokens,
                     total_tokens=usage.total_tokens,
@@ -975,6 +996,7 @@ def process_files(
                         path=rel,
                         status="rejected",
                         model=actual_model,
+                        reasoning_effort=effort_path,
                         input_tokens=usage.input_tokens,
                         output_tokens=usage.output_tokens,
                         total_tokens=usage.total_tokens,
@@ -996,6 +1018,7 @@ def process_files(
                     path=rel,
                     status="no_change",
                     model=actual_model,
+                    reasoning_effort=effort_path,
                     input_tokens=usage.input_tokens,
                     output_tokens=usage.output_tokens,
                     total_tokens=usage.total_tokens,
@@ -1013,6 +1036,7 @@ def process_files(
                 path=rel,
                 status="updated",
                 model=actual_model,
+                reasoning_effort=effort_path,
                 input_tokens=usage.input_tokens,
                 output_tokens=usage.output_tokens,
                 total_tokens=usage.total_tokens,
@@ -1051,12 +1075,14 @@ def process_files(
         total_estimated_cost_sek=total_estimated_cost_sek,
         requested_model=model,
         reasoning_effort=reasoning_effort,
+        retry_reasoning_effort=retry_reasoning_effort,
         test_label=os.getenv("DOXYGEN_AI_TEST_LABEL", "").strip(),
     )
     write_manifest(
         manifest_path=manifest_path,
         requested_model=model,
         reasoning_effort=reasoning_effort,
+        retry_reasoning_effort=retry_reasoning_effort,
         test_label=os.getenv("DOXYGEN_AI_TEST_LABEL", "").strip(),
         file_results=file_results,
     )
@@ -1085,6 +1111,12 @@ def main() -> int:
         choices=REASONING_EFFORTS,
         default=DEFAULT_REASONING_EFFORT,
         help="Responses API reasoning effort (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--retry-reasoning-effort",
+        choices=REASONING_EFFORTS,
+        default=DEFAULT_RETRY_REASONING_EFFORT,
+        help="Reasoning effort for targeted retries (default: %(default)s)",
     )
     parser.add_argument("--test-label", default=DEFAULT_TEST_LABEL)
     parser.add_argument("--input-cost-per-million", type=float, default=DEFAULT_INPUT_COST_PER_MILLION)
@@ -1134,6 +1166,7 @@ def main() -> int:
         limited_files,
         model=args.model,
         reasoning_effort=args.reasoning_effort,
+        retry_reasoning_effort=args.retry_reasoning_effort,
         max_chars=args.max_chars,
         max_output_tokens=args.max_output_tokens,
         input_cost_per_million=args.input_cost_per_million,

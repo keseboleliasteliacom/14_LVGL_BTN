@@ -14,6 +14,10 @@ on:
       reasoning_effort:
         description: "Reasoning effort: none, low, medium, high, or xhigh"
         required: false
+        default: "low"
+      retry_reasoning_effort:
+        description: "Reasoning effort for targeted retries"
+        required: false
         default: "medium"
       campaign_label:
         description: "Optional label used in branch names, summaries, and PR titles"
@@ -37,6 +41,7 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_MODEL: ${{ github.event.inputs.model }}
       OPENAI_REASONING_EFFORT: ${{ github.event.inputs.reasoning_effort }}
+      OPENAI_RETRY_REASONING_EFFORT: ${{ github.event.inputs.retry_reasoning_effort }}
       TARGET_REF: ${{ github.event.inputs.target_ref }}
       CAMPAIGN_LABEL: ${{ github.event.inputs.campaign_label }}
       BATCH_FILE: ${{ github.event.inputs.batch_file }}
@@ -122,6 +127,7 @@ jobs:
               --manifest "${manifest_path}" \
               --model "${OPENAI_MODEL}" \
               --reasoning-effort "${OPENAI_REASONING_EFFORT}" \
+              --retry-reasoning-effort "${OPENAI_RETRY_REASONING_EFFORT}" \
               --test-label "${batch_label}" \
               --max-files 20; then
               success_count=$((success_count + 1))
@@ -165,6 +171,8 @@ jobs:
             echo
             echo "- Target ref: ${TARGET_REF}"
             echo "- Requested model: ${OPENAI_MODEL}"
+            echo "- Initial reasoning effort: ${OPENAI_REASONING_EFFORT}"
+            echo "- Targeted retry reasoning effort: ${OPENAI_RETRY_REASONING_EFFORT}"
             echo "- Batch file: \`${BATCH_FILE}\`"
             echo "- Successful batches: ${success_count}"
             echo "- Failed batches: ${failure_count}"
@@ -216,6 +224,8 @@ jobs:
             This draft PR contains successful documentation updates from a Doxygen batch campaign.
 
             Requested model: `${{ env.OPENAI_MODEL }}`
+            Initial reasoning effort: `${{ env.OPENAI_REASONING_EFFORT }}`
+            Targeted retry reasoning effort: `${{ env.OPENAI_RETRY_REASONING_EFFORT }}`
             Target ref: `${{ env.TARGET_REF }}`
             Campaign label: `${{ env.CAMPAIGN_LABEL || env.SAFE_LABEL }}`
             Batch file: `${{ env.BATCH_FILE }}`

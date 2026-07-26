@@ -17,6 +17,10 @@ on:
       reasoning_effort:
         description: "Reasoning effort: none, low, medium, high, or xhigh"
         required: false
+        default: "low"
+      retry_reasoning_effort:
+        description: "Reasoning effort for targeted retries"
+        required: false
         default: "medium"
       rerun_mode:
         description: "Use 'all' to process selected file_paths, or 'remaining_only' to rerun previously rejected/deferred files"
@@ -50,7 +54,8 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_MODEL: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.model || 'gpt-5.4-mini' }}
-      OPENAI_REASONING_EFFORT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.reasoning_effort || 'medium' }}
+      OPENAI_REASONING_EFFORT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.reasoning_effort || 'low' }}
+      OPENAI_RETRY_REASONING_EFFORT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.retry_reasoning_effort || 'medium' }}
       MAX_FILES_PER_RUN: "25"
       MAX_CHARS_PER_FILE: "30000"
       OPENAI_MAX_OUTPUT_TOKENS: "100000"
@@ -210,9 +215,9 @@ jobs:
         id: update_docs
         run: |
           if [ "${RERUN_MODE}" = "remaining_only" ]; then
-            python tools/doxygen_ai/update_docs.py --remaining-only --manifest "${MANIFEST_PATH}" --model "${OPENAI_MODEL}" --reasoning-effort "${OPENAI_REASONING_EFFORT}" --test-label "${TEST_LABEL}"
+            python tools/doxygen_ai/update_docs.py --remaining-only --manifest "${MANIFEST_PATH}" --model "${OPENAI_MODEL}" --reasoning-effort "${OPENAI_REASONING_EFFORT}" --retry-reasoning-effort "${OPENAI_RETRY_REASONING_EFFORT}" --test-label "${TEST_LABEL}"
           else
-            python tools/doxygen_ai/update_docs.py --files "${MANUAL_FILE_PATHS}" --manifest "${MANIFEST_PATH}" --model "${OPENAI_MODEL}" --reasoning-effort "${OPENAI_REASONING_EFFORT}" --test-label "${TEST_LABEL}"
+            python tools/doxygen_ai/update_docs.py --files "${MANUAL_FILE_PATHS}" --manifest "${MANIFEST_PATH}" --model "${OPENAI_MODEL}" --reasoning-effort "${OPENAI_REASONING_EFFORT}" --retry-reasoning-effort "${OPENAI_RETRY_REASONING_EFFORT}" --test-label "${TEST_LABEL}"
           fi
 
       - name: Detect eligible documentation changes
@@ -252,6 +257,13 @@ jobs:
           if-no-files-found: ignore
           retention-days: 90
 
+      - name: Remove workflow-only artifacts from the PR working tree
+        if: always() && steps.documentation_changes.outputs.has_changes == 'true'
+        shell: bash
+        run: |
+          git restore --staged --worktree -- "${MANIFEST_PATH}" || true
+          rm -rf tools/doxygen_ai/rejected
+
       - name: Create draft pull request with documentation updates
         if: always() && steps.documentation_changes.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
@@ -260,18 +272,13 @@ jobs:
           commit-message: "[skip-doxygen] docs: update doxygen comments"
           branch: ${{ env.PR_BRANCH }}
           delete-branch: false
-          add-paths: |
-            **/*.c
-            **/*.h
-            **/*.cpp
-            **/*.hpp
-            **/*.cc
-            **/*.hh
           title: ${{ env.PR_TITLE }}
           body: |
             This draft PR contains automated Doxygen documentation updates generated for changed files.
 
             Requested model: `${{ env.OPENAI_MODEL }}`
+            Initial reasoning effort: `${{ env.OPENAI_REASONING_EFFORT }}`
+            Targeted retry reasoning effort: `${{ env.OPENAI_RETRY_REASONING_EFFORT }}`
             Test label: `${{ env.TEST_LABEL }}`
             Rerun mode: `${{ env.RERUN_MODE }}`
             Target ref: `${{ github.event_name == 'workflow_dispatch' && github.event.inputs.target_ref || github.ref_name }}`

@@ -20,7 +20,7 @@
  * @file WiFi.h
  * @brief Public API for the Wi-Fi module.
  *
- * Defines the Wi-Fi worker-task interface, connection state, and command and
+ * Defines the Wi-Fi worker task interface, connection state, and command and
  * result payloads used by the module.
  *
  * @defgroup WIFI WiFi
@@ -34,9 +34,9 @@
  * @{
  */
 
-extern QueueHandle_t wifi_cmd_queue;
+extern QueueHandle_t wifi_cmd_queue; /**< Command queue used by the Wi-Fi worker task. */
 
-extern QueueHandle_t wifi_result_queue;
+extern QueueHandle_t wifi_result_queue; /**< Result queue used by the Wi-Fi worker task. */
 
 typedef enum
 {
@@ -72,8 +72,8 @@ typedef struct
  */
 typedef struct
 {
-    char ssid[WIFI_SSID_MAX_LEN]; /**< SSID string. */
-    char password[WIFI_PASSWORD_MAX_LEN]; /**< Password string. */
+    char ssid[WIFI_SSID_MAX_LEN]; /**< Station SSID, including the terminator. */
+    char password[WIFI_PASSWORD_MAX_LEN]; /**< Station password, including the terminator. */
 } wifi_info;
 
 /**
@@ -86,11 +86,11 @@ typedef struct
  */
 typedef struct
 {
-    wifi_cmd_t cmd;
-    wifi_status status;
-    uint16_t number;
-    wifi_ap_record_t ap_info[10];
-    wifi_info wifi_info;
+    wifi_cmd_t cmd; /**< Requested Wi-Fi command. */
+    wifi_status status; /**< Result status reported by the worker task. */
+    uint16_t number; /**< Number of valid access-point records in ap_info. */
+    wifi_ap_record_t ap_info[10]; /**< Scan results; only the first number entries are valid. */
+    wifi_info wifi_info; /**< Station credentials associated with the request. */
 } wifi_data;
 
 typedef void (*wifi_connection_cb_t)(bool connected, void *ctx);
@@ -138,7 +138,7 @@ void WiFi_Work(void *arg);
  *
  * @return
  * - `ESP_OK` on success
- * - `ESP_FAIL` if the connection request cannot be started
+ * - an ESP-IDF error code on failure
  */
 esp_err_t WiFi_Connect(wifi_data *w_data);
 

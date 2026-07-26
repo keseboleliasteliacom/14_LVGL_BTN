@@ -70,10 +70,7 @@ static wifi_connection_cb_t wifi_connection_cb = NULL;
 static void *wifi_connection_ctx = NULL;
 
 /**
- * @brief Registers the Wi-Fi connection state callback.
- *
- * Stores the callback and its context for later use by the connection state
- * update path.
+ * @brief Registers the callback used to report connection state changes.
  *
  * @param[in] cb Callback invoked when the connection state changes.
  * @param[in] ctx Opaque context passed to the callback.
@@ -101,8 +98,8 @@ static void WiFi_SetConnectedState(bool connected)
 /**
  * @brief Handles IP events from the ESP-IDF event loop.
  *
- * Updates Wi-Fi connection state and starts time synchronization after the
- * station obtains an address.
+ * Updates connection state after the station obtains an address and starts
+ * time synchronization when needed.
  *
  * @warning Keep callback work short and avoid blocking.
  */
@@ -342,6 +339,12 @@ esp_err_t WiFi_Initialize()
  * @brief Scans for nearby Wi-Fi access points.
  *
  * Populates the provided result buffer with up to 10 scan records.
+ *
+ * @param[in,out] w_data Result storage for scan output.
+ *
+ * @return `ESP_OK` on success or an ESP-IDF error code on failure.
+ *
+ * @note Calls into the Wi-Fi driver and blocks while the scan completes.
  */
 esp_err_t WiFi_Scan(wifi_data *w_data)
 {
@@ -385,8 +388,8 @@ esp_err_t WiFi_Scan(wifi_data *w_data)
 /**
  * @brief Wi-Fi worker task.
  *
- * Waits for commands on the Wi-Fi command queue and forwards results after
- * scan, connect, or disconnect operations complete.
+ * Processes commands from the Wi-Fi command queue, handles deferred reconnects,
+ * and forwards results through the result queue.
  *
  * @param[in] arg Task context pointer supplied by the creator.
  *
@@ -535,16 +538,11 @@ void WiFi_Work(void *arg)
 }
 
 /**
- * @brief Connects to a Wi-Fi access point.
+ * @brief Applies station credentials to the Wi-Fi driver.
  *
- * Copies the SSID and password into the station configuration and starts the
- * ESP-IDF connection attempt.
+ * @param[in] w_data Connection data containing the station credentials.
  *
- * @param[in] w_data Connection data containing the credentials.
- *
- * @return
- * - `ESP_OK` on success
- * - `ESP_FAIL` if the connection request cannot be started
+ * @return `ESP_OK` on success or an ESP-IDF error code on failure.
  */
 static esp_err_t WiFi_ApplyConfig(const wifi_data *w_data)
 {
@@ -570,6 +568,11 @@ static esp_err_t WiFi_ApplyConfig(const wifi_data *w_data)
     return ESP_OK;
 }
 
+/**
+ * @brief Implementation of WiFi_Connect.
+ *
+ * See header for full contract documentation.
+ */
 esp_err_t WiFi_Connect(wifi_data *w_data)
 {
     esp_err_t err = esp_wifi_set_mode(WIFI_MODE_STA);
@@ -611,9 +614,9 @@ esp_err_t WiFi_Connect(wifi_data *w_data)
 }
 
 /**
- * @brief Returns the current Wi-Fi connection state.
+ * @brief Implementation of WiFi_IsConnected.
  *
- * @return `true` when connected, otherwise `false`.
+ * See header for full contract documentation.
  */
 bool WiFi_IsConnected()
 {
@@ -621,13 +624,9 @@ bool WiFi_IsConnected()
 }
 
 /**
- * @brief Disconnects the station from the access point.
+ * @brief Implementation of WiFi_Disconnect.
  *
- * Deletes the Wi-Fi event group before requesting disconnect from ESP-IDF.
- *
- * @return
- * - `ESP_OK` on success
- * - an ESP-IDF error code on failure
+ * See header for full contract documentation.
  */
 esp_err_t WiFi_Disconnect(void)
 {
@@ -642,14 +641,9 @@ esp_err_t WiFi_Disconnect(void)
 }
 
 /**
- * @brief Releases Wi-Fi resources.
+ * @brief Implementation of WiFi_Dispose.
  *
- * Stops the Wi-Fi stack, unregisters event handlers, clears the default
- * driver, and destroys the network interface.
- *
- * @return
- * - `ESP_OK` on success
- * - an ESP-IDF error code on failure
+ * See header for full contract documentation.
  */
 esp_err_t WiFi_Dispose(void)
 {

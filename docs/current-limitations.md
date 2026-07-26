@@ -89,6 +89,15 @@ risk.
 
 ## Current interface limitations
 
+### Server property-configuration error propagation
+
+The server property readers do not consistently turn unusable or empty
+configuration into process failure. InputCache can convert a parser `-1` to an
+unsigned count and report successful initialization, while Meteo treats zero
+accepted properties as a successful no-op and can publish a zero-property
+message. Service success alone therefore does not prove that usable property
+data was loaded.
+
 ### Transitional endpoint structure
 
 The implemented server grammar is:

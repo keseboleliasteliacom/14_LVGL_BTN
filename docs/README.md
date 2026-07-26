@@ -26,8 +26,10 @@ being present in the repository does not by itself make it current.
 
 - [Firmware architecture](architecture.md) — startup, tasks, queues, shared
   state, data ownership and recovery boundaries.
-- `development.md` — planned canonical ESP-IDF setup, build and test guide.
-- `hardware.md` — planned canonical board, display/touch, I2C and BME280 guide.
+- [Development guide](development.md) — ESP-IDF setup, build, validation and
+  authorized flash/monitor boundaries.
+- [Hardware guide](hardware.md) — source-derived board, display/touch, I2C and
+  BME280 configuration with unverified hardware behavior labeled.
 - `configuration.md` — planned canonical NVS, Wi-Fi and interval reference.
 - [UART command reference](UART_COMMANDS.md) — existing reference; persistence
   and command details are being reconciled with current code.

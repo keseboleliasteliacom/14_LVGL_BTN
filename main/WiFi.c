@@ -27,9 +27,7 @@
 #define WIFI_RECONNECT_BASE_DELAY_MS 1000
 #define WIFI_RECONNECT_MAX_DELAY_MS 30000
 
-// static const int WIFI_RETRY_ATTEMPT = 3;
 
-//static bool sntp_synced = false;    SNTP now owns sync state
 
 static int wifi_retry_count = 0;
 
@@ -116,7 +114,6 @@ static void ip_event_cb(void *arg, esp_event_base_t event_base, int32_t event_id
         ip_event_got_ip_t *event_ip = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event_ip->ip_info.ip));
 
-        //w_state.is_connected = true;
         WiFi_SetConnectedState(true);
         wifi_retry_count = 0;
         wifi_reconnect_pending = false;
@@ -146,7 +143,6 @@ static void ip_event_cb(void *arg, esp_event_base_t event_base, int32_t event_id
     }
     case (IP_EVENT_STA_LOST_IP):
         ESP_LOGI(TAG, "Lost IP");
-        //w_state.is_connected = false;
         WiFi_SetConnectedState(false);
         break;
     case (IP_EVENT_GOT_IP6):
@@ -216,17 +212,13 @@ static void wifi_event_cb(void *arg, esp_event_base_t event_base, int32_t event_
         ESP_LOGW(TAG, "Wi-Fi beascon timeout.");
         break;
     case (WIFI_EVENT_STA_CONNECTED):
-        //w_state.is_connected = true;
         ESP_LOGI(TAG, "Wi-Fi AP connected, waiting for IP...");
-        // status = WIFI_STATUS_CONNECTED;
-        // xQueueSend(event_queue, &status, 0);
         break;
     case (WIFI_EVENT_STA_DISCONNECTED):
         wifi_event_sta_disconnected_t *disc = (wifi_event_sta_disconnected_t *)event_data;
 
         ESP_LOGW(TAG, "Wifi disocnnected with reason: %d", disc->reason);
         ESP_LOGI(TAG, "Wi-Fi disconnected");
-        //w_state.is_connected = false;
         WiFi_SetConnectedState(false);
         if (wifi_retry_count < WIFI_RETRY_ATTEMPT)
         {
@@ -350,7 +342,6 @@ esp_err_t WiFi_Initialize()
 esp_err_t WiFi_Scan(wifi_data *w_data)
 {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    // ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 
     ESP_ERROR_CHECK(esp_wifi_start());
 
@@ -490,31 +481,6 @@ void WiFi_Work(void *arg)
                     xQueueOverwrite(wifi_result_queue, &result);
                     break;
             }
-            // if (status == WIFI_STATUS_CONNECTED)
-            // {
-            //     if (save_credentials_on_connect)
-            //     {
-            //         int ssid_result = Config_WriteToNVS_WifiSSID(pending_wifi_info.ssid);
-            //         int password_result = Config_WriteToNVS_WifiPassword(pending_wifi_info.password);
-
-            //         if (ssid_result != 0 || password_result != 0)
-            //         {
-            //             ESP_LOGW(TAG, "Connected, but failed to save Wi-Fi credentials");
-            //         }
-            //         else
-            //         {
-            //             ESP_LOGI(TAG, "Wi-Fi credentials saved after successful connection");
-            //         }
-
-            //         save_credentials_on_connect = false;
-            //     }
-
-                
-            //     wifi_data result = {0};
-            //     result.status = WIFI_STATUS_CONNECTED;
-            //     result.wifi_info = active_wifi_info;
-            //     xQueueOverwrite(wifi_result_queue, &result);
-            // }
         }
 
         if (wifi_reconnect_pending && xTaskGetTickCount() >= wifi_reconnect_time)
@@ -552,26 +518,19 @@ void WiFi_Work(void *arg)
                 }
                 break;
             case WIFI_CMD_DISCONNECT:
-                //WiFi_Disconnect();
                 if (xQueueReceive(event_queue, &status, pdMS_TO_TICKS(5000)))
                 {
                     if (status == WIFI_STATUS_DISCONNECTED)
                     {
                         w_data.status = status;
                         xQueueSend(wifi_result_queue, &w_data, 0);
-                        //ESP_LOGI(TAG, "Wifi dsocnnected, attempting reconnect");
-                        //w_data.status = WIFI_STATUS_CONN
-                        //WiFi_Connect(&w_data);
-                        //xQueueSend(wifi_result_queue, &w_data, 0);
                     }
                 }
                 break;
 
             default:
-                // xQueueSend(wifi_queue, &w_data, portMAX_DELAY);
                 break;
             }
-            // xQueueSend(wifi_queue, wifi, portMAX_DELAY);
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }

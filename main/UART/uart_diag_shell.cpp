@@ -17,7 +17,6 @@
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "../app_types.h"
-//#include "../WiFi.h"
 #include "UART.hpp"
 #include <ctime>
 

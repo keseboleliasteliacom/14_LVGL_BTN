@@ -33,10 +33,6 @@ extern "C" {
 
 //int NVS_Initialize();
 
-/**
- * @brief Demonstrates NVS initialization, read-modify-write, and restart flow.
- */
-void FullNVS();
 
 /**
  * @brief Initializes the default NVS flash partition.

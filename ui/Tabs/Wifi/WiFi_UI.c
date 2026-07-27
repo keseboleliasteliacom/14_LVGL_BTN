@@ -204,15 +204,20 @@ void WiFi_UI_Update(void)
         if (w_data.status == WIFI_STATUS_SCAN_DONE)
         {
             ESP_LOGI(TAG, "Scan finished!");
-            if (lvgl_port_lock(pdMS_TO_TICKS(100)))
+            lv_dropdown_clear_options(wifi_ui.network_dropdown_dyn);
+            for (int i = 0; i < w_data.number; i++)
             {
-                lv_dropdown_clear_options(wifi_ui.network_dropdown_dyn);
-                for (int i = 0; i < w_data.number; i++)
-                {
-                    lv_dropdown_add_option(wifi_ui.network_dropdown_dyn, (char *)w_data.ap_info[i].ssid, LV_DROPDOWN_POS_LAST);
-                }
-                lvgl_port_unlock();
+                lv_dropdown_add_option(wifi_ui.network_dropdown_dyn, (char *)w_data.ap_info[i].ssid, LV_DROPDOWN_POS_LAST);
             }
+                // if (lvgl_port_lock(pdMS_TO_TICKS(100)))
+            // {
+            //     lv_dropdown_clear_options(wifi_ui.network_dropdown_dyn);
+            //     for (int i = 0; i < w_data.number; i++)
+            //     {
+            //         lv_dropdown_add_option(wifi_ui.network_dropdown_dyn, (char *)w_data.ap_info[i].ssid, LV_DROPDOWN_POS_LAST);
+            //     }
+            //     lvgl_port_unlock();
+            // }
         }
         if (w_data.status == WIFI_STATUS_CONNECTED)
         {
@@ -231,7 +236,7 @@ void WiFi_UI_Update(void)
                 lv_label_set_text(wifi_ui.ssid_label, wifi_ui.selected_ssid);
             }
 
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            //vTaskDelay(pdMS_TO_TICKS(1000));
         }   
         if (w_data.status == WIFI_STATUS_RECONNECTING)
         {

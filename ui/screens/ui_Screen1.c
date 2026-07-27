@@ -95,9 +95,9 @@ void ui_update_task(void *arg)
     const app_state_t *app = (const app_state_t*)arg;
     while (1)
     {
-        WiFi_UI_Update();
         if (lvgl_port_lock(pdMS_TO_TICKS(100)))
         {
+            WiFi_UI_Update();
             Sensor_UI_Update();
             Electricity_UI_Update();
             //Weather_UI_Update();

@@ -352,7 +352,7 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
         // production TODO - Fetch interval can be set by any value from 1min to 24h. In production change this to 15min?
         int int_value;
         // Use helper function to see if we can parse something as int
-        if (parse_int(value, int_value) && int_value > 1 && int_value <= 1440)
+        if (parse_int(value, int_value) && int_value >= 1 && int_value <= 1440)
         {            
             std::cout << "Now setting \"fetch_interval_minutes\" to \"" << int_value << "\"." << std::endl;
             state->config_data.fetch_interval_minutes = int_value;

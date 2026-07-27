@@ -239,10 +239,14 @@ static void wifi_event_cb(void *arg, esp_event_base_t event_base, int32_t event_
             ESP_LOGI(TAG, "Scheduling wifi reconnect attempt %d/%d in %"PRIu32" ms", wifi_retry_count, WIFI_RETRY_ATTEMPT, delay_ms);
             wifi_reconnect_pending = true;
             wifi_reconnect_time = xTaskGetTickCount() + pdMS_TO_TICKS(delay_ms);
+
+            // Publish status to UI
+            status = WIFI_STATUS_RECONNECTING;
+            xQueueOverwrite(event_queue, &status);
         }
         else {
             status = WIFI_STATUS_DISCONNECTED;
-            xQueueSend(event_queue, &status, 0);
+            xQueueOverwrite(event_queue, &status);
         }
         break;
     case (WIFI_EVENT_STA_AUTHMODE_CHANGE):
@@ -447,31 +451,70 @@ void WiFi_Work(void *arg)
         // Check is there are any current events without blocking
         if (xQueueReceive(event_queue, &status, 0) == pdPASS)
         {
-            if (status == WIFI_STATUS_CONNECTED)
+            wifi_data result = {0};
+            result.status = status;
+            result.wifi_info = active_wifi_info;
+
+            // switch requires handling all cases, but currently we only want to have specially handling connecting if we need to save credentials when connecting as a one time thing.
+            switch (status)
             {
-                if (save_credentials_on_connect)
-                {
-                    int ssid_result = Config_WriteToNVS_WifiSSID(pending_wifi_info.ssid);
-                    int password_result = Config_WriteToNVS_WifiPassword(pending_wifi_info.password);
-
-                    if (ssid_result != 0 || password_result != 0)
+                case WIFI_STATUS_INITIALIZED:
+                    break;
+                case WIFI_STATUS_SCAN_DONE:
+                    break;
+                case WIFI_STATUS_CONNECTING:
+                    break;
+                case WIFI_STATUS_CONNECTED:
+                    if (save_credentials_on_connect)
                     {
-                        ESP_LOGW(TAG, "Connected, but failed to save Wi-Fi credentials");
-                    }
-                    else
-                    {
-                        ESP_LOGI(TAG, "Wi-Fi credentials saved after successful connection");
-                    }
+                        int ssid_result = Config_WriteToNVS_WifiSSID(pending_wifi_info.ssid);
+                        int password_result = Config_WriteToNVS_WifiPassword(pending_wifi_info.password);
 
-                    save_credentials_on_connect = false;
-                }
+                        if (ssid_result != 0 || password_result != 0)
+                        {
+                            ESP_LOGW(TAG, "Connected, but failed to save Wi-Fi credentials");
+                        }
+                        else
+                        {
+                            ESP_LOGI(TAG, "Wi-Fi credentials saved after successful connection");
+                        }
+
+                        save_credentials_on_connect = false;
+                    }
+                    xQueueOverwrite(wifi_result_queue, &result);
+                    break;
+                case WIFI_STATUS_RECONNECTING:
+                    xQueueOverwrite(wifi_result_queue, &result);
+                    break;
+                case WIFI_STATUS_DISCONNECTED:
+                    xQueueOverwrite(wifi_result_queue, &result);
+                    break;
+            }
+            // if (status == WIFI_STATUS_CONNECTED)
+            // {
+            //     if (save_credentials_on_connect)
+            //     {
+            //         int ssid_result = Config_WriteToNVS_WifiSSID(pending_wifi_info.ssid);
+            //         int password_result = Config_WriteToNVS_WifiPassword(pending_wifi_info.password);
+
+            //         if (ssid_result != 0 || password_result != 0)
+            //         {
+            //             ESP_LOGW(TAG, "Connected, but failed to save Wi-Fi credentials");
+            //         }
+            //         else
+            //         {
+            //             ESP_LOGI(TAG, "Wi-Fi credentials saved after successful connection");
+            //         }
+
+            //         save_credentials_on_connect = false;
+            //     }
 
                 
-                wifi_data result = {0};
-                result.status = WIFI_STATUS_CONNECTED;
-                result.wifi_info = active_wifi_info;
-                xQueueOverwrite(wifi_result_queue, &result);
-            }
+            //     wifi_data result = {0};
+            //     result.status = WIFI_STATUS_CONNECTED;
+            //     result.wifi_info = active_wifi_info;
+            //     xQueueOverwrite(wifi_result_queue, &result);
+            // }
         }
 
         if (wifi_reconnect_pending && xTaskGetTickCount() >= wifi_reconnect_time)

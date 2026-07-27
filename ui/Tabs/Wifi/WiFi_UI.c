@@ -112,7 +112,7 @@ void WiFi_UI_Initialize()
     lv_obj_set_y(wifi_ui.ssid_label, -264);
     lv_obj_set_align(wifi_ui.ssid_label, LV_ALIGN_CENTER);
     lv_label_set_text(wifi_ui.ssid_label, "Not Connected");
-    lv_obj_set_style_text_color(wifi_ui.ssid_label, lv_color_hex(0x00FF07), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(wifi_ui.ssid_label, lv_color_hex(0xFF0000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(wifi_ui.ssid_label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     WiFi_UI_Set_Callbacks();
@@ -218,7 +218,10 @@ void WiFi_UI_Update(void)
         {
             ESP_LOGI(TAG, "Connection finished!");
             lv_label_set_text(wifi_ui.status_label_dyn, "Connected");
+            lv_label_set_text(wifi_ui.ssid_label, "Connected");
             lv_obj_set_style_text_color(wifi_ui.status_label_dyn, lv_color_hex(0x66FF00), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_text_color(wifi_ui.ssid_label, lv_color_hex(0x66FF00), LV_PART_MAIN | LV_STATE_DEFAULT);
+
             // If SSID was loaded from NVS into w_data.wifi_info.ssid
             if (w_data.wifi_info.ssid[0] != '\0') {
                 lv_label_set_text(wifi_ui.ssid_label, w_data.wifi_info.ssid);
@@ -228,8 +231,43 @@ void WiFi_UI_Update(void)
                 lv_label_set_text(wifi_ui.ssid_label, wifi_ui.selected_ssid);
             }
 
-
             vTaskDelay(pdMS_TO_TICKS(1000));
+        }   
+        if (w_data.status == WIFI_STATUS_RECONNECTING)
+        {
+            lv_label_set_text(wifi_ui.status_label_dyn, "Reconnecting...");
+            lv_obj_set_style_text_color(
+                wifi_ui.status_label_dyn,
+                lv_color_hex(0xFFFF00),
+                LV_PART_MAIN | LV_STATE_DEFAULT
+            );
+
+            lv_label_set_text(wifi_ui.ssid_label, "Reconnecting");
+            lv_obj_set_style_text_color(
+                wifi_ui.ssid_label,
+                lv_color_hex(0xFFFF00),
+                LV_PART_MAIN | LV_STATE_DEFAULT
+            );
+        }
+        if (w_data.status == WIFI_STATUS_DISCONNECTED)
+        {
+            // Change the wifi status next to the "Status: " in the Wifi tab.
+            lv_label_set_text(wifi_ui.status_label_dyn, "Disconnected");
+            lv_obj_set_style_text_color(wifi_ui.status_label_dyn,
+                lv_color_hex(0xFF0000),
+                LV_PART_MAIN | LV_STATE_DEFAULT
+            );
+
+            // Change the status of the Wifi status in the top right of screen
+            lv_label_set_text(wifi_ui.ssid_label, "No WiFi");
+            lv_obj_set_style_text_color(
+                wifi_ui.ssid_label,
+                lv_color_hex(0xFF0000),
+                LV_PART_MAIN | LV_STATE_DEFAULT
+            );
+            
+
+
         }
         // xQueueSend(wifi_queue, &w_data, portMAX_DELAY);
     }

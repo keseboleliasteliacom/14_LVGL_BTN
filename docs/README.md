@@ -19,6 +19,10 @@ with its normal-use model before moving into limitations and source evidence.
 
 ## Start here
 
+- [Implementation backlog](implementation-backlog.md) — consolidated,
+  actionable coding, design, testing, verification and cleanup work from both
+  projects.
+
 - [System context](system-context.md) — how Glennergy and Glennergy-ESP form one
   system, where their boundaries are, and what is current versus planned.
 - [Current limitations](current-limitations.md) — temporary, partial, unresolved

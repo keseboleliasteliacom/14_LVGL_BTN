@@ -182,6 +182,7 @@ and [connectivity guide](docs/connectivity.md) before changing live settings.
 | Use the serial diagnostics safely | [UART command reference](docs/UART_COMMANDS.md) |
 | Diagnose a problem read-only-first | [Troubleshooting guide](docs/troubleshooting.md) |
 | Implement or review the server boundary | [Interface contract](docs/interface-contract.md) |
+| Work through known defects, decisions and cleanup | [Implementation backlog](docs/implementation-backlog.md) |
 | Find all current and historical documents | [Documentation index](docs/README.md) |
 
 Start with the README and system context, then follow the guide matching your

@@ -67,6 +67,7 @@ bool Sensor_Read_v3(sensor_data_t* sensor, hal::BME280SensorV2& environment_sens
     if (sensor_reading != hal::SensorError::Ok) {
         ESP_LOGW(TAG, "Something went wrong when reading data from sensor."); // TODO - add proper info to output
         sensor->valid = false;
+        
         sensor_data_t sensor_snapshot = *sensor;
         xQueueOverwrite(Sensor_Queue, &sensor_snapshot);
         return false;
@@ -164,7 +165,8 @@ void Sensor_Work(void* parameter) {
     
     while (1) {
         sensor_read_interval = app->config_data.sensor_interval_ms;
-        Sensor_Read_v3(&app->sensor_data, environment_sensor_v2);
+        // Also save if the latest was was OK or NOT OK to our current system status.
+        app->system_status.sensor_ok = Sensor_Read_v3(&app->sensor_data, environment_sensor_v2);
         vTaskDelay(pdMS_TO_TICKS(sensor_read_interval));
     }
 }

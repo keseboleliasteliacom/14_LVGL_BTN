@@ -3,6 +3,7 @@
 
 #include <string>
 #include "../app_types.h"
+#include "../SNTP/time_sync.h"
 
 /**
  * @file uart_diag_shell.hpp

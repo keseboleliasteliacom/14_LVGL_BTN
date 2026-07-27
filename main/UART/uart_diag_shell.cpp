@@ -19,6 +19,7 @@
 #include "../app_types.h"
 #include "UART.hpp"
 #include <ctime>
+#include "../Utils/TimeFormat.h"
 
 #include "../LEOP/Price.h"
 #include "../LEOP/Recommendation.h"
@@ -281,13 +282,49 @@ void handle_input(const std::string &input, app_state_t *state)
  */
 void handle_status(app_state_t* state)
 {
-    //bool live_wifi_connected = WiFi_IsConnected();
+    bool wifiStatus = state->system_status.wifi_connected;
+    bool LEOPStatus = state->system_status.leop_connected;
+    bool sensorValid = state->sensor_data.valid;
+    bool TimeSynced = TimeSync_IsSynced();
+    bool AllOK = false;
+    if (!wifiStatus || !LEOPStatus || !sensorValid || !TimeSynced)
+    {
+        std::cout << "Degraded." << std::endl;
+    }
+    else {
+        std::cout << "All systems OK." << std::endl;
+    }
+    
+    uint64_t uptime_seconds = (uint64_t)esp_timer_get_time() / 1000000ULL;
+    std::cout << "\nUptime: " << uptime_seconds << std::endl;
 
-    std::cout << "Wifi(system): " << connected_text(state->system_status.wifi_connected) << std::endl;
-    //std::cout << "Wifi(live): " << connected_text(live_wifi_connected) << std::endl;
-    std::cout << "LEOP: " << connected_text(state->system_status.leop_connected) << std::endl;
-    std::cout << "Sensor: " << ok_text(state->system_status.sensor_ok) << std::endl;
-    std::cout << "Update counter: " << state->system_status.update_counter << std::endl;
+
+    std::cout << "Wifi: " << connected_text(wifiStatus) << std::endl;
+    std::cout << "LEOP: " << connected_text(LEOPStatus) << std::endl;
+    
+    if (sensorValid) {
+        std::cout << "Sensor: OK" << std::endl;
+    }
+    else if (state->sensor_data.last_update_seconds > 0) {
+        std::cout << "Sensor: Not OK(no successful reading since startup)"<< std::endl; 
+    }
+    else {
+        char duration[32];
+        uint64_t now = esp_timer_get_time() / 1000000ULL;
+        uint64_t age = now - state->sensor_data.last_update_seconds;
+
+        TimeFormat_FormatDuration(duration, sizeof(duration), age);
+
+        std::cout << "Sensor: Not OK (last worked " << duration << " ago)" << std::endl;
+    }
+
+    if (TimeSynced) {
+        std::cout << "Time sync: Synchronized" << std::endl;
+    }
+    else {
+        std::cout << "Time sync: Not synchronized" << std::endl;
+    }
+
 }
 
 /**

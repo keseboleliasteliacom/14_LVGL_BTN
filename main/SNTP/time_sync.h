@@ -24,6 +24,11 @@
  * @{
  */
 
+
+#ifdef __cplusplus
+    extern "C" {
+#endif
+
 /**
  * @brief Starts SNTP time synchronization.
  *
@@ -40,6 +45,10 @@ esp_err_t TimeSync_Start();
  */
 bool TimeSync_IsSynced();
 
+
+#ifdef __cplusplus
+    }
+#endif
 /** @} */
 
 #endif

@@ -99,7 +99,7 @@ typedef struct {
 typedef struct {
     bool wifi_connected;
     bool leop_connected;
-    bool sensor_ok;
+    bool sensor_ok; // TODO - Might be uncessecary as the sensor_data_t already tracks if valid or not?
     uint32_t update_counter;
 } system_status_t;
 

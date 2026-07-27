@@ -1,5 +1,11 @@
 # Glennergy ESP32 API Endpoint Documentation
 
+> **Noncanonical historical draft:** This page contains stale assumptions and
+> is retained for review only. Use the current
+> [ESP interface contract](interface-contract.md) and Glennergy
+> [server API reference](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/http-api.md)
+> for implementation work.
+
 This document describes the HTTP interface used by the Glennergy ESP32 terminal when communicating with the LEOP server.
 
 Scope:
@@ -20,13 +26,13 @@ Note: The ESP32 client currently treats the server API as a simple HTTP JSON sou
 ## Base URL
 
 ```text
-http://31.59.105.197
+<LEOP_BASE_URL>
 ```
 
 Defined in:
 
 ```c
-#define LEOP_SERVER_URL "http://31.59.105.197"
+#define LEOP_SERVER_URL "<LEOP_BASE_URL>"
 ```
 
 ## Endpoint Summary
@@ -125,7 +131,7 @@ Fetches recommendation values used by the electricity recommendation chart.
 Full URL:
 
 ```text
-http://31.59.105.197/id=2?recommendation
+<LEOP_BASE_URL>/id=2?recommendation
 ```
 
 Successful response:
@@ -206,7 +212,7 @@ Fetches weather forecast values used by the weather dashboard.
 Full URL:
 
 ```text
-http://31.59.105.197/id=2?weather
+<LEOP_BASE_URL>/id=2?weather
 ```
 
 Successful response:
@@ -290,7 +296,7 @@ Fetches electricity price values used by the price list.
 Full URL:
 
 ```text
-http://31.59.105.197/id=2?price
+<LEOP_BASE_URL>/id=2?price
 ```
 
 Successful response:

@@ -1,4 +1,10 @@
-## LEOP Server API
+# LEOP Server API (historical overview)
+
+> **Noncanonical historical draft:** This Swedish overview is retained for
+> reference but may contain stale behavior or encoding. Use the current
+> [ESP interface contract](interface-contract.md) and Glennergy
+> [server API reference](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/http-api.md)
+> for implementation work.
 
 ESP32-terminalen hämtar data från LEOP-servern via tre HTTP GET-endpoints.
 
@@ -25,4 +31,5 @@ Alla endpoints returnerar JSON-arrayer med tidsstämplade värden. ESP32-kliente
 - Om WiFi saknas används senaste cachade JSON-data från SPIFFS.
 - Om JSON är tom eller ogiltig avvisas den av parsern och fetch-status markeras som misslyckad.
 
-Full API-specifikation finns här: [`docs/API_ENDPOINTS.md`](docs/API_ENDPOINTS.md)
+Den historiska fullversionen finns i [`API_ENDPOINTS.md`](API_ENDPOINTS.md).
+Använd de kanoniska dokumenten ovan för aktuellt beteende.

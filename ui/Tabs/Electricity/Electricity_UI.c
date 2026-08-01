@@ -44,11 +44,11 @@ static void chart_event_cb(lv_event_t *e)
 
             lv_coord_t val = electricity_chart_data[id];
 
-            if (val < 50)
+            if (val < 25)
             {
                 dsc->rect_dsc->bg_color = lv_color_hex(0x00FF00); // green
             }
-            else if (val < 60)
+            else if (val < 75)
             {
                 dsc->rect_dsc->bg_color = lv_color_hex(0xFFFF00); // yellow
             }
@@ -117,7 +117,7 @@ void Electricity_Update_TimeAxis(const RecommendationList *data)
         int hour = (start_hour + i) % 24;
 
         char buf[8];
-        snprintf(buf, sizeof(buf), "T%02d", hour);
+        snprintf(buf, sizeof(buf), "%02d", hour);
 
         lv_label_set_text(time_labels[i], buf);
     }

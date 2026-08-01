@@ -390,7 +390,7 @@ void Weather_UI_Update_test()
             return;
 
         char current_temp[10];
-        snprintf(current_temp, sizeof(current_temp), "%.2f", weather_list.weather[0].temp);
+        snprintf(current_temp, sizeof(current_temp), "%.1f °C", weather_list.weather[0].temp);
 
         lv_label_set_text(test.current_temp, current_temp);
         lv_label_set_text(test.current_weather, weather_code_to_text(weather_list.weather[0].weather_code));
@@ -414,7 +414,7 @@ void Weather_UI_Update_test()
 
             char temp_buf[10];
             snprintf(temp_buf, sizeof(temp_buf),
-                     "%.2f", weather_list.weather[i].temp);
+                     "%.1f °C", weather_list.weather[i].temp);
 
             forecast_row_t *r = &test.forecast_rows[j];
 

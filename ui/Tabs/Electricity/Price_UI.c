@@ -78,7 +78,7 @@ void Price_UI_Update()
     {
         if (price_list.status.electricity_fetched)
         {
-            ESP_LOGI(TAG, "Should print");
+            //ESP_LOGI(TAG, "Should print");
             for (int j = 0; j < 24; j++)
             {
                 int i = j * 4;

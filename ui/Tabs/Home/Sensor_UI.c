@@ -259,24 +259,29 @@ void Sensor_UI_Update(void)
         snprintf(humidity, sizeof(humidity), "%2.1f%%", sensor_data.humidity);
         snprintf(pressure, sizeof(pressure), "%.1f hPa", sensor_data.pressure);
 
-        if (lvgl_port_lock(-1))
-        {
-            lv_label_set_text(sensor_ui.temperature_label_dyn, temperature);
-            lv_label_set_text(sensor_ui.humidity_label_dyn, humidity);
-            lv_label_set_text(sensor_ui.pressure_label_dyn, pressure);
-            lv_label_set_text(sensor_ui.latest_data_label, "");
-            lvgl_port_unlock();
-        }
+        lv_label_set_text(sensor_ui.temperature_label_dyn, temperature);
+        lv_label_set_text(sensor_ui.humidity_label_dyn, humidity);
+        lv_label_set_text(sensor_ui.pressure_label_dyn, pressure);
+        lv_label_set_text(sensor_ui.latest_data_label, "");
+        // if (lvgl_port_lock(-1))
+        // {
+        //     lv_label_set_text(sensor_ui.temperature_label_dyn, temperature);
+        //     lv_label_set_text(sensor_ui.humidity_label_dyn, humidity);
+        //     lv_label_set_text(sensor_ui.pressure_label_dyn, pressure);
+        //     lv_label_set_text(sensor_ui.latest_data_label, "");
+        //     lvgl_port_unlock();
+        // }
     }
     else
     {
         char latest_data[128];
         format_latest_data(&sensor_data, latest_data, sizeof(latest_data));
 
-        if (lvgl_port_lock(-1))
-        {
-            lv_label_set_text(sensor_ui.latest_data_label, latest_data);
-            lvgl_port_unlock();
-        }
+        lv_label_set_text(sensor_ui.latest_data_label, latest_data);
+        // if (lvgl_port_lock(-1))
+        // {
+        //     lv_label_set_text(sensor_ui.latest_data_label, latest_data);
+        //     lvgl_port_unlock();
+        // }
     }
 }

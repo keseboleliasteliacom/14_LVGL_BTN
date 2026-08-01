@@ -52,6 +52,7 @@ void WiFi_UI_Initialize();
  * Call from the UI task context to consume queued Wi-Fi status updates and
  * refresh the visible labels and dropdown options.
  */
+// @pre The caller mumst hold the LVGL port lock
 void WiFi_UI_Update();
 
 /** @} */

@@ -90,6 +90,8 @@ static void LEOP_UI_Update(void)
  * Polls the individual UI modules, then updates the LVGL-backed widgets while
  * holding the LVGL lock. Runs in task context and blocks on the lock and delay.
  */
+// The current behavior and design decision is that this function holds the lock and updates everything.
+// @pre If an external call is needed, the caller for any "_UI_Update()" most hold the LVGL port lock
 void ui_update_task(void *arg)
 {
     const app_state_t *app = (const app_state_t*)arg;

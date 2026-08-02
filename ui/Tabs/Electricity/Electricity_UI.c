@@ -17,10 +17,14 @@ static Electricity_UI electricity_ui = {
 };
 
 static lv_chart_series_t *electricity_series;
-static lv_coord_t electricity_chart_data[96];
+static lv_coord_t electricity_chart_data[LEOP_FORECAST_MAX_ENTRIES];
+static RecommendationAction electricity_recommendations[LEOP_FORECAST_MAX_ENTRIES];
 
+static lv_obj_t *dashboard;
+static lv_obj_t *recommendation_panel;
+static lv_obj_t *price_panel;
 static lv_obj_t *time_container;
-static lv_obj_t *time_labels[24]; // max 24 hours
+static lv_obj_t *time_labels[12];
 
 /**
  * @brief Handles chart draw events to color bars based on value.
@@ -31,7 +35,6 @@ static lv_obj_t *time_labels[24]; // max 24 hours
  */
 static void chart_event_cb(lv_event_t *e)
 {
-    lv_obj_t *chart = lv_event_get_target(e);
     lv_event_code_t code = lv_event_get_code(e);
 
     if (code == LV_EVENT_DRAW_PART_BEGIN)
@@ -42,19 +45,25 @@ static void chart_event_cb(lv_event_t *e)
         {
             int32_t id = dsc->id; // bar index
 
-            lv_coord_t val = electricity_chart_data[id];
+            RecommendationAction action = LEOP_RECOMMENDATION_UNKNOWN;
+            if (id >= 0 && id < LEOP_FORECAST_MAX_ENTRIES)
+                action = electricity_recommendations[id];
 
-            if (val < 25)
+            if (action == LEOP_RECOMMENDATION_BUY)
             {
                 dsc->rect_dsc->bg_color = lv_color_hex(0x00FF00); // green
             }
-            else if (val < 75)
+            else if (action == LEOP_RECOMMENDATION_HOLD)
             {
                 dsc->rect_dsc->bg_color = lv_color_hex(0xFFFF00); // yellow
             }
-            else
+            else if (action == LEOP_RECOMMENDATION_SELL)
             {
                 dsc->rect_dsc->bg_color = lv_color_hex(0xFF0000); // red
+            }
+            else
+            {
+                dsc->rect_dsc->bg_color = lv_color_hex(0x808080); // unknown
             }
 
             dsc->rect_dsc->radius = 0;
@@ -77,15 +86,13 @@ int get_hour(const char *iso)
 /**
  * @brief Creates the time-axis label container under the chart.
  *
- * @note The container is aligned relative to the chart and creates 24 labels
- *       for hourly markers.
+ * @note Twelve two-hour markers keep the timeline precise without overlap.
  */
 void create_time_axis_container()
 {
-    time_container = lv_obj_create(ui_TabPage_Electricity);
+    time_container = lv_obj_create(recommendation_panel);
 
-    lv_obj_set_size(time_container, 700, 60);
-    lv_obj_align_to(time_container, electricity_ui.ui_Chart_Electricity, LV_ALIGN_OUT_BOTTOM_MID, 0, -5);
+    lv_obj_set_size(time_container, LV_PCT(92), 28);
 
     lv_obj_set_flex_flow(time_container, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(time_container,
@@ -96,7 +103,7 @@ void create_time_axis_container()
     lv_obj_set_style_bg_opa(time_container, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(time_container, 0, 0);
 
-    for (int i = 0; i < 24; i++)
+    for (int i = 0; i < 12; i++)
     {
         time_labels[i] = lv_label_create(time_container);
     }
@@ -109,15 +116,17 @@ void create_time_axis_container()
  */
 void Electricity_Update_TimeAxis(const RecommendationList *data)
 {
-    int start_hour =
-        get_hour(data->rec[0].timestamp);
-
-    for (int i = 0; i < 24; i++)
+    for (int i = 0; i < 12; i++)
     {
-        int hour = (start_hour + i) % 24;
+        size_t index = data->count > 1
+                           ? ((size_t)i * (data->count - 1)) / 11
+                           : 0;
+        int hour = get_hour(data->rec[index].timestamp);
+        int minute = (data->rec[index].timestamp[14] - '0') * 10 +
+                     (data->rec[index].timestamp[15] - '0');
 
-        char buf[8];
-        snprintf(buf, sizeof(buf), "%02d", hour);
+        char buf[12];
+        snprintf(buf, sizeof(buf), "%02d:%02d", hour, minute);
 
         lv_label_set_text(time_labels[i], buf);
     }
@@ -130,20 +139,53 @@ void Electricity_Update_TimeAxis(const RecommendationList *data)
  */
 void Electricity_UI_Initialize()
 {
-    electricity_ui.ui_Chart_Electricity = lv_chart_create(ui_TabPage_Electricity);
-    lv_obj_set_width(electricity_ui.ui_Chart_Electricity, 689);
-    lv_obj_set_height(electricity_ui.ui_Chart_Electricity, 285);
-    lv_obj_set_x(electricity_ui.ui_Chart_Electricity, 3);
-    lv_obj_set_y(electricity_ui.ui_Chart_Electricity, 20);
-    lv_obj_set_align(electricity_ui.ui_Chart_Electricity, LV_ALIGN_CENTER);
+    lv_obj_clear_flag(ui_TabPage_Electricity, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_pad_all(ui_TabPage_Electricity, 8, 0);
+
+    dashboard = lv_obj_create(ui_TabPage_Electricity);
+    lv_obj_remove_style_all(dashboard);
+    lv_obj_set_size(dashboard, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_layout(dashboard, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(dashboard, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(dashboard, LV_FLEX_ALIGN_START,
+                          LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_style_pad_column(dashboard, 8, 0);
+    lv_obj_clear_flag(dashboard, LV_OBJ_FLAG_SCROLLABLE);
+
+    recommendation_panel = lv_obj_create(dashboard);
+    lv_obj_set_size(recommendation_panel, 0, LV_PCT(100));
+    lv_obj_set_flex_grow(recommendation_panel, 7);
+    lv_obj_set_layout(recommendation_panel, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(recommendation_panel, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(recommendation_panel, LV_FLEX_ALIGN_START,
+                          LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_all(recommendation_panel, 8, 0);
+    lv_obj_set_style_pad_row(recommendation_panel, 4, 0);
+    lv_obj_set_style_bg_color(recommendation_panel, lv_color_hex(0x20142F), 0);
+    lv_obj_clear_flag(recommendation_panel, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *title = lv_label_create(recommendation_panel);
+    lv_label_set_text(title, "Energy recommendation");
+    lv_obj_set_style_text_color(title, lv_color_white(), 0);
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_20, 0);
+
+    lv_obj_t *scale_help = lv_label_create(recommendation_panel);
+    lv_label_set_text(scale_help, "Score 0-100 (height)  |  Color shows recommendation");
+    lv_obj_set_style_text_color(scale_help, lv_color_hex(0xD8CCE5), 0);
+
+    electricity_ui.ui_Chart_Electricity = lv_chart_create(recommendation_panel);
+    /* Leave room for Y-axis tick labels, which LVGL draws outside the chart. */
+    lv_obj_set_width(electricity_ui.ui_Chart_Electricity, LV_PCT(92));
+    lv_obj_set_flex_grow(electricity_ui.ui_Chart_Electricity, 1);
     lv_chart_set_type(electricity_ui.ui_Chart_Electricity, LV_CHART_TYPE_BAR);
-    lv_chart_set_point_count(electricity_ui.ui_Chart_Electricity, 96);
+    lv_chart_set_point_count(electricity_ui.ui_Chart_Electricity, LEOP_FORECAST_MAX_ENTRIES);
     lv_chart_set_axis_tick(electricity_ui.ui_Chart_Electricity, LV_CHART_AXIS_PRIMARY_X, 0, 0, 0, 0, false, 0);
     lv_chart_set_axis_tick(electricity_ui.ui_Chart_Electricity, LV_CHART_AXIS_PRIMARY_Y, 10, 5, 5, 2, true, 50);
     lv_chart_set_axis_tick(electricity_ui.ui_Chart_Electricity, LV_CHART_AXIS_SECONDARY_Y, 10, 5, 5, 2, true, 25);
     electricity_series = lv_chart_add_series(electricity_ui.ui_Chart_Electricity, lv_color_hex(0x808080),
                                              LV_CHART_AXIS_PRIMARY_Y);
     memset(electricity_chart_data, 0, sizeof(electricity_chart_data));
+    memset(electricity_recommendations, 0, sizeof(electricity_recommendations));
     lv_chart_set_ext_y_array(electricity_ui.ui_Chart_Electricity, electricity_series, electricity_chart_data);
     lv_chart_set_range(electricity_ui.ui_Chart_Electricity, LV_CHART_AXIS_PRIMARY_Y, 0, 100);
     lv_obj_set_style_bg_color(electricity_ui.ui_Chart_Electricity, lv_color_hex(0x20142F), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -154,10 +196,29 @@ void Electricity_UI_Initialize()
 
     lv_obj_set_style_text_color(electricity_ui.ui_Chart_Electricity, lv_color_hex(0xFFFFFF), LV_PART_TICKS | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(electricity_ui.ui_Chart_Electricity, 255, LV_PART_TICKS | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(electricity_ui.ui_Chart_Electricity, 6, LV_PART_MAIN);
+    lv_obj_set_style_pad_right(electricity_ui.ui_Chart_Electricity, 6, LV_PART_MAIN);
 
     create_time_axis_container();
 
+    lv_obj_t *legend = lv_label_create(recommendation_panel);
+    lv_label_set_recolor(legend, true);
+    lv_label_set_text(legend,
+                      "#00FF00 Buy#   #FFFF00 Hold#   #FF0000 Sell#   #808080 Unknown#");
+
+    price_panel = lv_obj_create(dashboard);
+    lv_obj_set_size(price_panel, 0, LV_PCT(100));
+    lv_obj_set_flex_grow(price_panel, 3);
+    lv_obj_set_style_pad_all(price_panel, 8, 0);
+    lv_obj_set_style_bg_color(price_panel, lv_color_hex(0x20142F), 0);
+    lv_obj_clear_flag(price_panel, LV_OBJ_FLAG_SCROLLABLE);
+
     lv_obj_add_event_cb(electricity_ui.ui_Chart_Electricity, chart_event_cb, LV_EVENT_DRAW_PART_BEGIN, NULL);
+}
+
+lv_obj_t *Electricity_UI_GetPricePanel(void)
+{
+    return price_panel;
 }
 
 /**
@@ -172,7 +233,15 @@ void Electricity_UI_Update(void)
     {
         if (rec_list.status.recommendation_fetched)
         {
-            for (int i = 0; i < 96; i++)
+            size_t count = rec_list.count;
+            if (count > LEOP_FORECAST_MAX_ENTRIES)
+                count = LEOP_FORECAST_MAX_ENTRIES;
+
+            memset(electricity_chart_data, 0, sizeof(electricity_chart_data));
+            memset(electricity_recommendations, 0, sizeof(electricity_recommendations));
+            lv_chart_set_point_count(electricity_ui.ui_Chart_Electricity, count);
+
+            for (size_t i = 0; i < count; i++)
             {
                 float value = rec_list.rec[i].recommendation;
 
@@ -185,8 +254,10 @@ void Electricity_UI_Update(void)
                 // ESP_LOGI(TAG, "value: %.f", value);
 
                 electricity_chart_data[i] = (lv_coord_t)(value * 100.0f);
+                electricity_recommendations[i] = rec_list.rec[i].action;
             }
-            Electricity_Update_TimeAxis(&rec_list);
+            if (count > 0)
+                Electricity_Update_TimeAxis(&rec_list);
             lv_chart_refresh(electricity_ui.ui_Chart_Electricity);
         }
     }

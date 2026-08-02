@@ -20,7 +20,7 @@ static const char *TAG = "Weather";
 int Weather_Initialize(WeatherList *w_list)
 {
     w_list->count = 0;
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < LEOP_FORECAST_MAX_ENTRIES; i++)
     {
         w_list->weather[i] = (Weather){0};
     }
@@ -110,7 +110,7 @@ void Weather_Dispose(WeatherList *w_list)
 {
     w_list->count = 0;
 
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < LEOP_FORECAST_MAX_ENTRIES; i++)
     {
         w_list->weather[i] = (Weather){0};
     }

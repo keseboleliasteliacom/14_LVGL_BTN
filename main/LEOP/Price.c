@@ -20,7 +20,7 @@ static const char *TAG = "Price";
 int Price_Initialize(PriceList *p_list)
 {
     p_list->count = 0;
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < LEOP_FORECAST_MAX_ENTRIES; i++)
     {
         p_list->price[i] = (Price){0};
     }
@@ -112,7 +112,7 @@ void Price_Dispose(PriceList *p_list)
 {
     p_list->count = 0;
 
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < LEOP_FORECAST_MAX_ENTRIES; i++)
     {
         p_list->price[i] = (Price){0};
     }

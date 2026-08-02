@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include "../Cache/Cache.h"
+#include "LEOP_Limits.h"
 
 /**
  * @file Price.h
@@ -15,7 +16,7 @@
  * @brief Price data management.
  *
  * Handles remote price retrieval, cached JSON loading, and in-memory
- * bookkeeping for up to 96 price entries.
+ * bookkeeping for up to 128 price entries.
  *
  * @note Fetching depends on HTTP and JSON parsing support provided by other
  * modules.
@@ -40,12 +41,12 @@ typedef struct
 /**
  * @brief Collection of fetched or cached price entries.
  *
- * Stores up to 96 entries along with load count, cache state, and fetch
+ * Stores up to 128 entries along with load count, cache state, and fetch
  * status.
  */
 typedef struct
 {
-    Price price[96];
+    Price price[LEOP_FORECAST_MAX_ENTRIES];
     size_t count;
     Cache_t cache;
     PriceStatus status;

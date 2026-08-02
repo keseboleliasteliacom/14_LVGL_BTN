@@ -36,7 +36,7 @@ static const char *TAG = "Recommendation";
 int Recommendation_Initialize(RecommendationList *r_list)
 {
     r_list->count = 0;
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < LEOP_FORECAST_MAX_ENTRIES; i++)
     {
         r_list->rec[i] = (Recommendation){0};
     }
@@ -137,7 +137,7 @@ void Recommendation_Dispose(RecommendationList *r_list)
 {
     r_list->count = 0;
 
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < LEOP_FORECAST_MAX_ENTRIES; i++)
     {
         r_list->rec[i] = (Recommendation){0};
     }

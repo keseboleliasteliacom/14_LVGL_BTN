@@ -66,19 +66,13 @@ sensor accuracy or the physical units supplied by every lower-level boundary.
 
 ## Electricity tab
 
-The upper chart displays 96 recommendation values normalized to 0–100 for
-rendering. Bars below 50 are green, values from 50 through 59 are yellow, and
-values from 60 upward are red. Labels provide 24 hourly markers derived from
-the first recommendation timestamp.
+The left panel displays 96 continuous recommendation scores normalized to
+0–100 for bar height. Bar colors use LEOP's separate quartile category: green
+for buy, yellow for hold, red for sell, and gray for unknown. Twelve two-hour
+labels keep the 24-hour axis readable.
 
-Those colors are presentation thresholds in current UI code, not a settled
-business interpretation. The server field semantics are explicitly unresolved,
-so do not describe green/yellow/red as buy, hold, or sell guidance.
-
-A second, vertically offset price panel creates 24 hourly rows and samples
-every fourth item from the 96-entry price list. Its current placement uses a
-large positive Y offset, so physical visibility/layout must be verified rather
-than assumed from object creation alone.
+The right panel shows a simultaneously visible, scrollable list of 24 hourly
+prices in SEK/kWh, sampled every fourth item from the 96-entry price list.
 
 ## Weather tab
 

@@ -14,7 +14,7 @@ change or delete source code.
 | --- | --- |
 | Property selection | The ESP uses temporary integer property ID `2`; UUID-like device identity and registration are planned |
 | Capacity | Five properties is a temporary test limit |
-| Recommendation | The numeric `type` field exists, but its intended meaning is unresolved |
+| Recommendation | The API separates continuous `score` from the quartile-based buy/hold/sell category |
 | UI | Three of five Settings fields work; Wi-Fi status can remain visually connected after loss |
 | HTTP | Current routes are backwards, unauthenticated and plain HTTP |
 | Compatibility | Timestamp, UV type, cache validation and bounds behavior have known gaps |
@@ -42,18 +42,6 @@ Important Glennergy runtime structures currently process at most five
 properties. The owner has classified this as a temporary test limit, not final
 product capacity. The repository seed contains more entries, and several later
 entries do not satisfy the schema consumed by the active code.
-
-## Unresolved behavior
-
-### Recommendation semantics
-
-The server returns a numeric `type` field in recommendation objects. The
-algorithm calculates a categorical recommendation result but discards it and
-publishes the output of `average_WindowLow_percent` instead. That value is held
-in a misleading local variable named `temp`, but it is not the weather
-temperature. The intended meaning of `type` is deliberately unresolved.
-Current documentation may describe the emitted schema and code evidence, but
-must not define `type` as a particular decision, score or enum.
 
 ## Partially implemented firmware behavior
 

@@ -120,9 +120,9 @@ fixed to 96 quarter-hour slots. The ESP storage is also fixed to 96 entries.
 [
   {
     "id": 2,
-    "type": 0.42,
-    "timestamp": "2026-01-01T12:00",
-    "temp": 18.5
+    "score": 0.42,
+    "recommendation": "hold",
+    "timestamp": "2026-01-01T12:00"
   }
 ]
 ```
@@ -130,16 +130,13 @@ fixed to 96 quarter-hour slots. The ESP storage is also fixed to 96 entries.
 | Field | Server output | ESP consumption |
 | --- | --- | --- |
 | `id` | JSON integer; property ID | Read with `json_integer_value`; missing/wrong type is not rejected and can become zero |
-| `type` | JSON real from `AlgoritmResult.recommendation[]` | Read with `json_real_value`; missing/wrong type is not rejected and can become zero |
+| `score` | JSON real normalized from the window's minimum and maximum price | Read with `json_real_value`; legacy cached `type` is also accepted |
+| `recommendation` | JSON string: `buy`, `hold`, or `sell`, calculated from Q25/Q75 | Parsed into `RecommendationAction`; legacy responses derive a fallback category from score thresholds |
 | `timestamp` | JSON string copied from the matched spot-price timestamp | Copied into a 20-byte buffer without a safe member/type check |
-| `temp` | JSON real, degrees Celsius | Emitted but ignored by the recommendation parser |
 
-The intended meaning of `recommendation[].type` is **unresolved**. The algorithm
-calculates a categorical recommendation value but currently discards it; the
-published array is instead assigned the result of a price-position calculation.
-This document deliberately does not name `type` as buy, hold, sell, percentage
-or another final semantic. Treat consumers that interpret it more specifically
-as depending on unconfirmed behavior.
+The score controls chart height. The explicit recommendation controls the bar
+color, so category boundaries follow actual price quartiles rather than fixed
+positions within the min/max-normalized score.
 
 ### Weather
 
@@ -173,7 +170,7 @@ UV values to an integer before the response is generated, losing fractions.
 [
   {
     "timestamp": "2026-01-01T12:00",
-    "price SEK": 0.73
+    "price_sek_per_kwh": 0.73
   }
 ]
 ```
@@ -181,10 +178,7 @@ UV values to an integer before the response is generated, losing fractions.
 | Field | Server output | Unit/meaning | ESP consumption |
 | --- | --- | --- | --- |
 | `timestamp` | JSON string | Quarter-hour price interval start | Copied into a 20-byte buffer without a safe member/type check |
-| `price SEK` | JSON real | SEK per kWh | Read as `double`; missing/wrong type is not rejected |
-
-The space in `price SEK` is part of the current wire key and must be preserved
-for compatibility.
+| `price_sek_per_kwh` | JSON real | SEK per kWh | Read as `double`; legacy cached `price SEK` is also accepted |
 
 ### Timestamp compatibility
 
@@ -227,7 +221,6 @@ instant. A future contract should specify format, offset policy and validation.
 
 | Area | Current incompatibility or risk |
 | --- | --- |
-| Recommendation semantics | `type` has no approved final meaning; a calculated categorical value is discarded before publication. |
 | Timestamp length | Server can emit strings longer than the ESP's 19-character payload capacity; timezone offsets can be truncated. |
 | UV index | Server emits a JSON real after an earlier integer conversion; ESP reads only a JSON integer. |
 | Array bounds | Server currently emits 96, but ESP parsers trust any array length despite fixed 96-entry storage. |

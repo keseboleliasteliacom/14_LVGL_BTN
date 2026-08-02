@@ -26,13 +26,13 @@
 /**
  * @brief LVGL widget handles for the electricity price view.
  *
- * The arrays contain 24 entries, one per hour shown in the tab.
+ * The arrays contain 32 entries, one per possible hour shown in the tab.
  */
 typedef struct
 {
     lv_obj_t* price_panel; /**< Root container for the price list. */
-    lv_obj_t *hourLabel[24]; /**< Hour labels, indexed by display row. */
-    lv_obj_t *priceLabel[24]; /**< Price labels, indexed by display row. */
+    lv_obj_t *hourLabel[32]; /**< Hour labels, indexed by display row. */
+    lv_obj_t *priceLabel[32]; /**< Price labels, indexed by display row. */
 } Price_UI;
 
 /**

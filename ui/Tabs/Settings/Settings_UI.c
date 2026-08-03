@@ -9,7 +9,9 @@
 
 #include "../../screens/Main_UI.h"
 #include "../../../main/SNTP/time_sync.h"
+#include "../../../main/Config/AppConfig.h"
 
+#include "esp_log.h"
 #include "esp_system.h"
 #include "esp_timer.h"
 
@@ -21,6 +23,275 @@
 
 
 #include "TimeFormat.h" // from "Utils" folder"
+
+static const char *TAG = "Settings_UI";
+
+typedef struct
+{
+    lv_obj_t *sensor_dropdown;
+    lv_obj_t *fetch_dropdown;
+    lv_obj_t *apply_button;
+    lv_obj_t *status_label;
+    app_state_t *app;
+    uint32_t sensor_custom_value;
+    uint32_t fetch_custom_value;
+    uint32_t displayed_sensor_value;
+    uint32_t displayed_fetch_value;
+    bool sensor_has_custom_option;
+    bool fetch_has_custom_option;
+    bool sensor_dirty;
+    bool fetch_dirty;
+    bool values_loaded;
+} settings_controls_t;
+
+static settings_controls_t controls;
+
+static const uint32_t sensor_presets[] = {1000, 2000, 3000, 4000, 5000, 10000, 30000, 60000};
+static const char *sensor_preset_labels[] = {
+    "1 second", "2 seconds", "3 seconds", "4 seconds", "5 seconds",
+    "10 seconds", "30 seconds", "60 seconds"};
+
+static const uint32_t fetch_presets[] = {1, 2, 3, 4, 5, 15, 30, 60, 120, 360, 720, 1440};
+static const char *fetch_preset_labels[] = {
+    "1 minute", "2 minutes", "3 minutes", "4 minutes", "5 minutes",
+    "15 minutes", "30 minutes", "1 hour", "2 hours", "6 hours", "12 hours", "24 hours"};
+
+static void Settings_UI_ApplyEvent(lv_event_t *event);
+static void Settings_UI_DropdownChanged(lv_event_t *event);
+static void Settings_UI_SyncConfig(app_state_t *app);
+
+static void Settings_UI_SetLabelStyle(lv_obj_t *label)
+{
+    lv_obj_set_style_text_color(label, lv_color_white(), 0);
+}
+
+static int Settings_UI_FindPreset(const uint32_t *values, size_t count, uint32_t value)
+{
+    for (size_t i = 0; i < count; ++i)
+    {
+        if (values[i] == value)
+        {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
+static void Settings_UI_BuildOptions(
+    char *buffer,
+    size_t buffer_size,
+    const char *const *labels,
+    size_t count,
+    const char *custom_label)
+{
+    size_t used = 0;
+    buffer[0] = '\0';
+
+    if (custom_label != NULL)
+    {
+        int written = snprintf(buffer, buffer_size, "%s\n", custom_label);
+        if (written < 0 || (size_t)written >= buffer_size)
+        {
+            return;
+        }
+        used = (size_t)written;
+    }
+
+    for (size_t i = 0; i < count && used < buffer_size; ++i)
+    {
+        int written = snprintf(
+            buffer + used,
+            buffer_size - used,
+            "%s%s",
+            labels[i],
+            i + 1 < count ? "\n" : "");
+        if (written < 0 || (size_t)written >= buffer_size - used)
+        {
+            buffer[buffer_size - 1] = '\0';
+            return;
+        }
+        used += (size_t)written;
+    }
+}
+
+static void Settings_UI_SetSensorDropdown(uint32_t value)
+{
+    char options[160];
+    char custom[32];
+    int preset = Settings_UI_FindPreset(
+        sensor_presets,
+        sizeof(sensor_presets) / sizeof(sensor_presets[0]),
+        value);
+
+    controls.sensor_has_custom_option = preset < 0;
+    controls.sensor_custom_value = value;
+    if (controls.sensor_has_custom_option)
+    {
+        snprintf(custom, sizeof(custom), "Current: %lu ms", (unsigned long)value);
+    }
+    Settings_UI_BuildOptions(
+        options,
+        sizeof(options),
+        sensor_preset_labels,
+        sizeof(sensor_preset_labels) / sizeof(sensor_preset_labels[0]),
+        controls.sensor_has_custom_option ? custom : NULL);
+    lv_dropdown_set_options(controls.sensor_dropdown, options);
+    lv_dropdown_set_selected(
+        controls.sensor_dropdown,
+        controls.sensor_has_custom_option ? 0U : (uint16_t)preset);
+    controls.displayed_sensor_value = value;
+}
+
+static void Settings_UI_SetFetchDropdown(uint32_t value)
+{
+    char options[192];
+    char custom[40];
+    int preset = Settings_UI_FindPreset(
+        fetch_presets,
+        sizeof(fetch_presets) / sizeof(fetch_presets[0]),
+        value);
+
+    controls.fetch_has_custom_option = preset < 0;
+    controls.fetch_custom_value = value;
+    if (controls.fetch_has_custom_option)
+    {
+        snprintf(custom, sizeof(custom), "Current: %lu minutes", (unsigned long)value);
+    }
+    Settings_UI_BuildOptions(
+        options,
+        sizeof(options),
+        fetch_preset_labels,
+        sizeof(fetch_preset_labels) / sizeof(fetch_preset_labels[0]),
+        controls.fetch_has_custom_option ? custom : NULL);
+    lv_dropdown_set_options(controls.fetch_dropdown, options);
+    lv_dropdown_set_selected(
+        controls.fetch_dropdown,
+        controls.fetch_has_custom_option ? 0U : (uint16_t)preset);
+    controls.displayed_fetch_value = value;
+}
+
+static uint32_t Settings_UI_GetSensorSelection(void)
+{
+    uint16_t selected = lv_dropdown_get_selected(controls.sensor_dropdown);
+    if (controls.sensor_has_custom_option)
+    {
+        if (selected == 0)
+        {
+            return controls.sensor_custom_value;
+        }
+        --selected;
+    }
+    return sensor_presets[selected];
+}
+
+static uint32_t Settings_UI_GetFetchSelection(void)
+{
+    uint16_t selected = lv_dropdown_get_selected(controls.fetch_dropdown);
+    if (controls.fetch_has_custom_option)
+    {
+        if (selected == 0)
+        {
+            return controls.fetch_custom_value;
+        }
+        --selected;
+    }
+    return fetch_presets[selected];
+}
+
+static void Settings_UI_DropdownChanged(lv_event_t *event)
+{
+    lv_obj_t *target = lv_event_get_target(event);
+    if (target == controls.sensor_dropdown)
+    {
+        controls.sensor_dirty = Settings_UI_GetSensorSelection() != controls.displayed_sensor_value;
+    }
+    else if (target == controls.fetch_dropdown)
+    {
+        controls.fetch_dirty = Settings_UI_GetFetchSelection() != controls.displayed_fetch_value;
+    }
+
+    lv_label_set_text(
+        controls.status_label,
+        controls.sensor_dirty || controls.fetch_dirty ? "Unsaved changes" : "No changes");
+}
+
+static void Settings_UI_ApplyEvent(lv_event_t *event)
+{
+    (void)event;
+    if (controls.app == NULL)
+    {
+        lv_label_set_text(controls.status_label, "Configuration unavailable");
+        return;
+    }
+
+    uint32_t sensor_value = Settings_UI_GetSensorSelection();
+    uint32_t fetch_value = Settings_UI_GetFetchSelection();
+    bool changed = false;
+    bool failed = false;
+
+    if (sensor_value != controls.app->config_data.sensor_interval_ms)
+    {
+        if (Config_WriteToNVS_SensorIntervalMs(sensor_value) == 0)
+        {
+            controls.app->config_data.sensor_interval_ms = sensor_value;
+            changed = true;
+        }
+        else
+        {
+            failed = true;
+            ESP_LOGW(TAG, "Failed to save sensor interval");
+        }
+    }
+
+    if (fetch_value != controls.app->config_data.fetch_interval_minutes)
+    {
+        if (Config_WriteToNVS_FetchIntervalMinutes(fetch_value) == 0)
+        {
+            controls.app->config_data.fetch_interval_minutes = fetch_value;
+            changed = true;
+        }
+        else
+        {
+            failed = true;
+            ESP_LOGW(TAG, "Failed to save LEOP fetch interval");
+        }
+    }
+
+    controls.sensor_dirty = false;
+    controls.fetch_dirty = false;
+    Settings_UI_SetSensorDropdown(controls.app->config_data.sensor_interval_ms);
+    Settings_UI_SetFetchDropdown(controls.app->config_data.fetch_interval_minutes);
+    lv_label_set_text(
+        controls.status_label,
+        failed ? (changed ? "Partially saved" : "Save failed") : (changed ? "Saved" : "No changes"));
+}
+
+static void Settings_UI_SyncConfig(app_state_t *app)
+{
+    if (app == NULL)
+    {
+        return;
+    }
+
+    controls.app = app;
+    if (!controls.sensor_dirty &&
+        (!controls.values_loaded || controls.displayed_sensor_value != app->config_data.sensor_interval_ms))
+    {
+        Settings_UI_SetSensorDropdown(app->config_data.sensor_interval_ms);
+    }
+    if (!controls.fetch_dirty &&
+        (!controls.values_loaded || controls.displayed_fetch_value != app->config_data.fetch_interval_minutes))
+    {
+        Settings_UI_SetFetchDropdown(app->config_data.fetch_interval_minutes);
+    }
+
+    if (!controls.values_loaded)
+    {
+        controls.values_loaded = true;
+        lv_obj_clear_state(controls.apply_button, LV_STATE_DISABLED);
+        lv_label_set_text(controls.status_label, "Ready");
+    }
+}
 
 
 /*
@@ -172,6 +443,70 @@ void Settings_UI_Initialize(void)
     lv_label_set_text(
         ui_RestartValueLabel,
         Settings_UI_GetRestartReasonText());
+
+    lv_obj_t *sensor_label = lv_label_create(ui_SettingsConfigContainer);
+    lv_label_set_text(sensor_label, "Sensor update interval");
+    lv_obj_set_width(sensor_label, 360);
+    lv_obj_set_pos(sensor_label, 0, -145);
+    lv_obj_set_align(sensor_label, LV_ALIGN_CENTER);
+    lv_obj_set_style_text_align(sensor_label, LV_TEXT_ALIGN_LEFT, 0);
+    Settings_UI_SetLabelStyle(sensor_label);
+
+    controls.sensor_dropdown = lv_dropdown_create(ui_SettingsConfigContainer);
+    lv_obj_set_size(controls.sensor_dropdown, 360, LV_SIZE_CONTENT);
+    lv_obj_set_pos(controls.sensor_dropdown, 0, -105);
+    lv_obj_set_align(controls.sensor_dropdown, LV_ALIGN_CENTER);
+    lv_obj_set_style_bg_color(controls.sensor_dropdown, lv_color_hex(0x301E4D), 0);
+    lv_obj_set_style_text_color(controls.sensor_dropdown, lv_color_white(), 0);
+    lv_obj_add_event_cb(
+        controls.sensor_dropdown,
+        Settings_UI_DropdownChanged,
+        LV_EVENT_VALUE_CHANGED,
+        NULL);
+
+    lv_obj_t *fetch_label = lv_label_create(ui_SettingsConfigContainer);
+    lv_label_set_text(fetch_label, "LEOP fetch interval");
+    lv_obj_set_width(fetch_label, 360);
+    lv_obj_set_pos(fetch_label, 0, -45);
+    lv_obj_set_align(fetch_label, LV_ALIGN_CENTER);
+    lv_obj_set_style_text_align(fetch_label, LV_TEXT_ALIGN_LEFT, 0);
+    Settings_UI_SetLabelStyle(fetch_label);
+
+    controls.fetch_dropdown = lv_dropdown_create(ui_SettingsConfigContainer);
+    lv_obj_set_size(controls.fetch_dropdown, 360, LV_SIZE_CONTENT);
+    lv_obj_set_pos(controls.fetch_dropdown, 0, -5);
+    lv_obj_set_align(controls.fetch_dropdown, LV_ALIGN_CENTER);
+    lv_obj_set_style_bg_color(controls.fetch_dropdown, lv_color_hex(0x301E4D), 0);
+    lv_obj_set_style_text_color(controls.fetch_dropdown, lv_color_white(), 0);
+    lv_obj_add_event_cb(
+        controls.fetch_dropdown,
+        Settings_UI_DropdownChanged,
+        LV_EVENT_VALUE_CHANGED,
+        NULL);
+
+    controls.apply_button = lv_btn_create(ui_SettingsConfigContainer);
+    lv_obj_set_size(controls.apply_button, 140, 48);
+    lv_obj_set_pos(controls.apply_button, 110, 70);
+    lv_obj_set_align(controls.apply_button, LV_ALIGN_CENTER);
+    lv_obj_set_style_bg_color(controls.apply_button, lv_color_hex(0x6E10CE), 0);
+    lv_obj_add_state(controls.apply_button, LV_STATE_DISABLED);
+    lv_obj_add_event_cb(
+        controls.apply_button,
+        Settings_UI_ApplyEvent,
+        LV_EVENT_CLICKED,
+        NULL);
+
+    lv_obj_t *apply_label = lv_label_create(controls.apply_button);
+    lv_label_set_text(apply_label, "Apply");
+    lv_obj_center(apply_label);
+
+    controls.status_label = lv_label_create(ui_SettingsConfigContainer);
+    lv_label_set_text(controls.status_label, "Loading...");
+    lv_obj_set_width(controls.status_label, 360);
+    lv_obj_set_pos(controls.status_label, 0, 125);
+    lv_obj_set_align(controls.status_label, LV_ALIGN_CENTER);
+    lv_obj_set_style_text_align(controls.status_label, LV_TEXT_ALIGN_RIGHT, 0);
+    lv_obj_set_style_text_color(controls.status_label, lv_color_hex(0xD8CCE5), 0);
 }
 
 /**
@@ -179,12 +514,14 @@ void Settings_UI_Initialize(void)
  *
  * See header for full contract documentation.
  */
-void Settings_UI_Update(const app_state_t *app)
+void Settings_UI_Update(app_state_t *app)
 {
     if (app == NULL)
     {
         return;
     }
+
+    Settings_UI_SyncConfig(app);
 
     uint64_t uptime_seconds =
         (uint64_t)esp_timer_get_time() / 1000000ULL;

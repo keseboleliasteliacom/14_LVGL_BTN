@@ -38,6 +38,8 @@ extern lv_obj_t * ui_LEOP_Label;
 extern lv_obj_t * ui_LEOP_Connected_Label;
 extern lv_obj_t * ui_TabPage_Settings;
 extern lv_obj_t * ui_SettingsContainer;
+extern lv_obj_t * ui_SettingsConfigContainer;
+extern lv_obj_t * ui_SettingsConfigTitle;
 //extern lv_obj_t * ui_Group_Settings; 
 
 extern lv_obj_t *ui_UptimeInfoLabel;

@@ -41,7 +41,7 @@ void Settings_UI_Initialize(void);
  *
  * @param app Current shared application state.
  */
-void Settings_UI_Update(const app_state_t *app);
+void Settings_UI_Update(app_state_t *app);
 
 #ifdef __cplusplus
 }

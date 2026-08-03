@@ -23,6 +23,8 @@ lv_obj_t *ui_LEOP_Label = NULL;
 lv_obj_t *ui_LEOP_Connected_Label = NULL;
 lv_obj_t *ui_TabPage_Settings = NULL;
 lv_obj_t *ui_SettingsContainer = NULL;
+lv_obj_t *ui_SettingsConfigContainer = NULL;
+lv_obj_t *ui_SettingsConfigTitle = NULL;
 //lv_obj_t *ui_Group_Settings = NULL;
 
 lv_obj_t *ui_UptimeInfoLabel = NULL;
@@ -251,6 +253,26 @@ void Main_UI_Initialize()
         ui_SettingsContainer,
         LV_OPA_COVER,
         LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    /* Right-hand configuration area exported from SquareLine. */
+    ui_SettingsConfigContainer = lv_obj_create(ui_TabPage_Settings);
+    lv_obj_remove_style_all(ui_SettingsConfigContainer);
+    lv_obj_set_width(ui_SettingsConfigContainer, 440);
+    lv_obj_set_height(ui_SettingsConfigContainer, 412);
+    lv_obj_set_x(ui_SettingsConfigContainer, 237);
+    lv_obj_set_y(ui_SettingsConfigContainer, 0);
+    lv_obj_set_align(ui_SettingsConfigContainer, LV_ALIGN_CENTER);
+    lv_obj_clear_flag(
+        ui_SettingsConfigContainer,
+        LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+
+    ui_SettingsConfigTitle = lv_label_create(ui_SettingsConfigContainer);
+    lv_obj_set_width(ui_SettingsConfigTitle, LV_SIZE_CONTENT);
+    lv_obj_set_height(ui_SettingsConfigTitle, LV_SIZE_CONTENT);
+    lv_obj_set_x(ui_SettingsConfigTitle, 8);
+    lv_obj_set_y(ui_SettingsConfigTitle, -191);
+    lv_obj_set_align(ui_SettingsConfigTitle, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_SettingsConfigTitle, "CONFIG");
 
 
     /*

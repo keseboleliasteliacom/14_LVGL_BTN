@@ -3,10 +3,11 @@
 This guide explains the touchscreen without requiring programming knowledge.
 Tap a tab along the top to move between the five screens.
 
-> The pictures are enhanced photographs of a real Glennergy display. Glare,
-> perspective, and readability were corrected for documentation, so they are
-> representative rather than pixel-perfect captures. Readings, times, network
-> names, and status values are examples and will differ on your device.
+> These are corrected photographs of a real Glennergy display. The photographs
+> were rotated, perspective-corrected, cropped to 1024 × 600, lightly denoised,
+> and sharpened. No UI elements, text, values, dimensions, or network names were
+> regenerated or replaced. Live readings and status values will naturally
+> differ on another device or at another time.
 
 ## At a glance
 

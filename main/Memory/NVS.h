@@ -20,14 +20,13 @@ extern "C" {
  * @brief Public API for the NVS helper module.
  *
  * Provides helpers for initializing NVS and reading or writing simple values
- * in storage namespaces.
+ * in the default storage namespace or a named namespace.
  *
  * @defgroup NVS NVS
  * @brief Helpers for ESP-IDF NVS storage access.
  *
- * The module wraps common NVS operations used by the firmware. Some functions
- * open the default storage namespace, and the demonstration routine performs a
- * blocking delay before restarting the device.
+ * The module wraps common NVS operations used by the firmware. Functions
+ * perform NVS open, read/write, and commit operations as needed.
  * @{
  */
 

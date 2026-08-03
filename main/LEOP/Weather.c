@@ -33,9 +33,10 @@ int Weather_Initialize(WeatherList *w_list)
 }
 
 /**
- * @brief Implementation of Weather_Fetch.
+ * @brief Fetches weather data from the network and updates the list.
  *
- * See header for full contract documentation.
+ * Performs an HTTP GET, attempts to cache the payload, and parses the
+ * response into the provided weather list.
  */
 int Weather_Fetch(const char *url, WeatherList *w_list)
 {
@@ -74,9 +75,9 @@ int Weather_Fetch(const char *url, WeatherList *w_list)
 }
 
 /**
- * @brief Implementation of Weather_FetchCache.
+ * @brief Loads weather data from the local cache file.
  *
- * See header for full contract documentation.
+ * Reads the cached JSON payload and parses it into the provided weather list.
  */
 int Weather_FetchCache(WeatherList *w_list)
 {
@@ -102,9 +103,9 @@ int Weather_FetchCache(WeatherList *w_list)
 }
 
 /**
- * @brief Implementation of Weather_Dispose.
+ * @brief Clears weather list contents.
  *
- * See header for full contract documentation.
+ * Resets the entry count and clears the stored weather entries.
  */
 void Weather_Dispose(WeatherList *w_list)
 {

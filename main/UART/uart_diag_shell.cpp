@@ -83,6 +83,12 @@ void print_config(app_state_t *state);
  */
 void handle_help(bool wait_for_enter);
 
+/**
+ * @brief Print a single help line.
+ *
+ * @param[in] message Text to print.
+ * @param[in] wait_for_enter When `true`, waits for Enter after printing.
+ */
 void print_help_line(const std::string message, bool wait_for_enter);
 
 /**

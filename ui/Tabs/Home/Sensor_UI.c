@@ -22,7 +22,8 @@
 /**
  * @brief Cached LVGL handles for the sensor tab.
  *
- * The pointers are initialized during UI setup and updated by the refresh path.
+ * The pointers are initialized during UI setup and refreshed by the update
+ * path.
  */
 static Sensor_UI sensor_ui = {
     .arc_humidity_dyn = NULL,
@@ -114,6 +115,9 @@ static void format_elapsed(elapsed_seconds_t diff,
 
 /**
  * @brief Builds the latest-data status text.
+ *
+ * Uses the monotonic update timestamp when available, and includes the wall
+ * clock timestamp only when the source data reports it as valid.
  *
  * @param[in] sensor_data Source sensor data snapshot.
  * @param[out] buffer Destination buffer for the formatted string.
@@ -236,9 +240,10 @@ void Sensor_UI_Initialize()
 }
 
 /**
- * @brief Implementation of Sensor_UI_Update.
+ * @brief Refreshes the Home tab sensor values.
  *
- * See header for full contract documentation.
+ * Reads one queued sensor update without blocking and updates the LVGL labels
+ * when new data is available.
  */
 void Sensor_UI_Update(void)
 {

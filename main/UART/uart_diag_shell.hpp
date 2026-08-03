@@ -13,8 +13,15 @@
  * diagnostic input and dispatch shell commands against shared application
  * state.
  *
+ * @ingroup UART
+ */
+
+/**
  * @defgroup UART UART
  * @brief UART communication and diagnostic helpers.
+ *
+ * Command handling for the UART diagnostic shell used by the application
+ * tasking model.
  * @{
  */
 

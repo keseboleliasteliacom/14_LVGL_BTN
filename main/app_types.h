@@ -55,9 +55,9 @@ typedef struct {
  * stored in the array.
  */
 typedef struct {
-    int id;
-    leop_entry_t entries[128];
-    uint32_t entry_count;
+    int id; /**< Snapshot identifier. */
+    leop_entry_t entries[128]; /**< Cached recommendation entries. */
+    uint32_t entry_count; /**< Number of valid entries stored in entries. */
 
 } leop_data_t;
 
@@ -67,13 +67,13 @@ typedef struct {
  * Contains the most recent sensor values and the associated validity flags.
  */
 typedef struct {
-    bool valid;
-    uint32_t last_update_seconds;
-    time_t last_unix_time;
-    bool wall_time_valid;
-    double temperature;
-    double pressure;
-    double humidity;
+    bool valid; /**< True when the sensor reading is valid. */
+    uint32_t last_update_seconds; /**< Seconds since the last sensor update. */
+    time_t last_unix_time; /**< Last update time in Unix seconds. */
+    bool wall_time_valid; /**< True when wall time has been synchronized. */
+    double temperature; /**< Temperature in project-defined units. */
+    double pressure; /**< Pressure in project-defined units. */
+    double humidity; /**< Relative humidity in project-defined units. */
 } sensor_data_t;
 
 
@@ -86,7 +86,7 @@ typedef struct {
  */
 typedef struct {
     uint32_t fetch_interval_minutes; /**< Fetch interval in minutes. */
-    bool test_mode;
+    bool test_mode; /**< True when running in test mode. */
     uint32_t sensor_interval_ms; /**< Sensor interval in milliseconds. */
 
 } config_data_t;
@@ -97,10 +97,10 @@ typedef struct {
  * Tracks basic connectivity and health indicators used by the application.
  */
 typedef struct {
-    bool wifi_connected;
-    bool leop_connected;
+    bool wifi_connected; /**< True when Wi-Fi is connected. */
+    bool leop_connected; /**< True when LEOP data is available. */
     bool sensor_ok; // TODO - Might be uncessecary as the sensor_data_t already tracks if valid or not?
-    uint32_t update_counter;
+    uint32_t update_counter; /**< Number of completed application updates. */
 } system_status_t;
 
 /**
@@ -109,20 +109,22 @@ typedef struct {
  * Stores the task name, FreeRTOS handle, and configured stack size.
  */
 typedef struct {
-    const char * name;
-    TaskHandle_t handle;
-    uint32_t stack_size;
+    const char * name; /**< Task name. */
+    TaskHandle_t handle; /**< FreeRTOS task handle. */
+    uint32_t stack_size; /**< Configured stack size in bytes or words, depending on the caller. */
 } task_info_t;
 
 /**
  * @brief Collection of application task handles.
+ *
+ * Groups the task records used by the application to track its worker tasks.
  */
 typedef struct {
-    task_info_t wifi_task;
-    task_info_t ui_task;
-    task_info_t uart_task;
-    task_info_t sensor_task;
-    task_info_t leop_task;
+    task_info_t wifi_task; /**< Wi-Fi task information. */
+    task_info_t ui_task; /**< UI task information. */
+    task_info_t uart_task; /**< UART task information. */
+    task_info_t sensor_task; /**< Sensor task information. */
+    task_info_t leop_task; /**< LEOP task information. */
 } system_task_handlers_t;
 
 

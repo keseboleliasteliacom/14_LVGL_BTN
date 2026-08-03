@@ -69,7 +69,14 @@ static bool first_boot = true;
 static wifi_connection_cb_t wifi_connection_cb = NULL;
 static void *wifi_connection_ctx = NULL;
 
-
+/**
+ * @brief Schedules a deferred reconnect attempt.
+ *
+ * Keeps reconnect attempts bounded and coalesces duplicate loss-of-link
+ * notifications into a single pending retry.
+ *
+ * @return `true` when a reconnect attempt is pending or has been scheduled.
+ */
 static bool WiFi_ScheduleReconnect()
 {
     // LOST_IP and STA_DISCONNECTED can both dscribe the same loss of connection.
@@ -133,8 +140,8 @@ static void WiFi_SetConnectedState(bool connected)
 /**
  * @brief Handles IP events from the ESP-IDF event loop.
  *
- * Updates Wi-Fi connection state and starts time synchronization after the
- * station obtains an address.
+ * Updates connection state, publishes status, and starts time synchronization
+ * after the station obtains an address.
  *
  * @warning Keep callback work short and avoid blocking.
  */
@@ -651,16 +658,16 @@ void WiFi_Work(void *arg)
 }
 
 /**
- * @brief Connects to a Wi-Fi access point.
+ * @brief Applies station credentials to the Wi-Fi driver.
  *
- * Copies the SSID and password into the station configuration and starts the
- * ESP-IDF connection attempt.
+ * Copies the SSID and password into the station configuration and updates the
+ * active credentials cache.
  *
  * @param[in] w_data Connection data containing the credentials.
  *
  * @return
  * - `ESP_OK` on success
- * - `ESP_FAIL` if the connection request cannot be started
+ * - an ESP-IDF error code on failure
  */
 static esp_err_t WiFi_ApplyConfig(const wifi_data *w_data)
 {
@@ -686,6 +693,11 @@ static esp_err_t WiFi_ApplyConfig(const wifi_data *w_data)
     return ESP_OK;
 }
 
+/**
+ * @brief Implementation of WiFi_Connect.
+ *
+ * See header for full contract documentation.
+ */
 esp_err_t WiFi_Connect(wifi_data *w_data)
 {
     esp_err_t err = esp_wifi_set_mode(WIFI_MODE_STA);
@@ -737,13 +749,9 @@ bool WiFi_IsConnected()
 }
 
 /**
- * @brief Disconnects the station from the access point.
+ * @brief Implementation of WiFi_Disconnect.
  *
- * Deletes the Wi-Fi event group before requesting disconnect from ESP-IDF.
- *
- * @return
- * - `ESP_OK` on success
- * - an ESP-IDF error code on failure
+ * See header for full contract documentation.
  */
 esp_err_t WiFi_Disconnect(void)
 {
@@ -758,14 +766,9 @@ esp_err_t WiFi_Disconnect(void)
 }
 
 /**
- * @brief Releases Wi-Fi resources.
+ * @brief Implementation of WiFi_Dispose.
  *
- * Stops the Wi-Fi stack, unregisters event handlers, clears the default
- * driver, and destroys the network interface.
- *
- * @return
- * - `ESP_OK` on success
- * - an ESP-IDF error code on failure
+ * See header for full contract documentation.
  */
 esp_err_t WiFi_Dispose(void)
 {

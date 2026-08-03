@@ -72,6 +72,9 @@ static void on_wifi_connection_changed(bool connected, void *ctx)
 
 /**
  * @brief Mirrors the authoritative LEOP state into shared diagnostics state.
+ *
+ * @param state Reported LEOP connection state.
+ * @param ctx Pointer to the application state.
  */
 static void on_leop_connection_changed(leop_connection_state_t state, void *ctx)
 {

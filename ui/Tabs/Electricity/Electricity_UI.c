@@ -72,7 +72,7 @@ static void chart_event_cb(lv_event_t *e)
 }
 
 /**
- * @brief Extracts the hour from an ISO timestamp string.
+ * @brief Extracts the hour from an ISO 8601 timestamp string.
  *
  * @param[in] iso ISO 8601 timestamp string with the hour at positions 11-12.
  *
@@ -216,6 +216,11 @@ void Electricity_UI_Initialize()
     lv_obj_add_event_cb(electricity_ui.ui_Chart_Electricity, chart_event_cb, LV_EVENT_DRAW_PART_BEGIN, NULL);
 }
 
+/**
+ * @brief Returns the dashboard panel reserved for electricity prices.
+ *
+ * @return Pointer to the price panel object created during initialization.
+ */
 lv_obj_t *Electricity_UI_GetPricePanel(void)
 {
     return price_panel;

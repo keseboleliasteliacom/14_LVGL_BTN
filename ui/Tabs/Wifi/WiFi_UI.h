@@ -33,6 +33,7 @@ typedef struct{
     lv_obj_t* status_label_sta;
     lv_obj_t* status_label_dyn;
     lv_obj_t* scan_button_dyn;
+    lv_obj_t* disconnect_button_dyn;
     lv_obj_t* wifi_label;
     lv_obj_t* ssid_label;
     lv_obj_t* group_label;

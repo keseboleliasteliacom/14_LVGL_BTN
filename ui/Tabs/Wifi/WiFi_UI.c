@@ -17,6 +17,7 @@ static WiFi_UI wifi_ui = {
     .network_dropdown_dyn = NULL,
     .password_textarea_dyn = NULL,
     .scan_button_dyn = NULL,
+    .disconnect_button_dyn = NULL,
     .status_label_dyn = NULL,
     .status_label_sta = NULL,
 };
@@ -94,6 +95,27 @@ void WiFi_UI_Initialize()
     lv_obj_set_style_bg_grad_color(wifi_ui.scan_button_dyn, lv_color_hex(0x5F06CF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(wifi_ui.scan_button_dyn, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    lv_obj_t *scan_label = lv_label_create(wifi_ui.scan_button_dyn);
+    lv_label_set_text(scan_label, "SCAN");
+    lv_obj_center(scan_label);
+
+    wifi_ui.disconnect_button_dyn = lv_btn_create(ui_Group_WiFi);
+    lv_obj_set_width(wifi_ui.disconnect_button_dyn, 95);
+    lv_obj_set_height(wifi_ui.disconnect_button_dyn, 25);
+    lv_obj_set_x(wifi_ui.disconnect_button_dyn, -20);
+    lv_obj_set_y(wifi_ui.disconnect_button_dyn, -131);
+    lv_obj_set_align(wifi_ui.disconnect_button_dyn, LV_ALIGN_CENTER);
+    lv_obj_add_flag(wifi_ui.disconnect_button_dyn, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+    lv_obj_clear_flag(wifi_ui.disconnect_button_dyn, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_color(wifi_ui.disconnect_button_dyn, lv_color_hex(0x370859), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(wifi_ui.disconnect_button_dyn, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_color(wifi_ui.disconnect_button_dyn, lv_color_hex(0x5F06CF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_dir(wifi_ui.disconnect_button_dyn, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t *disconnect_label = lv_label_create(wifi_ui.disconnect_button_dyn);
+    lv_label_set_text(disconnect_label, "Disconnect");
+    lv_obj_center(disconnect_label);
+
     wifi_ui.wifi_label = lv_label_create(ui_Screen1);
     lv_obj_set_width(wifi_ui.wifi_label, LV_SIZE_CONTENT);  /// 1
     lv_obj_set_height(wifi_ui.wifi_label, LV_SIZE_CONTENT); /// 1
@@ -125,8 +147,19 @@ void WiFi_UI_Initialize()
  */
 void WiFi_UI_Scan_cb(lv_event_t *_Event)
 {
+    (void)_Event;
+
     wifi_data w_data = {0};
     w_data.cmd = WIFI_CMD_SCAN;
+    xQueueSend(wifi_cmd_queue, &w_data, 0);
+}
+
+void WiFi_UI_Disconnect_cb(lv_event_t *_Event)
+{
+    (void)_Event;
+
+    wifi_data w_data = {0};
+    w_data.cmd = WIFI_CMD_DISCONNECT;
     xQueueSend(wifi_cmd_queue, &w_data, 0);
 }
 
@@ -288,4 +321,5 @@ void WiFi_UI_Set_Callbacks(void)
     lv_obj_add_event_cb(wifi_ui.network_dropdown_dyn, WiFi_UI_Dropdown_cb, LV_EVENT_VALUE_CHANGED, NULL);
     lv_obj_add_event_cb(wifi_ui.password_textarea_dyn, WiFi_UI_TextArea_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_add_event_cb(wifi_ui.scan_button_dyn, WiFi_UI_Scan_cb, LV_EVENT_PRESSED, NULL);
+    lv_obj_add_event_cb(wifi_ui.disconnect_button_dyn, WiFi_UI_Disconnect_cb, LV_EVENT_PRESSED, NULL);
 }

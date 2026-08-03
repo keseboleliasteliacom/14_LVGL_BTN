@@ -77,7 +77,7 @@ parser. This is not a dependable CORS preflight contract.
 
 | Condition | Observed server behavior |
 | --- | --- |
-| Valid route and matching property ID | `200 OK`, JSON array containing 96 objects |
+| Valid route and matching property ID | `200 OK`, JSON array containing the available matched forward entries, capped at 128 objects |
 | Valid route but no matching positive property ID | Normally `200 OK`, empty JSON array `[]` |
 | Invalid target, command, ID or supported-method parsing failure | `400 Bad Request`, empty body |
 | `/` or `/favicon.ico` | `204 No Content`, empty body |
@@ -105,14 +105,10 @@ zero/empty datasets instead of returning `[]`.
 
 ## Current JSON schemas
 
-All three successful responses are top-level JSON arrays. Glennergy emits
-exactly 96 entries for a matching property because its served result arrays are
-fixed to 96 quarter-hour slots. The ESP storage is also fixed to 96 entries.
-
-> Safety limitation: the ESP parsers do not check that an incoming array has at
-> most 96 entries before copying it. A server response larger than 96 entries
-> can write beyond the destination arrays. Producers must not exceed 96 until
-> bounds checking is implemented.
+All three successful responses are top-level JSON arrays. Glennergy publishes
+the matched forward range from the current quarter hour, capped at 128 entries.
+The range can be shorter before next-day prices are available. Glennergy-ESP
+stores at most 128 entries and truncates larger arrays with a warning.
 
 ### Recommendation
 
@@ -223,13 +219,13 @@ instant. A future contract should specify format, offset policy and validation.
 | --- | --- |
 | Timestamp length | Server can emit strings longer than the ESP's 19-character payload capacity; timezone offsets can be truncated. |
 | UV index | Server emits a JSON real after an earlier integer conversion; ESP reads only a JSON integer. |
-| Array bounds | Server currently emits 96, but ESP parsers trust any array length despite fixed 96-entry storage. |
+| Array bounds | Both sides cap the current contract at 128; the ESP truncates oversized arrays rather than rejecting the complete response. |
 | HTTP status | Data fetchers do not enforce 2xx before caching/parsing the body. |
 | Cache integrity | Raw bodies are cached before validation. |
 | Unknown property | Server returns `200 []`; ESP treats the empty array as a parse failure, without a distinct not-found reason. |
 | Property ID zero | Parser accepts zero, which can match zero-initialized unused server result slots and produce misleading zero/empty datasets. |
 | Object member validation | ESP validates top-level JSON/array shape but not every member; numeric errors can become zero and invalid timestamps can be unsafe. |
-| Partial/zero-filled data | The server serializes all 96 slots, even if an algorithm slot was not populated with meaningful current data. |
+| Partial data | The server serializes the counted matched forward range; fewer than 128 entries are normal when the available horizon is shorter. |
 | Identity | Current integer property ID `2` is a temporary example and is not authenticated or tied to a device identity. |
 
 ## Planned API correction (not implemented)
@@ -315,9 +311,9 @@ For each such change:
 | Audience | Glennergy-ESP developers, Glennergy maintainers, and integration reviewers |
 | Canonical owner | Glennergy-ESP for firmware consumption, parsing, cache, retry and compatibility behavior |
 | Applies to | Authoritative `dev`; stable-production differences are noted below |
-| Last verified | 2026-07-26 |
-| Glennergy-ESP `dev` | `b5a502afd9ca2ae374b3131b0031b8390f93b348` |
-| Glennergy `dev` | `42798bee227fcd621cbcb0b37c2b5da771210086` |
+| Last verified | 2026-08-03 |
+| Glennergy-ESP `dev` | `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
+| Glennergy `dev` | `63b1bad306d172e3d8cd337b314843f656715887` |
 
 </details>
 
@@ -325,7 +321,7 @@ Primary producer evidence in Glennergy:
 
 - `Server/HTTP/HTTPRequest.c` — exact route and command parser
 - `Server/Connection/Connection.c` — statuses, response headers and JSON fields
-- `Algorithm/AlgoritmProtocol.h` — five-result/96-slot shared-memory limits
+- `Algorithm/AlgoritmProtocol.h` — five-result/128-slot shared-memory limits
 - `Algorithm/main.c` — recommendation assignment, field population and timestamp source
 - `API/Meteo/Meteo.h` and `API/Spotpris/Spotpris.h` — units and source types
 
@@ -333,9 +329,9 @@ Primary consumer evidence in Glennergy-ESP:
 
 - `main/LEOP/LEOP_Fetcher.c` — current URLs, scheduling, state, retry and cache flow
 - `main/HTTP.c` — GET/probe methods, status handling and 5-second timeout
-- `main/JSONParser/DataParser.c` — required fields, JSON accessors and missing bounds checks
+- `main/JSONParser/DataParser.c` — required fields, JSON accessors and 128-entry truncation
 - `main/LEOP/Recommendation.c`, `Weather.c` and `Price.c` — cache-before-parse behavior
-- `main/LEOP/Recommendation.h`, `Weather.h` and `Price.h` — fixed storage and field types
+- `main/LEOP/LEOP_Limits.h`, `Recommendation.h`, `Weather.h` and `Price.h` — shared storage limit and field types
 
 This contract was verified statically against source and branch history. It was
 not validated against the production VPS, a running local server or physical

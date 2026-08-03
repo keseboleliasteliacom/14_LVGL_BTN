@@ -91,9 +91,9 @@ Current behavior to account for:
 - connection becomes true only after the station obtains an IP address;
 - reconnect delay grows from one second to a maximum of 30 seconds, for up to
   100 scheduled attempts;
-- the displayed Wi-Fi status/SSID has no disconnect update and may remain green
-  or stale after connectivity is lost;
-- the successful-connect UI path mutates LVGL without taking its lock.
+- reconnecting and disconnected results should update both the tab and header;
+- the disconnect button intentionally suppresses automatic reconnect, but its
+  zero-wait queue send can be dropped if the command queue is full.
 
 Therefore, a green Wi-Fi label is not sufficient evidence of current
 connectivity. Compare the LEOP header state and, in an authorized serial
@@ -149,8 +149,9 @@ Current UI behavior matters:
 
 - an invalid snapshot leaves the last numeric readings visible;
 - the Home latest-data label reports unavailability/age;
-- Settings `Last data update` is still a hard-coded `No data yet` placeholder;
-- UART `status` uses a `sensor_ok` field that the active path does not update;
+- Settings `Last data update` measures the latest successful recommendation
+  fetch, not sensor age or completion of all three LEOP fetches;
+- UART `status` summarizes current Wi-Fi, LEOP, sensor validity and time sync;
 - authorized UART `sensor` output is the more direct validity check.
 
 Do not disconnect the BME280, scan the shared I²C bus, alter wiring, or inject
@@ -164,10 +165,8 @@ Check the known synchronization boundaries before assuming a hardware fault:
 - the common `app_state_t` has no common mutex;
 - queue consumers receive copied snapshots, while UI/UART also read shared
   state directly;
-- most UI updates run under the LVGL port lock;
-- `WiFi_UI_Update()` runs before the outer lock, and its connected-result label
-  mutations are currently unlocked;
-- that successful-connect path delays the UI update task for one second;
+- the periodic tab updates, including `WiFi_UI_Update()`, run under the outer
+  LVGL port lock;
 - generated and custom UI code are coupled through object names.
 
 Compare recent UI or generated-source changes and build first. Runtime stress,
@@ -178,12 +177,14 @@ and a recorded test setup.
 
 This may be expected current behavior. Of five Settings rows:
 
-- Uptime, restart reason, and time synchronization are implemented;
+- Uptime, restart reason, recommendation-update age, and time synchronization
+  are implemented;
 - System status always displays `Starting...`;
-- Last data update always displays `No data yet`.
+- Last data update displays `No data yet.` until the first successful
+  recommendation fetch, then a monotonic age.
 
-Use the Home tab, LEOP/Wi-Fi header, and appropriate read-only diagnostics
-instead of treating those two placeholders as live health signals.
+Use the Home tab for sensor freshness and the LEOP/Wi-Fi header for connectivity;
+the Settings update age is narrower than either signal.
 
 ## UART does not respond or output looks wrong
 
@@ -193,7 +194,7 @@ with the existing UART0 pins and a carriage-return or line-feed ending.
 
 Input is lowercased and tokenized on literal spaces. Use one space between
 tokens. Lines beyond 127 characters are silently truncated. Remember that
-`status` contains placeholder fields, `leop` prints recommendation only, and
+`status` is a summary rather than a per-dataset freshness check, `leop` prints recommendation only, and
 task stack figures are estimates. Do not use hidden `reboot` or persistent
 `config` commands during read-only triage.
 
@@ -206,7 +207,7 @@ task stack figures are estimates. Do not use hidden `reboot` or persistent
 | --- | --- |
 | Status | Current source-backed diagnostic guide |
 | Audience | Developers, maintainers, and authorized device testers |
-| Last verified | Glennergy-ESP `b5a502a` |
+| Last verified | Glennergy-ESP `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
 | Evidence boundary | Static inspection; no hardware, serial port, or live endpoint used |
 
 </details>

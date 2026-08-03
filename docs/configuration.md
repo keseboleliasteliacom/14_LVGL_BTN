@@ -16,21 +16,20 @@ or unreadable key is logged and leaves the already assigned default in memory.
 
 | Runtime field | Namespace | Key | NVS type | Compiled default | UART accepted values |
 | --- | --- | --- | --- | --- | --- |
-| `fetch_interval_minutes` | `config` | `leop_min` | unsigned 32-bit integer | `1` minute | Integers `2` through `1440` |
+| `fetch_interval_minutes` | `config` | `leop_min` | unsigned 32-bit integer | `1` minute | Integers `1` through `1440` |
 | `test_mode` | `config` | `test_mode` | unsigned 8-bit value interpreted as Boolean | `false` | Exact text `true` or `false` |
 | `sensor_interval_ms` | `config` | `sensor_ms` | unsigned 32-bit integer | `1000` ms | Integers `1000` through `60000` |
 
 NVS namespace and key names are limited by ESP-IDF, which is why the persisted
 names are shorter than the runtime fields.
 
-### Fetch-interval contradiction
+### Settings UI mutation and persistence
 
-The compiled LEOP fetch default is one minute, and the fetcher accepts any
-positive stored value. The UART setter tests `value > 1`, however, so it rejects
-`1` even though its error text says the accepted range starts at one minute.
-This is an implementation contradiction: the current UART-settable range is
-2–1440 minutes. Documentation must not silently reinterpret the condition as
-1–1440.
+The Settings tab offers sensor presets from 1 to 60 seconds and LEOP fetch
+presets from 1 minute to 24 hours. An existing value outside those presets is
+shown as a `Current` choice until a preset is selected. Applying a change
+writes the new value to NVS first and updates RAM only for successful writes;
+if one of two writes fails, the UI reports `Partially saved`.
 
 ### UART mutation and persistence
 
@@ -172,7 +171,7 @@ boundary is recorded in [current limitations](current-limitations.md).
 | --- | --- |
 | Status | Current implementation |
 | Storage | ESP-IDF NVS default partition |
-| Last verified | Glennergy-ESP `b5a502a` |
+| Last verified | Glennergy-ESP `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
 
 </details>
 

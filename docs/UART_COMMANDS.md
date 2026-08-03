@@ -55,17 +55,18 @@ trimmed line prints the shell's no/incorrect-input message.
 
 ### `status`
 
-Prints these fields from `app_state_t.system_status`:
+Prints an overall `All systems OK.` or `Degraded.` classification followed by:
 
-- `Wifi(system)`: mirrored by the Wi-Fi connection callback;
+- uptime in seconds;
+- `Wifi`: mirrored by the Wi-Fi connection callback;
 - `LEOP`: `Connected` for the internal connected or degraded LEOP states and
   `Disconnected` for the other states;
-- `Sensor`: `OK` or `Not OK` from `sensor_ok`;
-- `Update counter`: the current numeric `update_counter`.
+- `Sensor`: derived from the active sensor snapshot validity/update fields;
+- `Time sync`: `Synchronized` or `Not synchronized`.
 
-`sensor_ok` and `update_counter` are not updated by the active production path
-at this snapshot. Treat those two lines as placeholders, not reliable health
-evidence. Use `sensor` for the current sensor validity flag.
+The overall classification requires Wi-Fi, LEOP, a valid sensor snapshot, and
+synchronized time. It is a current-state summary, not a freshness guarantee for
+all three LEOP datasets.
 
 ### `sensor`
 
@@ -114,9 +115,8 @@ The task lines derive `used = configured_stack_size -
 uxTaskGetStackHighWaterMark(handle)`. Treat them as rough diagnostics. Their
 units and interpretation depend on the ESP-IDF FreeRTOS port, and the displayed
 configured size is not an independently measured allocation. A missing handle
-prints `<name>: no handle:`. The intended metadata names are printed even
-though current task creation passes invalid name arguments for the UART and
-Sensor tasks; see [firmware architecture](architecture.md#application-tasks).
+prints `<name>: no handle:`. The metadata names are also passed to task
+creation; see [firmware architecture](architecture.md#application-tasks).
 
 ## Persistent configuration command
 
@@ -128,7 +128,7 @@ config <key> <value>
 
 | Key | Accepted value | Runtime consumer | NVS namespace/key |
 | --- | --- | --- | --- |
-| `fetch_interval_minutes` | Decimal integer `2` through `1440` | Next LEOP fetch interval calculation | `config` / `leop_min` as `u32` |
+| `fetch_interval_minutes` | Decimal integer `1` through `1440` | Next LEOP fetch interval calculation | `config` / `leop_min` as `u32` |
 | `sensor_interval_ms` | Decimal integer `1000` through `60000` | Sensor task reads it before each delay | `config` / `sensor_ms` as `u32` |
 | `test_mode` | Exactly `true` or `false` after lowercasing | No active behavior beyond storage/display | `config` / `test_mode` as `u8` boolean |
 
@@ -147,8 +147,6 @@ value can therefore appear changed until restart without having persisted.
 
 Important current validation details:
 
-- the compiled fetch default is 1 minute, but the command uses `> 1`, so it
-  rejects 1 while its error text incorrectly says 1 through 1440;
 - decimal parsing must consume the entire token, but it does not explicitly
   detect `strtol` overflow before casting to `int`;
 - an invalid `test_mode` value produces no user-facing error;
@@ -192,7 +190,7 @@ for the hardware authorization boundary.
 | --- | --- |
 | Status | Current implementation, including known defects |
 | Audience | Firmware developers and authorized device testers |
-| Last verified | Glennergy-ESP `b5a502a` |
+| Last verified | Glennergy-ESP `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
 | Evidence | Static source inspection; no serial session was opened |
 
 </details>

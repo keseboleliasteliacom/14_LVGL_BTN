@@ -127,10 +127,10 @@ ordinary build or troubleshooting step.
 The current firmware is useful now, but the following must not be presented as
 finished behavior:
 
-- **Settings is three of five:** uptime, restart reason, and time
-  synchronization work; System status and Last data update remain placeholders.
-- **Wi-Fi display defect:** the Wi-Fi text/color and prior SSID can remain stale
-  after a disconnect.
+- **Settings health remains partial:** uptime, restart reason, last successful
+  recommendation update, and time synchronization work; System status remains
+  a placeholder. The tab also provides persisted sensor and LEOP interval
+  presets.
 - **Temporary server request:** the current route shape is backwards and the
   ESP uses a hard-coded integer property ID. The desired command-first route is
   planned.
@@ -141,8 +141,9 @@ finished behavior:
 - **Identity and security are unfinished:** UUID-like device identity,
   authentication, authorization, registration retries, and conflict handling
   still require design and implementation.
-- **Recommendation meaning is unresolved:** the numeric recommendation field
-  and its chart colors must not be described as settled buy/hold/sell guidance.
+- **Recommendation output is transitional:** the API now separates a normalized
+  score from explicit quartile-based buy/hold/sell categories, but the wider
+  product meaning and decision policy remain subject to product review.
 - **Testing remains partial:** this documentation campaign has not verified the
   display, touch, sensors, Wi-Fi, or recovery flows on physical hardware.
 
@@ -193,7 +194,7 @@ remains approachable for users, evaluators, and developers.
 
 | Project status | Reference |
 | --- | --- |
-| Authoritative implementation | `dev` at `b5a502a` |
+| Authoritative implementation | `dev` at `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
 | Stable production line | `main` |
 | Documentation scope | Current `dev` behavior, with planned work labelled |
 

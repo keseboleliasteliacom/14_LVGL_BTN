@@ -123,7 +123,7 @@ review; they are not the primary onboarding path.
 | Status | Current navigation index; migration from older documents is in progress |
 | Audience | Newcomers, developers, maintainers, operators, and evaluators |
 | Applies to | Authoritative `dev` documentation campaign |
-| Last verified | Glennergy-ESP `b5a502a`; Glennergy `42798be` |
+| Last verified | Glennergy-ESP `693dc8819ac5b6d8fb29ce057d287814a3b9a14d`; Glennergy `63b1bad306d172e3d8cd337b314843f656715887` |
 
 </details>
 

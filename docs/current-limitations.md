@@ -15,7 +15,7 @@ change or delete source code.
 | Property selection | The ESP uses temporary integer property ID `2`; UUID-like device identity and registration are planned |
 | Capacity | Five properties is a temporary test limit |
 | Recommendation | The API separates continuous `score` from the quartile-based buy/hold/sell category |
-| UI | Three of five Settings fields work; Wi-Fi status can remain visually connected after loss |
+| UI | Settings System Status remains a placeholder; command-queue delivery errors are not shown |
 | HTTP | Current routes are backwards, unauthenticated and plain HTTP |
 | Compatibility | Timestamp, UV type, cache validation and bounds behavior have known gaps |
 | Verification | Full hardware, production and stable end-to-end behavior was not tested in this campaign |
@@ -47,23 +47,28 @@ entries do not satisfy the schema consumed by the active code.
 
 ### Settings screen
 
-Three of five Settings fields are implemented:
+Four of five Settings fields are implemented:
 
 - uptime;
 - restart reason;
+- age since the last successful recommendation fetch;
 - time synchronization.
 
-Two fields remain placeholders:
+One field remains a placeholder:
 
 - system status displays `Starting...`;
-- last sensor update displays `No data yet`.
+
+The `Last data update` row is not sensor data: it reports recommendation-fetch
+age and shows `No data yet.` only until the first successful recommendation
+response. The Settings configuration panel can persist sensor and LEOP update
+interval presets; it reports partial failure when only one NVS write succeeds.
 
 ### Wi-Fi status display
 
-The Wi-Fi screen changes from red/disconnected to green/connected after a
-successful connection. It does not currently consume a corresponding
-disconnect/loss update, so it can remain green after connectivity is lost. The
-LEOP status display has a more complete changing-state model.
+The Wi-Fi screen now consumes connected, reconnecting, and disconnected states
+and provides an intentional disconnect button. UI command sends remain
+zero-wait operations: if the depth-one queue is full, scan, connect, or
+disconnect input can be dropped without user-facing error.
 
 ### Shared application state
 
@@ -72,19 +77,11 @@ without a common mutex. Depth-one queues provide snapshots for selected UI
 flows, but they do not protect every shared-state access. This is an implemented
 concurrency limitation, not evidence that a race has been reproduced.
 
-### Task-name arguments
-
-UART and Sensor task creation currently pass the address of their task-name
-pointer rather than the string pointer expected by `xTaskCreate`. Their intended
-metadata names are `UART` and `Sensor`, but the runtime task names can be invalid
-or garbage until those calls are corrected.
-
 ### LVGL locking
 
-Most tab updates run under the UI task's LVGL lock. The Wi-Fi connected-result
-branch currently changes labels and colors without acquiring that lock. This is
-a concrete unlocked widget-update path, not merely an unverified concurrency
-risk.
+The periodic UI task now places Wi-Fi and the other tab updates under its LVGL
+lock. This protects that update path's widget mutations, but does not provide a
+common mutex for the shared `app_state_t` values read by UI and other tasks.
 
 ## Current interface limitations
 
@@ -163,9 +160,10 @@ loading is tied to offline/no-Wi-Fi behavior.
 - Add a UUID-like device identity and appropriate authentication and
   authorization.
 - Persist validated registration information safely on Glennergy.
-- Complete the two placeholder Settings fields.
-- Make the Wi-Fi status display track disconnection.
-- Resolve recommendation-result semantics.
+- Complete the remaining System Status placeholder.
+- Provide user-visible delivery/error feedback for Wi-Fi commands.
+- Decide whether the current quartile recommendation categories are the final
+  product policy.
 - Remove or archive confirmed obsolete code/comments through separate reviewed
   cleanup changes.
 
@@ -184,7 +182,7 @@ to delete merely because static reference searches did not find an active call.
 | Item | Value |
 | --- | --- |
 | Audience | Users, evaluators, developers, and maintainers |
-| Applies to | Glennergy-ESP `dev` at `b5a502a` and Glennergy `dev` at `42798be` |
+| Applies to | Glennergy-ESP `dev` at `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` and Glennergy `dev` at `63b1bad306d172e3d8cd337b314843f656715887` |
 | Verification boundary | Static repository inspection; unresolved behavior remains explicitly unresolved |
 
 </details>

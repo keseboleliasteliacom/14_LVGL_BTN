@@ -110,17 +110,12 @@ supported ESP-IDF port; the table retains the exact configured values.
 | Intended metadata name | Entry point | Stack | Priority | Argument | Primary responsibility |
 | --- | --- | ---: | ---: | --- | --- |
 | `WIFI_Work` | `WiFi_Work` | 8192 | 5 | `NULL` | Wi-Fi credentials, scans, connect/disconnect commands, events, and reconnect attempts |
-| `UI_Update` | `ui_update_task` | 16384 | 5 | `&app` | Poll snapshots and update widgets; most tab updates use an outer lock, but the Wi-Fi connected-result path is currently unlocked |
+| `UI_Update` | `ui_update_task` | 16384 | 5 | `&app` | Poll snapshots and update Wi-Fi, sensor, electricity, weather, price, Settings, and LEOP widgets under the outer LVGL lock |
 | `UART` | `UART_Work` | 4096 | 4 | `&app` | Blocking UART input and diagnostic/configuration commands |
 | `Sensor` | `Sensor_Work` | 4096 | 4 | `&app` | Initialize and periodically read the active BME280 V2 wrapper |
 | `LEOP` | `LEOPFetcher_Work` | 4096 | 4 | `&app.leop_data` | Fetch, cache, health-check, and publish server data and LEOP state |
 
-The table gives the intended names stored in task metadata. The UART and Sensor
-creation calls currently pass `&app.system_task_handlers.<task>.name` instead
-of the `char *` value. That pointer-to-pointer is incompatible with
-`xTaskCreate`'s task-name parameter and can produce an invalid or garbage
-runtime task name. Wi-Fi, UI and LEOP pass their name values correctly. This is
-a current implementation defect, not a naming convention.
+The table gives the names stored in task metadata and passed to `xTaskCreate`.
 
 The Wi-Fi and UI tasks have higher configured priority than UART, Sensor, and
 LEOP. The code does not pin these tasks to specific cores. ESP-IDF system tasks,
@@ -278,12 +273,10 @@ behavior are canonical in [the interface contract](interface-contract.md).
 SquareLine Studio generated the base LVGL project and screen files under
 `ui/`. The current `ui/screens/ui_Screen1.c` also acts as application UI
 orchestration: it initializes tab modules and its update task calls their
-update functions approximately every 50 ms. Most tab widget updates occur under
-the UI task's outer LVGL port lock. `WiFi_UI_Update()` runs before that outer
-lock. Its scan-result branch acquires its own lock, but its connected-result
-branch directly changes labels and text colors without acquiring the lock. This
-unlocked path is a current concurrency defect and must not be described as
-serialized LVGL access.
+update functions approximately every 50 ms. Tab widget updates, including
+Wi-Fi result processing, run inside the outer LVGL port lock. This serializes
+the current update task's LVGL mutations,
+but does not make reads from shared application state atomic.
 
 Files carrying generated headers or large generated/commented regions should
 be treated as regeneration-sensitive. Application-specific tab modules and
@@ -309,7 +302,7 @@ documented in [UART commands](UART_COMMANDS.md).
 | LEOP transport | Partial success becomes degraded; repeated total failures become unavailable; health retry is faster after failure | Plain HTTP, no API authentication, no dedicated health endpoint, and no individual fetch retry |
 | LEOP cache | Cached snapshots are loaded once per offline period | Malformed online responses do not automatically fall back to cache; raw bodies can replace cache before validation |
 | Sensor | Failed reads publish an invalid snapshot; V2 wrapper periodically attempts recovery | No campaign hardware observation proves recovery timing or electrical behavior |
-| UI | Most tab updates use the LVGL lock; Wi-Fi scan results lock internally | Wi-Fi connected-result widget changes are unlocked; direct shared-state reads remain unsynchronized; generated/custom boundary is fragile |
+| UI | Periodic tab updates use the outer LVGL lock | Direct shared-state reads remain unsynchronized; generated/custom boundary is fragile |
 | UART | Input loop remains available for inspection and configuration | Commands share live state without a common mutex; some commands can persist or reboot |
 
 Recovery guarantees should not be inferred beyond these code paths. In
@@ -340,7 +333,7 @@ the current evidence and next verification steps.
 ## Stable-production applicability
 
 This document describes the architecture verified on authoritative `dev` at
-`b5a502a`. The campaign recorded stable `origin/main` at
+`693dc8819ac5b6d8fb29ce057d287814a3b9a14d`. The campaign recorded stable `origin/main` at
 `daf35c538d84586576f8286c2d543eb1c3c89e6a`, but no production device or live
 deployment was inspected. Shared files on `main` provide useful comparison
 evidence; they do not prove that every task, queue, failure path, configuration,
@@ -354,7 +347,7 @@ or peripheral behavior documented here is running in production.
 | Item | Value |
 | --- | --- |
 | Audience | Firmware developers and maintainers |
-| Applies to | Glennergy-ESP `dev` at `b5a502a` |
+| Applies to | Glennergy-ESP `dev` at `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
 | Evidence | Static source inspection and documentation checks |
 | Not verified | Runtime, physical hardware, serial devices, real VPS, or production services |
 

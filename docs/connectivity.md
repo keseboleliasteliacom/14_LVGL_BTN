@@ -108,10 +108,10 @@ reconnect attempts. Delay grows by one second per attempt and is capped at
 Only after the attempt counter is exhausted does the event path try to enqueue
 `WIFI_STATUS_DISCONNECTED`. A newly obtained IP resets the counter.
 
-The current Wi-Fi UI does not reliably reflect a later loss of connection and
-contains a known unlocked connected-result widget update. See
-[current limitations](current-limitations.md#wifi-status-display) and
-[LVGL locking](current-limitations.md#lvgl-locking).
+The Wi-Fi UI consumes connected, reconnecting, and disconnected results and
+offers an intentional disconnect button. Commands use zero-wait queue sends,
+so the UI still cannot confirm delivery when the depth-one command queue is
+full. See [current limitations](current-limitations.md#wifi-status-display).
 
 ## Current LEOP request boundary
 
@@ -374,7 +374,7 @@ GET behavior.
 | Item | Value |
 | --- | --- |
 | Transport | ESP-initiated HTTP reads over the current LEOP interface |
-| Applies to | Glennergy-ESP `dev` at `b5a502a` |
+| Applies to | Glennergy-ESP `dev` at `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
 | Verification boundary | Static source inspection; no live network, VPS, or hardware testing |
 
 </details>

@@ -1,7 +1,8 @@
 # User interface guide
 
 > **In short:** The UI has five tabs. Home, Electricity, Weather and WiFi show
-> current snapshots; Settings currently has three working fields out of five.
+> current snapshots; Settings shows device state and can persist update-interval
+> presets.
 
 The firmware presents one main LVGL screen with five tabs: **Home**,
 **Electricity**, **Weather**, **WiFi**, and **Settings**. A persistent header
@@ -17,19 +18,18 @@ been observed on a physical panel.
 | Tab | Main purpose | Important limitation |
 | --- | --- | --- |
 | Home | Local BME280 temperature, humidity and pressure | Freshness depends on sensor validity |
-| Electricity | Recommendation snapshot | Recommendation meaning remains unresolved |
+| Electricity | Recommendation chart and electricity-price list | Data freshness is not shown |
 | Weather | Forecast snapshot | Timestamp and UV compatibility gaps apply |
-| WiFi | Scan and connect | Connected styling may remain after disconnect |
-| Settings | Uptime, restart and time-sync status | System Status and Last Update are placeholders |
+| WiFi | Scan, connect, reconnect and disconnect | Queue delivery can fail without UI feedback |
+| Settings | Device status plus sensor/LEOP interval configuration | System Status remains a placeholder |
 
 ## Header status
 
 ### Wi-Fi name
 
-The header starts as `Not Connected`. After the Wi-Fi worker publishes a
-successful connection result, it displays the loaded or selected SSID. The
-current UI has no corresponding disconnect-result update, so the old SSID can
-remain visible after connectivity is lost.
+The header starts as `Not Connected`. It shows the loaded or selected SSID
+after connection, `Reconnecting` during automatic recovery, and `No WiFi` after
+an intentional disconnect or exhausted reconnect scheduling.
 
 ### LEOP state
 
@@ -66,13 +66,13 @@ sensor accuracy or the physical units supplied by every lower-level boundary.
 
 ## Electricity tab
 
-The left panel displays 96 continuous recommendation scores normalized to
-0–100 for bar height. Bar colors use LEOP's separate quartile category: green
-for buy, yellow for hold, red for sell, and gray for unknown. Twelve two-hour
-labels keep the 24-hour axis readable.
+The left panel displays every available recommendation entry, up to 128,
+normalized to 0–100 for bar height. Bar colors use LEOP's separate quartile
+category: green for buy, yellow for hold, red for sell, and gray for unknown.
+Twelve labels are distributed across the received time range.
 
-The right panel shows a simultaneously visible, scrollable list of 24 hourly
-prices in SEK/kWh, sampled every fourth item from the 96-entry price list.
+The right panel shows a simultaneously visible, scrollable list of up to 32
+hourly prices in SEK/kWh, sampled every fourth item from the received list.
 
 ## Weather tab
 
@@ -83,6 +83,10 @@ The active path is the newer weather dashboard (`weather_dashboard_create` and
 - a text description and icon selected from the weather code;
 - a scrollable 24-hour forecast list sampled every fourth entry, with time,
   temperature, icon, and code-derived presentation.
+
+The icon mapping covers clear/partly cloudy, overcast/fog, drizzle/rain,
+heavy rain/thunderstorm, and snow/freezing-weather WMO code groups. Unknown
+codes fall back to the cloud icon.
 
 The older `Weather_UI_Initialize`/`Weather_UI_Update` path remains in source but
 is not called by current screen startup. Weather values update only when a
@@ -96,6 +100,7 @@ The WiFi tab provides:
 - a scan button;
 - a network dropdown populated from the latest scan result;
 - a password-mode text area and on-screen keyboard;
+- a disconnect button;
 - a status label initialized as red `Disconnected`.
 
 Selecting a network updates the selected SSID. Pressing OK on the password
@@ -103,34 +108,37 @@ keyboard submits a non-blocking, depth-one connect command. Scan and connect
 commands can be dropped if that queue is full; the UI does not currently show a
 delivery error.
 
-On a successful result the tab changes the status text to green `Connected`
-and updates the header SSID. It does **not** handle a later disconnected result,
-so `WifiValueLabel`/the Wi-Fi status can remain green and the prior SSID can
-remain visible after loss. This is a known defect, not evidence that the device
-is still connected. Compare the LEOP header state or read-only diagnostics when
-the display is inconsistent.
+The tab consumes connected, reconnecting, and disconnected results and updates
+both its status and the header. The disconnect button sends an intentional
+disconnect command; that path suppresses automatic reconnect for the requested
+disconnect. Queue sends are non-blocking, so a full command queue can still
+drop a scan, connect, or disconnect request without user-facing delivery error.
 
 Passwords are stored through the Wi-Fi module's NVS path after a successful
 connection. Do not expose the password field, NVS contents, or logs/screenshots
 containing network details.
 
-## Settings tab: three of five fields work
+## Settings tab
 
-The Settings tab currently contains five read-only rows. Exactly three have
-implemented live/current behavior:
+The Settings status panel contains five rows. Four have live/current behavior:
 
 | Field | Current behavior | Status |
 | --- | --- | --- |
 | Uptime | Re-formatted from monotonic device uptime once per second | Implemented |
 | Last restart reason | Set once from `esp_reset_reason()` during UI initialization | Implemented |
 | System status | Always returns `Starting...` | **Placeholder / TODO** |
-| Last data update | Always returns `No data yet` | **Placeholder / TODO** |
+| Last data update | Age since the latest successful recommendation fetch; `No data yet.` before the first success | Implemented |
 | Time synchronized | Shows `Synchronized` or `Waiting` from the SNTP module | Implemented |
 
-Therefore, `Starting...` and `No data yet` in Settings do not prove that the
-system is still starting or has no sensor data. The Home tab and UART sensor
-diagnostic use different paths and can show valid data while those placeholders
-remain unchanged.
+`System status` remains a placeholder. `Last data update` refers specifically
+to recommendation-fetch success, not sensor freshness and not proof that
+weather and price were updated in the same cycle.
+
+The configuration panel provides preset dropdowns for the sensor interval
+(1–60 seconds) and LEOP fetch interval (1 minute–24 hours). It preserves an
+existing non-preset value as a `Current` option. Apply writes each changed value
+to NVS before updating the shared runtime configuration; partial persistence is
+reported as `Partially saved`.
 
 ## Generated and custom code boundary
 
@@ -147,25 +155,20 @@ compare the full diff, rebuild, and validate on an authorized board. See
 
 ## LVGL locking limitation
 
-The UI update task normally acquires the LVGL port lock around Sensor,
-Electricity, Weather, Price, Settings, and LEOP updates. Several of those
-modules also acquire the same lock internally.
-
-`WiFi_UI_Update()` runs before that outer lock. Its scan-result path takes its
-own lock, but its successful-connect path directly changes labels and colors
-without acquiring the lock, then delays the UI task for one second. This is a
-known concurrency defect. The current architecture must not be described as
-having every LVGL mutation serialized.
+The UI update task acquires the LVGL port lock around Wi-Fi, Sensor,
+Electricity, Weather, Price, Settings, and LEOP updates. Event callbacks also
+run in LVGL context. Shared application state is still read without a common
+application mutex, so serialized widget access does not make every data read an
+atomic snapshot.
 
 ## Current limitations at a glance
 
-- Settings implements three of five displayed fields.
-- The Wi-Fi label does not reliably return to disconnected text/color.
-- The Wi-Fi successful-result LVGL update is currently unlocked.
+- Settings System Status remains a placeholder.
+- Non-blocking Wi-Fi command sends do not report a full queue to the user.
 - Header/LEOP state does not establish data freshness.
 - Cached versus live server data is not identified visually.
-- Recommendation color semantics are presentation behavior, not a resolved
-  recommendation contract.
+- Recommendation categories reflect the current server quartile algorithm, but
+  are not a final product decision policy.
 - Display, touch, layout, and timing remain unverified by this campaign.
 
 See [current limitations](current-limitations.md) for the cross-project backlog,
@@ -180,7 +183,7 @@ ownership, and [troubleshooting](troubleshooting.md) for safe diagnosis.
 | Item | Value |
 | --- | --- |
 | Audience | Users, evaluators, firmware developers, and maintainers |
-| Applies to | Glennergy-ESP `dev` at `b5a502a` |
+| Applies to | Glennergy-ESP `dev` at `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
 | Evidence | Static source and generated UI inspection |
 | Not verified | Display, touch, layout, timing, or other physical-hardware behavior |
 
@@ -191,8 +194,8 @@ ownership, and [troubleshooting](troubleshooting.md) for safe diagnosis.
 - `ui/Tabs/Home/Sensor_UI.c`: Home values and age text;
 - `ui/Tabs/Electricity/Electricity_UI.c` and `Price_UI.c`: chart and price list;
 - `ui/Tabs/Weather/Weather_UI.c`: active and legacy weather layouts;
-- `ui/Tabs/Wifi/WiFi_UI.c`: scan/connect UI and known status/locking defects;
-- `ui/Tabs/Settings/Settings_UI.c`: three implemented and two placeholder rows;
+- `ui/Tabs/Wifi/WiFi_UI.c`: scan/connect/disconnect UI and connection-state display;
+- `ui/Tabs/Settings/Settings_UI.c`: status rows and persisted interval controls;
 - `main/LEOP/LEOP_Fetcher.c`: LEOP state publication.
 
 Re-check this page whenever generated objects, tabs, queue consumers, status

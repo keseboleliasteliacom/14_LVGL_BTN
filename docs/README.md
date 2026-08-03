@@ -8,6 +8,7 @@ being present in the repository does not by itself make it current.
 
 | You are looking forâ€¦ | Start with | Then continue to |
 | --- | --- | --- |
+| A simple guide to using the touchscreen | [Visual user guide](user-guide.md) | [UI guide](ui-guide.md) if you need technical details |
 | A quick project introduction | [Project README](../README.md) | [System context](system-context.md) and [current limitations](current-limitations.md) |
 | Firmware implementation details | [Development guide](development.md) | [Architecture](architecture.md), [hardware](hardware.md), and [configuration](configuration.md) |
 | HTTP integration details | [ESP interface contract](interface-contract.md) | [Connectivity](connectivity.md) and the [server API reference](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/http-api.md) |
@@ -33,6 +34,8 @@ with its normal-use model before moving into limitations and source evidence.
 
 ## Firmware guides
 
+- [Visual user guide](user-guide.md) — an illustrated, non-technical tour of
+  every touchscreen tab and its normal, failed, and offline behavior.
 - [Firmware architecture](architecture.md) — startup, tasks, queues, shared
   state, data ownership and recovery boundaries.
 - [Development guide](development.md) — ESP-IDF setup, build, validation and

@@ -10,6 +10,9 @@ remain temporary or unfinished. This README provides a safe starting point;
 the [documentation index](docs/README.md) links to the complete technical
 guides.
 
+New to the touchscreen? Start with the short, illustrated
+[visual user guide](docs/user-guide.md).
+
 `dev` is the source of truth for current development. `main` represents the
 stable production line, but may not contain every behavior described in the
 current `dev` documentation. Confirm a device's installed revision before
@@ -172,6 +175,7 @@ and [connectivity guide](docs/connectivity.md) before changing live settings.
 
 | If you want to… | Read |
 |---|---|
+| Use the touchscreen without technical details | [Visual user guide](docs/user-guide.md) |
 | Understand the complete two-project system | [System context](docs/system-context.md) |
 | Check unfinished or temporary behavior | [Current limitations](docs/current-limitations.md) |
 | Understand tasks, queues, state, and startup | [Firmware architecture](docs/architecture.md) |

@@ -17,8 +17,8 @@
  * @defgroup RECOMMENDATION Recommendation
  * @brief Recommendation data handling and cache access.
  *
- * The module stores up to 128 recommendation entries, tracks fetch state, and
- * uses the cache helper for persisted JSON data.
+ * The module stores recommendation entries in a fixed-size list, tracks fetch
+ * state, and uses the cache helper for persisted JSON data.
  *
  * @note Functions operate on a caller-provided RecommendationList instance.
  * @note Fetch functions depend on the HTTP and JSON parsing pipeline used by
@@ -48,16 +48,16 @@ typedef enum
  */
 typedef struct{
     int id;
-    double recommendation; /**< Continuous score in the range 0.0 to 1.0. */
-    RecommendationAction action; /**< Explicit LEOP buy/hold/sell category. */
+    double recommendation; /**< Recommendation score parsed from the source data. */
+    RecommendationAction action; /**< Recommendation category. */
     char timestamp[20];
 }Recommendation;
 
 /**
  * @brief Container for recommendation entries, status, and cache state.
  *
- * Holds up to 128 entries in the fixed-size array and keeps the cache and
- * fetch status used by the recommendation workflow.
+ * Holds up to LEOP_FORECAST_MAX_ENTRIES entries in the fixed-size array and
+ * keeps the cache and fetch status used by the recommendation workflow.
  */
 typedef struct{
     Recommendation rec[LEOP_FORECAST_MAX_ENTRIES];

@@ -9,15 +9,18 @@
  * @file Weather.h
  * @brief Public API for the weather data module.
  *
- * Provides weather list storage and fetch helpers for live and cached data.
+ * Provides fixed-size weather storage and helpers for live fetch and cached
+ * data loading.
+ *
+ * @ingroup WEATHER
  */
 
 /**
  * @defgroup WEATHER WEATHER
  * @brief Weather data storage and retrieval helpers.
  *
- * The module owns a fixed-size list of 128 weather entries, plus cache and
- * status bookkeeping used by the fetch paths.
+ * The module owns a fixed-size list of weather entries plus cache and status
+ * bookkeeping used by the fetch paths.
  * @{
  */
 
@@ -41,8 +44,8 @@ typedef struct
 /**
  * @brief Fixed-size weather list and associated state.
  *
- * Contains up to 128 weather entries, a current entry count, cache storage,
- * and fetch status used by the module.
+ * Contains up to `LEOP_FORECAST_MAX_ENTRIES` weather entries, a current entry
+ * count, cache storage, and fetch status used by the module.
  */
 typedef struct
 {

@@ -17,7 +17,10 @@ static bool s_sntp_initialized = false;
 /**
  * @brief Implementation of TimeSync_Start.
  *
+ * Initializes SNTP on first use, then waits for synchronization to complete.
  * See header for full contract documentation.
+ *
+ * @note Calls into ESP-IDF SNTP services and blocks while waiting for time sync.
  */
 esp_err_t TimeSync_Start() {
     if (s_sntp_initialized == false)

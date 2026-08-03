@@ -2,6 +2,9 @@
  * @file Main_UI.c
  * @brief Implementation of the main LVGL screen setup.
  *
+ * Creates the application screen, tab pages, and status labels used by the
+ * UI layer during display bring-up.
+ *
  * @ingroup UI
  */
 

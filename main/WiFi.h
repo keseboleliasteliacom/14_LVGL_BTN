@@ -70,7 +70,7 @@ typedef struct
 
 
 /**
- * @brief Credentials used for Wi-Fi station connection.
+ * @brief Station credentials used by the Wi-Fi module.
  */
 typedef struct
 {

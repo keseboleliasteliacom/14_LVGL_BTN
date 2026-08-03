@@ -154,6 +154,11 @@ void WiFi_UI_Scan_cb(lv_event_t *_Event)
     xQueueSend(wifi_cmd_queue, &w_data, 0);
 }
 
+/**
+ * @brief Sends a Wi-Fi disconnect request from the disconnect button event.
+ *
+ * @param[in] _Event LVGL event object.
+ */
 void WiFi_UI_Disconnect_cb(lv_event_t *_Event)
 {
     (void)_Event;

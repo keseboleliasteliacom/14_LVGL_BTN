@@ -3,6 +3,9 @@
  * @brief Implementation of the NVS helper module.
  *
  * @ingroup NVS
+ *
+ * Provides simple wrappers around ESP-IDF NVS operations for the default
+ * storage namespace and named namespaces.
  */
 
 #include "NVS.h"
@@ -15,7 +18,8 @@ const static char* TAG = "NVS";
 /**
  * @brief Initializes the default NVS flash partition.
  *
- * Returns a non-zero value if the partition must be erased and reinitialized.
+ * Returns `0` on success. If the NVS partition is full or incompatible, the
+ * partition is erased and reinitialized before returning `-1`.
  */
 int NVS_Init() {
     err = nvs_flash_init();

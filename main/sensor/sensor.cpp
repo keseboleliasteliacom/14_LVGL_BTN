@@ -90,14 +90,7 @@ bool Sensor_Read_v3(sensor_data_t* sensor, hal::BME280SensorV2& environment_sens
 }
 
 /**
- * @brief Reads the BME280 sensor and publishes a snapshot to the queue.
- *
- * Updates the application sensor state only when all sensor reads succeed.
- *
- * @param[in,out] sensor Sensor state to update with the latest measurement.
- * @param[in,out] environment_sensor BME280 sensor wrapper used for hardware access.
- *
- * @return `true` when all readings succeed, otherwise `false`.
+ * @brief Legacy disabled sensor read implementation retained for reference.
  */
 // TODO & To Be Removed: OLD version that was using the original bme280_sensor.cpp HAL class. 
 // bool Sensor_Read_v2(sensor_data_t* sensor, hal::BME280Sensor& environment_sensor)
@@ -105,11 +98,11 @@ bool Sensor_Read_v3(sensor_data_t* sensor, hal::BME280SensorV2& environment_sens
 //     hal::TemperatureReading temperatur = hal::TemperatureReading();
 //     hal::HumidityReading humidityReading = hal::HumidityReading();
 //     hal::PressureReading pressureReading = hal::PressureReading();
-
+//
 //     hal::SensorError result = environment_sensor.read(temperatur);
 //     hal::SensorError humidityResult = environment_sensor.read(humidityReading);
 //     hal::SensorError pressureResult = environment_sensor.read(pressureReading);
-
+//
 //     if (result != hal::SensorError::Ok || humidityResult != hal::SensorError::Ok || pressureResult != hal::SensorError::Ok) {
 //         ESP_LOGW(TAG, "Something went wrong with reading data from sensor.\nTemperature code: %d, humidity code: %d", static_cast<int>(result), static_cast<int>(humidityResult));
 //         // Om något inte är okej med error codes för SensorError så hanteras det här.
@@ -121,7 +114,7 @@ bool Sensor_Read_v3(sensor_data_t* sensor, hal::BME280SensorV2& environment_sens
 //         environment_sensor.increment_read_failure();
 //         return false;
 //     }
-
+//
 //     sensor->temperature = temperatur.celcius;
 //     sensor->humidity = humidityReading.humidity;
 //     sensor->pressure = pressureReading.pressure;
@@ -131,10 +124,10 @@ bool Sensor_Read_v3(sensor_data_t* sensor, hal::BME280SensorV2& environment_sens
 //     sensor->last_update_seconds = esp_timer_get_time() / 1000000ULL;
 //     sensor->last_unix_time = temperatur.unix_timestamp;
 //     sensor->wall_time_valid = sensor->last_unix_time >= MIN_VALID_UNIX_TIME;
-
+//
 //     sensor_data_t sensor_snapshot = *sensor;
 //     xQueueOverwrite(Sensor_Queue, &sensor_snapshot);
-
+//
 //     return true;
 // }
 

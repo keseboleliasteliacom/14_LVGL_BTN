@@ -33,9 +33,10 @@ int Price_Initialize(PriceList *p_list)
 }
 
 /**
- * @brief Implementation of Price_Fetch.
+ * @brief Fetches price data from a remote URL and updates the cache.
  *
- * See header for full contract documentation.
+ * Performs HTTP retrieval, writes the raw JSON to the local cache, and parses
+ * the response into the provided list.
  */
 int Price_Fetch(const char *url, PriceList *p_list)
 {
@@ -76,9 +77,9 @@ int Price_Fetch(const char *url, PriceList *p_list)
 }
 
 /**
- * @brief Implementation of Price_FetchCache.
+ * @brief Loads cached price data from local storage and parses it.
  *
- * See header for full contract documentation.
+ * Uses the cached JSON file, then clears the cache buffer after parsing.
  */
 int Price_FetchCache(PriceList *p_list)
 {
@@ -104,9 +105,9 @@ int Price_FetchCache(PriceList *p_list)
 }
 
 /**
- * @brief Implementation of Price_Dispose.
+ * @brief Clears the price list contents.
  *
- * See header for full contract documentation.
+ * Resets the entry count and zeroes the stored prices.
  */
 void Price_Dispose(PriceList *p_list)
 {

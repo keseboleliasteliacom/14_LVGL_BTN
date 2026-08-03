@@ -35,7 +35,11 @@ typedef struct
  */
 void Electricity_UI_Initialize();
 
-/** @brief Returns the dashboard panel reserved for electricity prices. */
+/**
+ * @brief Returns the dashboard panel reserved for electricity prices.
+ *
+ * @return Pointer to the price panel created during initialization.
+ */
 lv_obj_t *Electricity_UI_GetPricePanel(void);
 
 /**

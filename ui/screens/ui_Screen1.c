@@ -84,14 +84,13 @@ static void LEOP_UI_Update(void)
                                 LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
-/**
- * @brief Background UI update task for Screen 1.
- *
- * Polls the individual UI modules, then updates the LVGL-backed widgets while
- * holding the LVGL lock. Runs in task context and blocks on the lock and delay.
- */
 // The current behavior and design decision is that this function holds the lock and updates everything.
 // @pre If an external call is needed, the caller for any "_UI_Update()" most hold the LVGL port lock
+/**
+ * @brief Implementation of ui_update_task.
+ *
+ * See header for full contract documentation.
+ */
 void ui_update_task(void *arg)
 {
     app_state_t *app = (app_state_t *)arg;

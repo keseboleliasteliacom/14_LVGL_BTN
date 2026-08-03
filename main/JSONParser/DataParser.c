@@ -13,7 +13,7 @@
 static const char *TAG = "DataParser";
 
 /**
- * @brief Implementation of DataParser_ParseRecommendation.
+ * @brief Parses a recommendation JSON array into a recommendation list.
  *
  * See header for full contract documentation.
  */
@@ -105,7 +105,7 @@ int DataParser_ParseRecommendation(const char *raw_data, RecommendationList *r_l
 }
 
 /**
- * @brief Implementation of DataParser_ParseWeather.
+ * @brief Parses a weather JSON array into a weather list.
  *
  * See header for full contract documentation.
  */
@@ -168,7 +168,7 @@ int DataParser_ParseWeather(const char *raw_data, WeatherList *w_list)
 }
 
 /**
- * @brief Implementation of DataParser_ParsePrice.
+ * @brief Parses a price JSON array into a price list.
  *
  * See header for full contract documentation.
  */

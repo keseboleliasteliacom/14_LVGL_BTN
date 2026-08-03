@@ -60,11 +60,25 @@ static void Settings_UI_ApplyEvent(lv_event_t *event);
 static void Settings_UI_DropdownChanged(lv_event_t *event);
 static void Settings_UI_SyncConfig(app_state_t *app);
 
+/**
+ * @brief Sets the standard white label text style used by Settings labels.
+ *
+ * @param label Label object to style.
+ */
 static void Settings_UI_SetLabelStyle(lv_obj_t *label)
 {
     lv_obj_set_style_text_color(label, lv_color_white(), 0);
 }
 
+/**
+ * @brief Finds a preset value in an array of preset values.
+ *
+ * @param[in] values Preset values to search.
+ * @param[in] count Number of entries in @p values.
+ * @param[in] value Value to search for.
+ *
+ * @return Matching preset index, or `-1` if the value is not present.
+ */
 static int Settings_UI_FindPreset(const uint32_t *values, size_t count, uint32_t value)
 {
     for (size_t i = 0; i < count; ++i)
@@ -77,6 +91,15 @@ static int Settings_UI_FindPreset(const uint32_t *values, size_t count, uint32_t
     return -1;
 }
 
+/**
+ * @brief Builds a newline-separated dropdown option string.
+ *
+ * @param[out] buffer Output buffer for the dropdown text.
+ * @param[in] buffer_size Size of @p buffer in bytes.
+ * @param[in] labels Preset labels to append.
+ * @param[in] count Number of labels in @p labels.
+ * @param[in] custom_label Optional first option shown for a custom current value.
+ */
 static void Settings_UI_BuildOptions(
     char *buffer,
     size_t buffer_size,
@@ -114,6 +137,11 @@ static void Settings_UI_BuildOptions(
     }
 }
 
+/**
+ * @brief Updates the sensor interval dropdown to show the current value.
+ *
+ * @param[in] value Sensor interval in milliseconds.
+ */
 static void Settings_UI_SetSensorDropdown(uint32_t value)
 {
     char options[160];
@@ -142,6 +170,11 @@ static void Settings_UI_SetSensorDropdown(uint32_t value)
     controls.displayed_sensor_value = value;
 }
 
+/**
+ * @brief Updates the fetch interval dropdown to show the current value.
+ *
+ * @param[in] value Fetch interval in minutes.
+ */
 static void Settings_UI_SetFetchDropdown(uint32_t value)
 {
     char options[192];
@@ -170,6 +203,11 @@ static void Settings_UI_SetFetchDropdown(uint32_t value)
     controls.displayed_fetch_value = value;
 }
 
+/**
+ * @brief Returns the currently selected sensor interval.
+ *
+ * @return Sensor interval in milliseconds.
+ */
 static uint32_t Settings_UI_GetSensorSelection(void)
 {
     uint16_t selected = lv_dropdown_get_selected(controls.sensor_dropdown);
@@ -184,6 +222,11 @@ static uint32_t Settings_UI_GetSensorSelection(void)
     return sensor_presets[selected];
 }
 
+/**
+ * @brief Returns the currently selected fetch interval.
+ *
+ * @return Fetch interval in minutes.
+ */
 static uint32_t Settings_UI_GetFetchSelection(void)
 {
     uint16_t selected = lv_dropdown_get_selected(controls.fetch_dropdown);
@@ -198,6 +241,11 @@ static uint32_t Settings_UI_GetFetchSelection(void)
     return fetch_presets[selected];
 }
 
+/**
+ * @brief Handles dropdown value changes and updates the unsaved-state label.
+ *
+ * @param[in] event LVGL value-changed event.
+ */
 static void Settings_UI_DropdownChanged(lv_event_t *event)
 {
     lv_obj_t *target = lv_event_get_target(event);
@@ -215,6 +263,11 @@ static void Settings_UI_DropdownChanged(lv_event_t *event)
         controls.sensor_dirty || controls.fetch_dirty ? "Unsaved changes" : "No changes");
 }
 
+/**
+ * @brief Applies the selected Settings values to NVS and the shared app state.
+ *
+ * @param[in] event LVGL click event.
+ */
 static void Settings_UI_ApplyEvent(lv_event_t *event)
 {
     (void)event;
@@ -266,6 +319,11 @@ static void Settings_UI_ApplyEvent(lv_event_t *event)
         failed ? (changed ? "Partially saved" : "Save failed") : (changed ? "Saved" : "No changes"));
 }
 
+/**
+ * @brief Syncs the UI state to the shared application configuration.
+ *
+ * @param[in] app Shared application state snapshot.
+ */
 static void Settings_UI_SyncConfig(app_state_t *app)
 {
     if (app == NULL)

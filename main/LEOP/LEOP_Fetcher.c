@@ -135,6 +135,9 @@ static void LEOPFetcher_PublishData(const LEOPData *leop_data)
 /**
  * @brief Loads cached LEOP data and publishes the resulting snapshots.
  *
+ * Updates the fetch flags from the cache helpers before publishing the local
+ * snapshots to the shared queues.
+ *
  * @param[in,out] leop_data LEOP state to update from cache.
  */
 static void LEOPFetcher_LoadCachedData(LEOPData *leop_data)
@@ -152,7 +155,12 @@ static void LEOPFetcher_LoadCachedData(LEOPData *leop_data)
 /**
  * @brief Fetches all LEOP remote payloads.
  *
+ * Updates the in-memory snapshots, publishes them to the shared queues, and
+ * records the last successful recommendation update time in seconds.
+ *
  * @param[in,out] leop_data LEOP state to update with fetched data.
+ * @param[in,out] last_update_recommendation_success Seconds since boot for the
+ *        last successful recommendation fetch.
  *
  * @return Per-source fetch success flags.
  */
@@ -188,6 +196,9 @@ static leop_fetch_result_t LEOPFetcher_FetchAll(LEOPData *leop_data, uint32_t *l
 
 /**
  * @brief Converts the configured fetch interval to RTOS ticks.
+ *
+ * Uses the application-provided interval in minutes and clamps the result to
+ * the RTOS tick range.
  *
  * @param[in] leop_data LEOP state containing the interval pointer.
  *

@@ -2,6 +2,9 @@
  * @file Price_UI.c
  * @brief Implementation of the electricity price UI tab.
  *
+ * Creates the LVGL widgets for the electricity price view and refreshes them
+ * from the queued price data when available.
+ *
  * @ingroup Electricity
  */
 

@@ -197,7 +197,7 @@ void app_main()
     ESP_LOGI(TAG, "Leop data config time interval: %ld", *app.leop_data.leop_conf.time_interval);
 
     //xTaskCreate(LEOPFetcher_Work, "LEOP", LEOP_STACK_SIZE, &leop_data, 4, NULL);
-    xTaskCreate(LEOPFetcher_Work, app.system_task_handlers.leop_task.name, app.system_task_handlers.leop_task.stack_size, &app.leop_data, 4, &leop_task_handle);
+    xTaskCreate(LEOPFetcher_Work, app.system_task_handlers.leop_task.name, app.system_task_handlers.leop_task.stack_size, &app, 4, &leop_task_handle);
     //  ESP_ERROR_CHECK(WiFi_Dispose());
 
     // Set the task handles after the tasks has been started, so we actually store info/data instead of NULL

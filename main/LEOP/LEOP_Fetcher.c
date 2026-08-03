@@ -11,6 +11,8 @@
 #include "esp_log.h"
 #include "freertos/task.h"
 #include <limits.h>
+#include "../app_types.h"
+#include "esp_timer.h"
 
 static const char *TAG = "LEOP";
 
@@ -154,7 +156,7 @@ static void LEOPFetcher_LoadCachedData(LEOPData *leop_data)
  *
  * @return Per-source fetch success flags.
  */
-static leop_fetch_result_t LEOPFetcher_FetchAll(LEOPData *leop_data)
+static leop_fetch_result_t LEOPFetcher_FetchAll(LEOPData *leop_data, uint32_t *last_update_recommendation_success)
 {
     leop_fetch_result_t result = {0};
 
@@ -162,6 +164,13 @@ static leop_fetch_result_t LEOPFetcher_FetchAll(LEOPData *leop_data)
     result.recommendation_ok =
         (Recommendation_Fetch(LEOP_RECOMMENDATION_ENDPOINT, &leop_data->recommendations) == 0);
     leop_data->recommendations.status.recommendation_fetched = result.recommendation_ok;
+    
+    // Add a monotonic timestamp of the last time we fetched a successful recommendation.
+    // Currently used to display as info on the settings tab
+    if (result.recommendation_ok == true)
+    {
+        *last_update_recommendation_success = (uint32_t)(esp_timer_get_time() / 1000000ULL);
+    }
 
     ESP_LOGI(TAG, "Fetching %s", LEOP_WEATHER_ENDPOINT);
     result.weather_ok =
@@ -268,7 +277,10 @@ int LEOPFetcher_Initialize(LEOPData *leop_data, uint32_t interval)
  */
 void LEOPFetcher_Work(void *arg)
 {
-    LEOPData *leop_data = (LEOPData *)arg;
+    app_state_t *app_data = (app_state_t *)arg;
+    LEOPData *leop_data = &app_data->leop_data;
+
+    uint32_t *last_recommendation_success_seconds = &app_data->last_recommendation_update_seconds;
 
     if (leop_data == NULL)
         return;
@@ -319,7 +331,7 @@ void LEOPFetcher_Work(void *arg)
 
         if (LEOPFetcher_DeadlineReached(now, next_fetch))
         {
-            leop_fetch_result_t result = LEOPFetcher_FetchAll(leop_data);
+            leop_fetch_result_t result = LEOPFetcher_FetchAll(leop_data, last_recommendation_success_seconds);
             bool any_succeeded = result.recommendation_ok || result.weather_ok || result.price_ok;
             bool all_succeeded = result.recommendation_ok && result.weather_ok && result.price_ok;
 

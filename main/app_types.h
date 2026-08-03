@@ -138,6 +138,7 @@ typedef struct {
     config_data_t config_data;
     system_status_t system_status;
     system_task_handlers_t system_task_handlers;
+    uint32_t last_recommendation_update_seconds;
 } app_state_t;
 
 /** @} */

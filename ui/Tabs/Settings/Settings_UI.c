@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 
 #include "TimeFormat.h" // from "Utils" folder"
@@ -109,7 +110,7 @@ static const char *Settings_UI_GetRestartReasonText(void)
  */
 static const char *Settings_UI_GetSystemStatusText(const system_status_t *status)
 {
-    // Todo - Fix system status once other feature branches are merged 
+    // Todo - Reconsider if this is needed at all?
 
     
     if (status == NULL)
@@ -129,19 +130,35 @@ static const char *Settings_UI_GetSystemStatusText(const system_status_t *status
  * @param[in] last_update_seconds Timestamp of the last update.
  * @param[in] uptime_seconds Current uptime in seconds.
  */
-static void Settings_UI_FormatLastUpdate(
-    char *buffer,
-    size_t buffer_size,
-    uint32_t last_update_seconds,
-    uint64_t uptime_seconds)
+static void Settings_UI_FormatLastUpdate(char *buffer, size_t buffer_size, uint32_t last_update_seconds, uint64_t uptime_seconds)
 {
+    // Add the size of this suffix to any buffer_size we take in, to ensure we have enough space to write/add the " ago" part to the info string no matter the input size.
+    static const char suffix[] = " ago.";
+    if (buffer == NULL || buffer_size == 0) 
+    {
+        return;
+    }
 
-    
+    if (last_update_seconds == 0)
+    {
+        snprintf(buffer, buffer_size, "No data yet.");
+        return;
+    }
 
-    (void)last_update_seconds;
-    (void)uptime_seconds;
+    uint64_t age_seconds = uptime_seconds - last_update_seconds;
+    size_t duration_capacity = buffer_size - sizeof(suffix) +1;
 
-    snprintf(buffer, buffer_size, "No data yet");
+    int written = TimeFormat_FormatDuration(buffer, duration_capacity, age_seconds);
+
+    // Validate and check if safe to write
+    if (written < 0 || (size_t)written >= duration_capacity)
+    {
+        snprintf(buffer, buffer_size, "Unknown.");
+        return;
+    }
+
+    // Appends suffix to the duration. 
+    memcpy(buffer + written, suffix, sizeof(suffix));
 }
 
 /**
@@ -192,7 +209,7 @@ void Settings_UI_Update(const app_state_t *app)
     Settings_UI_FormatLastUpdate(
         last_update_text,
         sizeof(last_update_text),
-        app->sensor_data.last_update_seconds,
+        app->last_recommendation_update_seconds,
         uptime_seconds);
 
     lv_label_set_text(ui_UptimeValueLabel, uptime_text);

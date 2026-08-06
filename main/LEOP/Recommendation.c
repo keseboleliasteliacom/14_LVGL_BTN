@@ -88,10 +88,12 @@ int Recommendation_Fetch(const char *url, RecommendationList *r_list)
         return 2;
     }
 
+    /* debug
     for (int i = 0; i < r_list->count; i++)
     {
-        //ESP_LOGI(TAG, "%lf", r_list->rec[i].recommendation);
+        ESP_LOGI(TAG, "%lf", r_list->rec[i].recommendation);
     }
+    */
 
     HTTPClient_Dispose(&http_response);
 

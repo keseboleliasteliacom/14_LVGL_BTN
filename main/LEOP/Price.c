@@ -65,11 +65,7 @@ int Price_Fetch(const char *url, PriceList *p_list)
         return 2;
     }
 
-    /*
-    for (int i = 0; i < p_list->count; i++)
-    {
-        //ESP_LOGI(TAG, "%lf", p_list->price[i].current_prices);
-    }*/
+
 
     HTTPClient_Dispose(&http_response);
 

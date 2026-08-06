@@ -64,10 +64,12 @@ int Weather_Fetch(const char *url, WeatherList *w_list)
         return 2;
     }
 
+    /* debug
     for (int i = 0; i < w_list->count; i++)
     {
-        //ESP_LOGI(TAG, "%.f", w_list->weather[i].temp);
+        ESP_LOGI(TAG, "%.f", w_list->weather[i].temp);
     }
+    */
 
     HTTPClient_Dispose(&http_response);
 

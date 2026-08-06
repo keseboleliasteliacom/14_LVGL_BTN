@@ -17,7 +17,7 @@
 
 #define UART_PORT UART_NUM_0
 #define UART_BAUD 115200
-#define BUF_SIZE 1024
+#define BUF_SIZE 2048
 
 
 static const char* TAG = "UART";
@@ -99,7 +99,7 @@ void UART_Init_new(void)
 
     // Installing drivers.
     ESP_ERROR_CHECK(uart_driver_install(UART_PORT, 
-        BUF_SIZE * 2, // RX buffer, *2 why?
+        BUF_SIZE, //Size of uart's ring buffer
         0, //TX buffer so it becomes blocking
         0, // event queue size - No queue
         NULL, // event queue handle, dont want this atm

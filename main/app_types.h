@@ -6,7 +6,6 @@
 #include <time.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-//#include <task.h>
 #include "Price.h"
 #include "Recommendation.h"
 #include "LEOP_Fetcher.h"
@@ -35,31 +34,6 @@ typedef enum {
     RECOMMENDATION_INVALID = 0,
     RECOMMENDATION_ERROR = -1
 } recommendation_type_t;
-
-/**
- * @brief One LEOP recommendation entry.
- *
- * Stores a timestamp, normalized recommendation value, and decoded
- * recommendation type.
- */
-typedef struct {
-    char timestamp[20]; /**< Timestamp in "YYYY-MM-DD HH:MM" format. */
-    float recommendation;  /**< Normalized value in the range 0 to 1. */
-    recommendation_type_t recommendation_type; /**< BUY, HOLD, SELL, INVALID, or ERROR. */
-} leop_entry_t;
-
-/**
- * @brief Latest LEOP data snapshot.
- *
- * Contains the cached LEOP entries and the number of valid entries currently
- * stored in the array.
- */
-typedef struct {
-    int id; /**< Snapshot identifier. */
-    leop_entry_t entries[128]; /**< Cached recommendation entries. */
-    uint32_t entry_count; /**< Number of valid entries stored in entries. */
-
-} leop_data_t;
 
 /**
  * @brief Latest BME280 sensor readings.

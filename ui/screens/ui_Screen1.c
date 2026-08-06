@@ -12,6 +12,8 @@
 // SquareLine Studio version: SquareLine Studio 1.6.0
 // LVGL version: 8.3.11
 // Project name: SquareLine_Project
+// Original files was generated, it has now since been modified, split apart and currently relies on manual maintenance on updates
+// TODO - streamline/guide for this?
 
 #include "../ui.h"
 #include "../Tabs/Wifi/WiFi_UI.h"

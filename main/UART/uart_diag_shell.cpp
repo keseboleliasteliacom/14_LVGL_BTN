@@ -186,7 +186,7 @@ static void print_local_time(time_t& time) {
 
 
 // Takes in a std::string,
-// .c_str() converts to C-style char*,
+// .c_str() converts to C-style const char*,
 // so std::strtol:
 // Converts our c++ string to a C char *
 // Reds and attempts to convert char to long.
@@ -237,8 +237,6 @@ void handle_input(const std::string &input, app_state_t *state)
     if (cmd == "reboot"){
         std::cout << "restarting device.. " << std::endl;
         std::cout.flush();
-        //vTaskDelay(pdMS_TO_TICKS(200));
-
         esp_restart();
     }
 
@@ -482,7 +480,6 @@ void handle_leop(app_state_t *app)
     
 }
 
-// Diagnostics helper function - prints info about a task
 /**
  * @brief Print basic FreeRTOS stack usage information for one task.
  *
@@ -528,7 +525,6 @@ void handle_diag(app_state_t *app)
     std::cout << "Minimum free heap: " << min_free_heap << " bytes." << std::endl;
     std::cout << "Task count: " << task_count << std::endl;
 
-    // New helper stuff
     print_task_stack(app->system_task_handlers.wifi_task.name, app->system_task_handlers.wifi_task.handle, app->system_task_handlers.wifi_task.stack_size);
     print_task_stack(app->system_task_handlers.ui_task.name, app->system_task_handlers.ui_task.handle, app->system_task_handlers.ui_task.stack_size);
     print_task_stack(app->system_task_handlers.sensor_task.name, app->system_task_handlers.sensor_task.handle, app->system_task_handlers.sensor_task.stack_size);

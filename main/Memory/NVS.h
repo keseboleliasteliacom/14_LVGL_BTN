@@ -30,7 +30,6 @@ extern "C" {
  * @{
  */
 
-//int NVS_Initialize();
 
 
 /**

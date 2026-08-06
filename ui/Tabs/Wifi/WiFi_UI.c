@@ -247,15 +247,7 @@ void WiFi_UI_Update(void)
             {
                 lv_dropdown_add_option(wifi_ui.network_dropdown_dyn, (char *)w_data.ap_info[i].ssid, LV_DROPDOWN_POS_LAST);
             }
-                // if (lvgl_port_lock(pdMS_TO_TICKS(100)))
-            // {
-            //     lv_dropdown_clear_options(wifi_ui.network_dropdown_dyn);
-            //     for (int i = 0; i < w_data.number; i++)
-            //     {
-            //         lv_dropdown_add_option(wifi_ui.network_dropdown_dyn, (char *)w_data.ap_info[i].ssid, LV_DROPDOWN_POS_LAST);
-            //     }
-            //     lvgl_port_unlock();
-            // }
+
         }
         if (w_data.status == WIFI_STATUS_CONNECTED)
         {
@@ -265,16 +257,14 @@ void WiFi_UI_Update(void)
             lv_obj_set_style_text_color(wifi_ui.status_label_dyn, lv_color_hex(0x66FF00), LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_text_color(wifi_ui.ssid_label, lv_color_hex(0x66FF00), LV_PART_MAIN | LV_STATE_DEFAULT);
 
-            // If SSID was loaded from NVS into w_data.wifi_info.ssid
+            // Use the SSID from active connection, if it has one.
+            // Otherwise fallback to SSID from currently selected in the UI
             if (w_data.wifi_info.ssid[0] != '\0') {
                 lv_label_set_text(wifi_ui.ssid_label, w_data.wifi_info.ssid);
             }
-            // Else if manually connected
             else {
                 lv_label_set_text(wifi_ui.ssid_label, wifi_ui.selected_ssid);
             }
-
-            //vTaskDelay(pdMS_TO_TICKS(1000));
         }   
         if (w_data.status == WIFI_STATUS_RECONNECTING)
         {

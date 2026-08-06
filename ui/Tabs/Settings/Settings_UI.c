@@ -371,20 +371,6 @@ static const char *Settings_UI_GetRestartReasonText(void);
  */
 static const char *Settings_UI_GetSystemStatusText(const system_status_t *status);
 
-/**
- * @brief Formats the last sensor update text for the Settings tab.
- *
- * @param[out] buffer Output buffer for the formatted text.
- * @param[in] buffer_size Size of @p buffer in bytes.
- * @param[in] last_update_seconds Timestamp of the last update.
- * @param[in] uptime_seconds Current uptime in seconds.
- */
-static void Settings_UI_FormatLastUpdate(
-    char *buffer,
-    size_t buffer_size,
-    uint32_t last_update_seconds,
-    uint64_t uptime_seconds
-);
 
 /*
  * Private helper implementations
@@ -452,12 +438,12 @@ static const char *Settings_UI_GetSystemStatusText(const system_status_t *status
 
 // TODO - Fix this until after merging branches 
 /**
- * @brief Formats the last sensor update text for the Settings tab.
+ * @brief Formats the time elapsed since the last successful recommendation update.
  *
  * @param[out] buffer Output buffer for the formatted text.
  * @param[in] buffer_size Size of @p buffer in bytes.
- * @param[in] last_update_seconds Timestamp of the last update.
- * @param[in] uptime_seconds Current uptime in seconds.
+ * @param[in] last_update_seconds Monotonic seconds-since-boot timestamp of the last successfull recommendation udatep.
+ * @param[in] uptime_seconds Current monotonic uptime in seconds.
  */
 static void Settings_UI_FormatLastUpdate(char *buffer, size_t buffer_size, uint32_t last_update_seconds, uint64_t uptime_seconds)
 {

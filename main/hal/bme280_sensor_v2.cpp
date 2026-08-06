@@ -173,6 +173,10 @@ bool hal::BME280SensorV2::bme280_init_at_address(uint8_t address)
     }
 
     // If reconnected, wait 150ms so sensor is given enough time to produce first valid smaple
+    // Todo - check if this has an effect on reconnect message logging order or sensor status itself 
+    // Verified, keep in 
+    // When initalized or reconnecting, give the sensor a grace time to load up.
+    // Otherwise it tries to read instantly before things are fully ready, and one warning message is delivered even if sensor reads succesfully shortly after.
     vTaskDelay(pdMS_TO_TICKS(150));
 
     this->active_i2c_address = address;
@@ -216,7 +220,6 @@ if (this->i2c_bus_wrapper == NULL) {
     }
 
     // Waveshare BME280 defaults to 0x77 when ADDR is left unconnected.
-    
     this->bme280_ready = bme280_init_at_address(BME280_WAVESHARE_DEFAULT_ADDRESS);
     if (this->bme280_ready) {
         return true;

@@ -66,7 +66,6 @@ int NVS_WriteToFile(const char* key, const char* value)
  * See header for full contract documentation.
  */
 int NVS_LoadFromFile(const char* key, char* value, size_t length) {
-    //char value[20];
 
     err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {

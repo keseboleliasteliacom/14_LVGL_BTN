@@ -13,7 +13,7 @@
  * @ingroup SENSOR
  */
 
-// sensor.h needs to be a normal header since our main.c/program is in C.
+// sensor.h needs to have proper C naming during linking.
 // So sensor.cpp includes this, but Extern C tells compiler to use C linkage instead of C++ linkage
 #ifdef __cplusplus
     extern "C" {

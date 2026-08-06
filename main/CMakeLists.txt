@@ -19,7 +19,7 @@ idf_component_register(
     "LEOP/LEOP_Fetcher.c" "Cache/Cache.c"
     "LEOP/Price.c"
     "LEOP/LEOP_Fetcher.c"
-    "hal/bme280_sensor.cpp" "hal/bme280_sensor_v2.cpp"
+    "hal/bme280_sensor_v2.cpp"
     "Memory/Spiffs.c" "Memory/NVS.c" 
     "Config/AppConfig.c" "Config/WifiConfig.c"
     "Utils/TimeFormat.c"

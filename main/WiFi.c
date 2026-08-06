@@ -58,11 +58,11 @@ QueueHandle_t event_queue = NULL;
 esp_err_t WiFi_Connect(wifi_data *w_info);
 esp_err_t WiFi_Dispose(void);
 esp_err_t WiFi_Disconnect(void);
-// New helper function
+
+
 static esp_err_t WiFi_ApplyConfig(const wifi_data *w_data);
 
 static bool first_boot = true;
-
 
 
 
@@ -638,17 +638,7 @@ void WiFi_Work(void *arg)
                     ESP_LOGW(TAG, "Failed to request WiFi to disconnect: %s", esp_err_to_name(err));
                 }
                 break;
-            }
-                // if (xQueueReceive(event_queue, &status, pdMS_TO_TICKS(5000)))
-                // {
-                    //     if (status == WIFI_STATUS_DISCONNECTED)
-                    //     {
-                        //         w_data.status = status;
-                        //         xQueueSend(wifi_result_queue, &w_data, 0);
-                        //     }
-                        // }
-                        // break;
-                        
+            }                        
             default:
                 break;
             }
@@ -755,13 +745,7 @@ bool WiFi_IsConnected()
  */
 esp_err_t WiFi_Disconnect(void)
 {
-    /*
-    if (wifi_event_group)
-    {
-        vEventGroupDelete(wifi_event_group);
-    }
 
-    */
     return esp_wifi_disconnect();
 }
 

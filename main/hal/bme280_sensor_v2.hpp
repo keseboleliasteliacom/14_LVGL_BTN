@@ -4,9 +4,6 @@
 #include "environment_sensor.hpp"
 #include "i2c_bus.h"
 #include "bme280.h"
-//#include "freertos/FreeRTOS.h"
-//#include "freertos/queue.h"
-//#include "../app_queues.h"
 
 /**
  * @file bme280_sensor_v2.hpp

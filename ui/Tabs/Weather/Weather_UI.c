@@ -136,15 +136,11 @@ static void init_styles(void)
     lv_style_set_border_color(&style_forecast_row, lv_color_hex(0x345070));
 }
 
+static Weather_UI_test test;
+
 /*********************
  * WEATHER ICON
  *********************/
-
-/*********************
- * FORECAST ROW
- *********************/
-
-static Weather_UI_test test;
 
 LV_IMG_DECLARE(icons8_summer_50);
 LV_IMG_DECLARE(icons8_partly_cloudy_day_50);
@@ -208,6 +204,11 @@ static void set_icon(lv_obj_t *obj, int weather_code)
         break;
     }
 }
+
+
+/*********************
+ * FORECAST ROW
+ *********************/
 
 /**
  * @brief Creates one forecast row widget set.
@@ -279,7 +280,7 @@ void weather_dashboard_create(void)
 
     
 
-    test.icon = lv_img_create(test.left_card); // ✅ correct widget
+    test.icon = lv_img_create(test.left_card);
     lv_img_set_zoom(test.icon, 512);
     lv_obj_align(test.icon, LV_ALIGN_TOP_MID, 0, 120);
 

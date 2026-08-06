@@ -28,7 +28,6 @@ lv_obj_t *ui_TabPage_Settings = NULL;
 lv_obj_t *ui_SettingsContainer = NULL;
 lv_obj_t *ui_SettingsConfigContainer = NULL;
 lv_obj_t *ui_SettingsConfigTitle = NULL;
-//lv_obj_t *ui_Group_Settings = NULL;
 
 lv_obj_t *ui_UptimeInfoLabel = NULL;
 lv_obj_t *ui_UptimeValueLabel = NULL;
@@ -138,35 +137,6 @@ void Main_UI_Initialize()
     lv_obj_set_style_border_width(ui_TabPage_Weather, 0, 0);
 
 
-    // ui_TabPage_Settings = lv_tabview_add_tab(ui_Tab_Main, "SETTINGS");
-    // lv_obj_set_style_bg_color(ui_TabPage_Settings, lv_color_hex(0x1E1425), LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_bg_opa(ui_TabPage_Settings, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    // ui_Group_Settings = lv_obj_create(ui_TabPage_Settings);
-
-    // lv_obj_set_width(ui_Group_Settings, 404);
-    // lv_obj_set_height(ui_Group_Settings, 380);
-    // lv_obj_set_x(ui_Group_Settings, -263);
-    // lv_obj_set_y(ui_Group_Settings, -5);
-    // lv_obj_set_align(ui_Group_Settings, LV_ALIGN_CENTER);
-
-    // // Match your "non-scrollable" behavior
-    // lv_obj_clear_flag(ui_Group_Settings,
-    //                   LV_OBJ_FLAG_SCROLLABLE |
-    //                       LV_OBJ_FLAG_SCROLL_ELASTIC |
-    //                       LV_OBJ_FLAG_SCROLL_MOMENTUM |
-    //                       LV_OBJ_FLAG_SCROLL_CHAIN);
-
-    // // Style (based on your tab button style)
-    // lv_obj_set_style_bg_color(ui_Group_Settings, lv_color_hex(0x6E10CE), LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_bg_opa(ui_Group_Settings, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_bg_grad_color(ui_Group_Settings, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_bg_grad_dir(ui_Group_Settings, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    // // Optional: cleaner edges (tabview had implicit styling)
-    // lv_obj_set_style_radius(ui_Group_Settings, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_border_width(ui_Group_Settings, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_border_color(ui_Group_Settings, lv_color_hex(0x6E10CE), LV_PART_MAIN | LV_STATE_DEFAULT);
     ui_TabPage_WiFi = lv_tabview_add_tab(ui_Tab_Main, "WIFI");
     lv_obj_set_style_bg_color(
         ui_TabPage_WiFi,
@@ -257,7 +227,7 @@ void Main_UI_Initialize()
         LV_OPA_COVER,
         LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    /* Right-hand configuration area exported from SquareLine. */
+    /* Right-hand configuration area */
     ui_SettingsConfigContainer = lv_obj_create(ui_TabPage_Settings);
     lv_obj_remove_style_all(ui_SettingsConfigContainer);
     lv_obj_set_width(ui_SettingsConfigContainer, 440);

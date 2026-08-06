@@ -298,11 +298,7 @@ void WiFi_UI_Update(void)
                 lv_color_hex(0xFF0000),
                 LV_PART_MAIN | LV_STATE_DEFAULT
             );
-            
-
-
         }
-        // xQueueSend(wifi_queue, &w_data, portMAX_DELAY);
     }
 }
 

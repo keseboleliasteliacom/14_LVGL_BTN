@@ -14,9 +14,6 @@
 #include "lvgl_port.h"
 #include "../../screens/ui_Screen1.h"
 #include "../../../main/app_queues.h"
-//#include "../../../main/sensor/sensor.h"
-//#include "../../../main/hal/temperature_sensor.hpp";
-//#include "../../../main/hal/temperature_sensor_c_api.h";
 #include "../../../main/app_types.h"
 
 /**

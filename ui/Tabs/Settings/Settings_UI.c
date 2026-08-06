@@ -22,7 +22,7 @@
 #include <string.h>
 
 
-#include "TimeFormat.h" // from "Utils" folder"
+#include "TimeFormat.h" // from "Utils" folder
 
 static const char *TAG = "Settings_UI";
 
@@ -409,9 +409,7 @@ static const char *Settings_UI_GetRestartReasonText(void)
         case ESP_RST_UNKNOWN:
         default:
             return "Unkown.";
-
     }
- 
 
     return "Unknown";
 }
@@ -436,7 +434,6 @@ static const char *Settings_UI_GetSystemStatusText(const system_status_t *status
     return "Starting...";
 }
 
-// TODO - Fix this until after merging branches 
 /**
  * @brief Formats the time elapsed since the last successful recommendation update.
  *
@@ -572,7 +569,7 @@ void Settings_UI_Update(app_state_t *app)
 
     static uint64_t previous_update_seconds = UINT64_MAX;
 
-    // Settings UI does not require frequent updates, so we can limit it to once a second instead of the usual 50ms update timer
+    // Settings UI does not require frequent updates, so we can limit the information labels update to once a second instead of the usual 50ms update timer
     if (uptime_seconds == previous_update_seconds)
     {
         return;

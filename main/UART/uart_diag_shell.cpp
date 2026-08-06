@@ -136,7 +136,6 @@ std::vector<std::string> split(const std::string &str, char delimiter)
     return result;
 }
 
-// todo - maybe change to enum instead of simple format helpers?
 /**
  * @brief Return connection-state text for shell output.
  *
@@ -278,7 +277,6 @@ void handle_input(const std::string &input, app_state_t *state)
     }
 }
 
-// Todo - Update counter currently throttled to once a second. Disable this?
 /**
  * @brief Print current system status flags.
  *
@@ -389,7 +387,6 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
     const std::string &value = tokens[2];
     if (key == "fetch_interval_minutes")
     {
-        // production TODO - Fetch interval can be set by any value from 1min to 24h. In production change this to 15min?
         int int_value;
         // Use helper function to see if we can parse something as int
         if (parse_int(value, int_value) && int_value >= 1 && int_value <= 1440)

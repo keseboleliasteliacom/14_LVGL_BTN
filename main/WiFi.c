@@ -256,8 +256,6 @@ static void wifi_event_cb(void *arg, esp_event_base_t event_base, int32_t event_
             if (err != ESP_OK)
             {
                 ESP_LOGE(TAG, "Initial Wi-Fi connection request failed: %s", esp_err_to_name(err));
-                // wifi_reconnect_pending = true;
-                // wifi_reconnect_time = xTaskGetTickCount() + pdMS_TO_TICKS(WIFI_RECONNECT_BASE_DELAY_MS);
                 if (WiFi_ScheduleReconnect())
                 {
                     status = WIFI_STATUS_RECONNECTING;
@@ -316,26 +314,6 @@ static void wifi_event_cb(void *arg, esp_event_base_t event_base, int32_t event_
             status = WIFI_STATUS_DISCONNECTED;
         }
 
-        // if (wifi_retry_count < WIFI_RETRY_ATTEMPT)
-        // {
-            //     wifi_retry_count++;
-            //     uint32_t delay_ms = WIFI_RECONNECT_BASE_DELAY_MS * wifi_retry_count;
-            //     if (delay_ms > WIFI_RECONNECT_MAX_DELAY_MS)
-            //     {
-                //         delay_ms = WIFI_RECONNECT_MAX_DELAY_MS;
-                //     }
-                //     ESP_LOGI(TAG, "Scheduling wifi reconnect attempt %d/%d in %"PRIu32" ms", wifi_retry_count, WIFI_RETRY_ATTEMPT, delay_ms);
-                //     wifi_reconnect_pending = true;
-                //     wifi_reconnect_time = xTaskGetTickCount() + pdMS_TO_TICKS(delay_ms);
-                
-                //     // Publish status to UI
-                //     status = WIFI_STATUS_RECONNECTING;
-                //     xQueueOverwrite(event_queue, &status);
-                // }
-                // else {
-                    //     status = WIFI_STATUS_DISCONNECTED;
-                    //     xQueueOverwrite(event_queue, &status);
-                    // }
         xQueueOverwrite(event_queue, &status);
         break;
     case (WIFI_EVENT_STA_AUTHMODE_CHANGE):
@@ -486,7 +464,6 @@ esp_err_t WiFi_Scan(wifi_data *w_data)
  */
 void WiFi_Work(void *arg)
 {
-    //app_state_t* app = (app_state_t*)arg;
 
     wifi_status status = {0};
     wifi_data w_data = {0};

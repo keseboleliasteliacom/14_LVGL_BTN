@@ -6,7 +6,7 @@ idf_component_register(
     SRCS "HTTP.c" "../ui/ui.c" "../ui/ui_helpers.c" "../ui/screens/ui_Screen1.c" "HTTP.c" "WiFi.c" "main.c"
     "SNTP/time_sync.c"
     "fake/fake_config.cpp" "fake/fake_system_status.cpp" 
-    "LEOP/leop.cpp" "LEOP/fake_leop.cpp"
+    
     "sensor/sensor.cpp" "sensor/fake_sensor.cpp"
     "UART/UART.cpp" "UART/uart_diag_shell.cpp"
     "../ui/screens/Main_UI.c"

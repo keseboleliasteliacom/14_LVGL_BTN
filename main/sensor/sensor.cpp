@@ -64,7 +64,9 @@ bool Sensor_Read_v3(sensor_data_t* sensor, hal::BME280SensorV2& environment_sens
     hal::SensorError sensor_reading = environment_sensor.read(reading);
 
     if (sensor_reading != hal::SensorError::Ok) {
-        ESP_LOGW(TAG, "Something went wrong when reading data from sensor."); // TODO - add proper info to output
+        // static_cast<unsigned>> is needed because SensorError is a scoped c++ enum, therefor explicit convertion is needed.
+
+        ESP_LOGW(TAG, "Something went wrong when reading data from sensor. HAL error %u; publishing invalid snapshot.", static_cast<unsigned>(sensor_reading));
         sensor->valid = false;
         
         sensor_data_t sensor_snapshot = *sensor;

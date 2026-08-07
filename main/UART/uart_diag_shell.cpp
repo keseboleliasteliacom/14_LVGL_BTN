@@ -336,15 +336,15 @@ void handle_status(app_state_t* state)
  */
 void handle_sensor(app_state_t *state)
 {
-    std::cout << "Debug valid: " << state->sensor_data.valid << std::endl;
-    std::cout << "Temperature raw: " << state->sensor_data.temperature << std::endl;
+    //std::cout << "Debug valid: " << state->sensor_data.valid << std::endl;
+    //std::cout << "Temperature raw: " << state->sensor_data.temperature << std::endl;
 
     if (!state->sensor_data.valid) {
         std::cout << "Sensor: No valid data yet." << std::endl;
         return;
     }
 
-    std::cout << "Last updated monotonic time: " << state->sensor_data.last_update_seconds << std::endl;
+    std::cout << "Last successful sensor read done in monotonic time since boot: " << state->sensor_data.last_update_seconds << std::endl;
     // If we have synced our local clock to SNTP via wifi and have a valid unix time, we print that to user
     if (state->sensor_data.wall_time_valid) {
         print_local_time(state->sensor_data.last_unix_time);
@@ -352,9 +352,9 @@ void handle_sensor(app_state_t *state)
     else {
         std::cout << "Last updated local time: not synced yet" << std::endl;
     }
-    std::cout << "Temperature - " << state->sensor_data.temperature << std::endl;
-    std::cout << "Pressure    - " << state->sensor_data.pressure << std::endl;
-    std::cout << "Humidity    - " << state->sensor_data.humidity << std::endl;
+    std::cout << "Temperature - " << state->sensor_data.temperature << " °C" << std::endl;
+    std::cout << "Pressure    - " << state->sensor_data.pressure << " hPa" << std::endl;
+    std::cout << "Humidity    - " << state->sensor_data.humidity << " %" << std::endl;
 }
 
 /**
@@ -364,9 +364,9 @@ void handle_sensor(app_state_t *state)
  */
 void print_config(app_state_t *state)
 {
-    std::cout << "fetch_interval_minutes: " << state->config_data.fetch_interval_minutes << std::endl;
-    std::cout << "sensor_interval_ms: " << state->config_data.sensor_interval_ms << std::endl;
-    std::cout << "test_mode: " << enabled_text(state->config_data.test_mode) << std::endl;
+    std::cout << "fetch_interval_minutes: " << state->config_data.fetch_interval_minutes << ".\tAccepted value between 1-1440" << std::endl;
+    std::cout << "sensor_interval_ms: " << state->config_data.sensor_interval_ms << ". \t Accepted values between 1000-60000" << std::endl;
+    std::cout << "test_mode: " << enabled_text(state->config_data.test_mode) << ".\t Accepted inputs: \"true\"|\"false\"" << std::endl;
 }
 
 /**
@@ -501,7 +501,7 @@ void print_task_stack(const char* name, TaskHandle_t handle, uint32_t stack_size
     uint32_t used = stack_size - free;
     uint32_t used_percent = (used * 100) / stack_size;
 
-    std::cout << name << ": used " << used << "/" << stack_size << " {" << used_percent << "%), min free " << free << std::endl;
+    std::cout << name << ": used " << used << "/" << stack_size << " (" << used_percent << "%), min free " << free << std::endl;
 }
 
 /**

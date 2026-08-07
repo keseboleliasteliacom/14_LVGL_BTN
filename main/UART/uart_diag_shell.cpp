@@ -392,12 +392,12 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
         if (parse_int(value, int_value) && int_value >= 1 && int_value <= 1440)
         {            
             state->config_data.fetch_interval_minutes = int_value;
-            std::cout << "Set \"fetch_interval_minutes\" to \"" << int_value << "\"." << std::endl;
             // Also save the changed settings to NVS
             int result = Config_WriteToNVS_FetchIntervalMinutes(int_value);
             if (result != 0) {
                 ESP_LOGW(TAG, "Something failed when attempting to write \"new fetch_interval_minutes\" to NVS.");
             }
+            std::cout << "Set \"fetch_interval_minutes\" to \"" << int_value << "\"." << std::endl;
         }
         else { 
             std::cout << "You must enter a int value between 1(1 minute) and 1440 minutes(1 day)." << std::endl;
@@ -412,11 +412,11 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
             if (int_value >= 1000 && int_value <= 60000)
             {
                 state->config_data.sensor_interval_ms = int_value;
-                std::cout << "Set \"sensor_interval_ms\" to \"" << int_value << "\"." << std::endl;
                 int result = Config_WriteToNVS_SensorIntervalMs(int_value);
                 if (result != 0) {
                     ESP_LOGW(TAG, "Something failed when attempting to write new \"sensor_interval_ms\" to NVS.");
                 }
+                std::cout << "Set \"sensor_interval_ms\" to \"" << int_value << "\"." << std::endl;
             }
             else {
                 std::cout << "You must enter a int value between 1 000 and 60 000ms(1-60s)" << std::endl;
@@ -431,7 +431,7 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
         // TODO - add logic to not unecessecarily write new config if new value is same as old(true -> true)?
         if (value == "true")
         {
-            std::cout << "Now setting \test_mode\" to \"true\"." << std::endl;
+            std::cout << "Now setting \"test_mode\" to \"true\"." << std::endl;
             state->config_data.test_mode = true;
             int result = Config_WriteToNVS_TestMode(true);
             if (result != 0) {
@@ -441,7 +441,7 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
         }
         else if (value == "false")
         {
-            std::cout << "Now setting \test_mode\" to \"false\"." << std::endl;
+            std::cout << "Now setting \"test_mode\" to \"false\"." << std::endl;
             state->config_data.test_mode = false;
             int result = Config_WriteToNVS_TestMode(false);
             if (result != 0) {

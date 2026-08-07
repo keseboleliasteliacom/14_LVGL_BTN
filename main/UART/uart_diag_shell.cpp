@@ -307,7 +307,7 @@ void handle_status(app_state_t* state)
     if (sensorValid) {
         std::cout << "Sensor: OK" << std::endl;
     }
-    else if (state->sensor_data.last_update_seconds > 0) {
+    else if (state->sensor_data.last_update_seconds == 0) {
         std::cout << "Sensor: Not OK(no successful reading since startup)"<< std::endl; 
     }
     else {
@@ -344,7 +344,7 @@ void handle_sensor(app_state_t *state)
         return;
     }
 
-    std::cout << "Last updated monotinic time: " << state->sensor_data.last_update_seconds << std::endl;
+    std::cout << "Last updated monotonic time: " << state->sensor_data.last_update_seconds << std::endl;
     // If we have synced our local clock to SNTP via wifi and have a valid unix time, we print that to user
     if (state->sensor_data.wall_time_valid) {
         print_local_time(state->sensor_data.last_unix_time);
@@ -377,7 +377,7 @@ void print_config(app_state_t *state)
  */
 void handle_config(std::vector<std::string> tokens, app_state_t *state)
 {
-    std::string help_msg = "syntax: \"config <config_name> <value>\".\nFields (name) (value):\n \tfetch_interval_minutes uint32_t\n\ttest_mode bool\n";
+    std::string help_msg = "syntax: \"config <config_name> <value>\".\nFields (name) (value):\n fetch_interval_minutes int\nsensor_interval_ms int\ntest_mode bool\n";
     if (tokens.size() != 3)
     {
         std::cout << help_msg;
@@ -391,8 +391,8 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
         // Use helper function to see if we can parse something as int
         if (parse_int(value, int_value) && int_value >= 1 && int_value <= 1440)
         {            
-            std::cout << "Now setting \"fetch_interval_minutes\" to \"" << int_value << "\"." << std::endl;
             state->config_data.fetch_interval_minutes = int_value;
+            std::cout << "Set \"fetch_interval_minutes\" to \"" << int_value << "\"." << std::endl;
             // Also save the changed settings to NVS
             int result = Config_WriteToNVS_FetchIntervalMinutes(int_value);
             if (result != 0) {
@@ -411,8 +411,8 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
         {
             if (int_value >= 1000 && int_value <= 60000)
             {
-                std::cout << "Now setting \"sensor_interval_ms\" to \"" << int_value << "\"." << std::endl;
                 state->config_data.sensor_interval_ms = int_value;
+                std::cout << "Set \"sensor_interval_ms\" to \"" << int_value << "\"." << std::endl;
                 int result = Config_WriteToNVS_SensorIntervalMs(int_value);
                 if (result != 0) {
                     ESP_LOGW(TAG, "Something failed when attempting to write new \"sensor_interval_ms\" to NVS.");
@@ -448,6 +448,9 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
                 ESP_LOGW(TAG, "Something failed when attempting to write new \"test_mode=false\" to NVS.");
             }
         }
+        else {
+            std::cout << "needs to be \"true\" or \"false\"" << std::endl;
+        }
     }
     else
     {
@@ -464,8 +467,10 @@ void handle_leop(app_state_t *app)
 {
     if (app == NULL) {
         ESP_LOGE(TAG, "app is null in handle_leop");
+        return;
     }
     LEOPData &leop = app->leop_data;
+
     uint32_t total_entries = leop.recommendations.count;
     std::cout << "--- Latest leop data --- " << std::endl;
     std::cout << "Number of entries: " << total_entries << std::endl;

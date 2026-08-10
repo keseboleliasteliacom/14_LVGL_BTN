@@ -413,6 +413,12 @@ esp_err_t WiFi_Initialize()
  * @brief Scans for nearby Wi-Fi access points.
  *
  * Populates the provided result buffer with up to 10 scan records.
+ *
+ * @param[in,out] w_data Output buffer for scan results and count.
+ *
+ * @return
+ * - `ESP_OK` on success
+ * - an ESP-IDF error code on failure
  */
 esp_err_t WiFi_Scan(wifi_data *w_data)
 {

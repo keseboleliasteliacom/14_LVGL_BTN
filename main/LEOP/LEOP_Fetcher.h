@@ -63,10 +63,10 @@ typedef void (*leop_connection_cb_t)(leop_connection_state_t state, void *ctx);
 void LEOPFetcher_SetConnectionCallback(leop_connection_cb_t cb, void *ctx);
 
 /**
- * @brief Configuration for LEOP fetch timing.
+ * @brief Configuration for the LEOP fetch interval.
  *
- * The interval points to the fetch interval in minutes owned by the application
- * state.
+ * The worker reads the interval in minutes through this pointer when it is
+ * present and greater than zero.
  */
 typedef struct{
     uint32_t* time_interval;
@@ -89,7 +89,8 @@ typedef struct{
  * @brief Initializes the LEOP fetcher state and queues.
  *
  * @param[in,out] leop_data Pointer to the LEOP state to initialize.
- * @param[in] interval Fetch interval value passed to the module.
+ * @param[in] interval Reserved fetch-interval value currently not used by this
+ *        implementation.
  *
  * @return `0` on success or a negative value on failure.
  *

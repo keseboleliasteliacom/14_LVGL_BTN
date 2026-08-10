@@ -7,22 +7,21 @@
  * @file Weather_UI.h
  * @brief Public API for the Weather UI module.
  *
- * Provides the UI setup and update functions for the weather tabs and
- * dashboard views.
+ * Declares the LVGL setup and update functions used by the weather tab views.
  *
  * @defgroup WEATHER_UI Weather UI
  * @brief Weather tab and dashboard user interface.
  *
- * Creates and updates LVGL objects that present forecast data from the weather
+ * Creates and updates LVGL widgets that present forecast data from the weather
  * fetcher. Call the setup function before any update function so the widget
- * pointers are valid.
+ * handles are valid.
  * @{
  */
 
 /**
  * @brief Collection of LVGL objects used by the hourly weather grid.
  *
- * Each entry corresponds to one forecast cell in the 24-hour view.
+ * Each array entry corresponds to one forecast cell in the 24-hour view.
  */
 typedef struct
 {
@@ -44,10 +43,10 @@ typedef struct
 } forecast_row_t;
 
 /**
- * @brief Widget collection for the weather dashboard test view.
+ * @brief Widget collection used by the weather dashboard view.
  *
- * Stores references to the current-weather card and the 24-row forecast list.
- * The arrays are used by the implementation to keep per-row widget handles.
+ * Stores the current-weather card widgets, the forecast list container, and
+ * the created 24-row forecast widgets used by the implementation.
  */
 typedef struct
 {

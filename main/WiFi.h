@@ -20,13 +20,14 @@
  * @file WiFi.h
  * @brief Public API for the Wi-Fi module.
  *
- * Defines the Wi-Fi worker-task interface, connection state, and command and
- * result payloads used by the module.
+ * Declares the Wi-Fi worker task interface, connection state, and data
+ * structures used to coordinate scan, connect, disconnect, and status
+ * reporting.
  *
  * @defgroup WIFI WiFi
  * @brief Wi-Fi control and worker task interface.
  *
- * The module initializes the ESP-IDF Wi-Fi stack, owns the worker task command
+ * The module initializes the ESP-IDF Wi-Fi stack, owns the worker-task command
  * and result queues, and coordinates scan, connect, and disconnect operations.
  *
  * @note Functions in this module are intended for task context. The worker task
@@ -38,6 +39,9 @@ extern QueueHandle_t wifi_cmd_queue;
 
 extern QueueHandle_t wifi_result_queue;
 
+/**
+ * @brief Wi-Fi worker commands.
+ */
 typedef enum
 {
     WIFI_CMD_START,
@@ -47,6 +51,9 @@ typedef enum
     WIFI_CMD_STOP,
 } wifi_cmd_t;
 
+/**
+ * @brief Wi-Fi status values reported by the worker task and event path.
+ */
 typedef enum
 {
     WIFI_STATUS_INITIALIZED,
@@ -58,16 +65,14 @@ typedef enum
 } wifi_status;
 
 /**
- * @brief Shared Wi-Fi connection state.
+ * @brief Shared Wi-Fi connection state snapshot.
  *
- * Exposes whether the station is connected to an access point.
+ * Exposes whether the station is currently connected to an access point.
  */
 typedef struct 
 {
     bool is_connected; /**< `true` when the station is connected. */
 }wifi_state;
-
-
 
 /**
  * @brief Station credentials used by the Wi-Fi module.
@@ -140,7 +145,7 @@ void WiFi_Work(void *arg);
  *
  * @return
  * - `ESP_OK` on success
- * - `ESP_FAIL` if the connection request cannot be started
+ * - an ESP-IDF error code on failure
  */
 esp_err_t WiFi_Connect(wifi_data *w_data);
 

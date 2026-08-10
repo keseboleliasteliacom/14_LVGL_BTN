@@ -148,6 +148,11 @@ def function_names(text: str) -> list[str]:
     ignored = {"if", "for", "while", "switch", "return", "sizeof"}
     names: list[str] = []
     for match in FUNCTION_NAME_RE.finditer(text):
+        line_start = text.rfind("\n", 0, match.start()) + 1
+        line_end = text.find("\n", match.start())
+        line_end = len(text) if line_end < 0 else line_end
+        if text[line_start:line_end].lstrip().startswith("typedef"):
+            continue
         name = match.group(1)
         if name not in ignored and name not in names:
             names.append(name)

@@ -82,8 +82,20 @@ class WorkflowPolicyTests(unittest.TestCase):
         self.assertEqual(report.ratio, 0.0)
 
     def test_function_name_discovery(self) -> None:
-        names = function_names("void LEOPFetcher_Work(void *arg);\nstatic bool helper(void) { return true; }")
+        names = function_names(
+            "typedef void (*callback_t)(void *arg);\n"
+            "void LEOPFetcher_Work(void *arg);\n"
+            "static bool helper(void) { return true; }"
+        )
         self.assertEqual(names, ["LEOPFetcher_Work", "helper"])
+
+    def test_real_leop_context_contains_task_creation_argument(self) -> None:
+        root = Path(__file__).resolve().parents[3]
+        target = root / "main/LEOP/LEOP_Fetcher.h"
+        caller = root / "main/main.c"
+        context = caller_context(target, target.read_text(encoding="utf-8"), [target, caller], root)
+        self.assertIn("xTaskCreate(LEOPFetcher_Work", context)
+        self.assertIn("&app", context)
 
     def test_caller_context_finds_task_argument(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

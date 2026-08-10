@@ -701,7 +701,10 @@ def review_semantics(
 ) -> tuple[SemanticReview, OpenAIResult]:
     system_prompt = """You review documentation-only C/C++ changes for semantic accuracy.
 Return JSON only: {"verdict":"pass|warning|reject","findings":["concise evidence-based finding"]}.
-Reject only a clear contradiction with supplied code evidence. Use warning for ambiguity or likely churn.
+You MUST reject when any proposed documentation claim is contradicted by supplied code evidence, even if other changes are correct.
+For example, reject association wording when the state becomes true only after GOT_IP, reject a task-argument type that disagrees
+with both the implementation cast and task-creation argument, and reject test/legacy wording when active callers use that path.
+Use warning only when evidence is ambiguous, incomplete, or indicates likely churn without proving a false claim.
 Check task arguments, active versus test/legacy status, connectivity meaning, ownership, units, blocking,
 state transitions, and header/source/caller agreement. Do not request code changes."""
     user_prompt = f"""Target: {path.relative_to(REPO_ROOT).as_posix()}

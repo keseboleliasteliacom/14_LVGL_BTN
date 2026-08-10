@@ -38,6 +38,9 @@ extern QueueHandle_t wifi_cmd_queue;
 
 extern QueueHandle_t wifi_result_queue;
 
+/**
+ * @brief Wi-Fi worker commands accepted by the module.
+ */
 typedef enum
 {
     WIFI_CMD_START,
@@ -47,6 +50,12 @@ typedef enum
     WIFI_CMD_STOP,
 } wifi_cmd_t;
 
+/**
+ * @brief Wi-Fi status values reported by the worker task.
+ *
+ * The connection-related states reflect whether the station has usable IPv4
+ * connectivity.
+ */
 typedef enum
 {
     WIFI_STATUS_INITIALIZED,
@@ -58,24 +67,27 @@ typedef enum
 } wifi_status;
 
 /**
- * @brief Shared Wi-Fi connection state.
+ * @brief Cached Wi-Fi connectivity state.
  *
- * Tracks whether the station is connected to an access point.
+ * The state reflects whether the station currently has usable IPv4
+ * connectivity.
  */
 typedef struct 
 {
-    bool is_connected; /**< `true` when the station is connected. */
+    bool is_connected; /**< `true` when the station has usable IPv4 connectivity. */
 }wifi_state;
 
 
 
 /**
  * @brief Station credentials used by the Wi-Fi module.
+ *
+ * The credentials are stored in fixed-size null-terminated buffers.
  */
 typedef struct
 {
-    char ssid[WIFI_SSID_MAX_LEN]; /**< SSID string. */
-    char password[WIFI_PASSWORD_MAX_LEN]; /**< Password string. */
+    char ssid[WIFI_SSID_MAX_LEN]; /**< SSID string, including the terminator. */
+    char password[WIFI_PASSWORD_MAX_LEN]; /**< Password string, including the terminator. */
 } wifi_info;
 
 /**
@@ -88,11 +100,11 @@ typedef struct
  */
 typedef struct
 {
-    wifi_cmd_t cmd;
-    wifi_status status;
-    uint16_t number;
-    wifi_ap_record_t ap_info[10];
-    wifi_info wifi_info;
+    wifi_cmd_t cmd; /**< Requested worker command. */
+    wifi_status status; /**< Result status reported by the worker. */
+    uint16_t number; /**< Number of valid scan records. */
+    wifi_ap_record_t ap_info[10]; /**< Scan result buffer. */
+    wifi_info wifi_info; /**< Station credentials used for connect requests. */
 } wifi_data;
 
 typedef void (*wifi_connection_cb_t)(bool connected, void *ctx);
@@ -102,6 +114,9 @@ typedef void (*wifi_connection_cb_t)(bool connected, void *ctx);
  *
  * @param[in] cb Callback invoked when the connection state changes.
  * @param[in] ctx Opaque context passed to the callback.
+ *
+ * @note The callback is invoked from the Wi-Fi event path; keep it short and
+ * avoid blocking.
  */
 void WiFi_SetConnectionCallback(wifi_connection_cb_t cb, void *ctx);
 
@@ -140,14 +155,17 @@ void WiFi_Work(void *arg);
  *
  * @return
  * - `ESP_OK` on success
- * - `ESP_FAIL` if the connection request cannot be started
+ * - an ESP-IDF error code on failure
+ *
+ * @pre `w_data` must point to valid credentials with a non-empty SSID.
+ * @note Call from task context.
  */
 esp_err_t WiFi_Connect(wifi_data *w_data);
 
 /**
  * @brief Returns the current Wi-Fi connection state.
  *
- * @return `true` when connected, otherwise `false`.
+ * @return `true` when the station has usable IPv4 connectivity, otherwise `false`.
  */
 bool WiFi_IsConnected();
 
@@ -171,6 +189,7 @@ esp_err_t WiFi_Disconnect(void);
  * - an ESP-IDF error code on failure
  *
  * @note Call after Wi-Fi activity has stopped.
+ * @note Returns `ESP_ERR_WIFI_NOT_INIT` if the Wi-Fi stack was not initialized.
  */
 esp_err_t WiFi_Dispose(void);
 

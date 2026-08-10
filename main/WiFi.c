@@ -453,14 +453,11 @@ esp_err_t WiFi_Scan(wifi_data *w_data)
 }
 
 /**
- * @brief Wi-Fi worker task.
+ * @brief Implementation of WiFi_Work.
  *
- * Waits for commands on the Wi-Fi command queue and forwards results after
- * scan, connect, or disconnect operations complete.
+ * See header for full contract documentation.
  *
  * @param[in] arg Task context pointer supplied by the creator.
- *
- * @note Runs in task context and blocks on queues and delays.
  */
 void WiFi_Work(void *arg)
 {

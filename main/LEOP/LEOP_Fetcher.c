@@ -1,6 +1,6 @@
 /**
  * @file LEOP_Fetcher.c
- * @brief Implementation of the LEOP fetcher module.
+ * @brief Implementation of the LEOP fetcher module worker and helper logic.
  *
  * @ingroup LEOP_FETCHER
  */

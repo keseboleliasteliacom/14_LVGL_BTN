@@ -24,7 +24,7 @@ static bool fake_mode = false;
 QueueHandle_t Sensor_Queue = NULL;
 
 /**
- * @brief Initializes sensor state and the sensor update queue.
+ * @brief Initializes sensor state and creates the sensor update queue.
  *
  * @param[in,out] app Application state to reset before sensor updates begin.
  */

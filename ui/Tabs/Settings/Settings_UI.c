@@ -380,6 +380,8 @@ static const char *Settings_UI_GetSystemStatusText(const system_status_t *status
 
 /**
  * @brief Returns a short text description of the current ESP reset reason.
+ *
+ * @return Text describing the most recent reset reason.
  */
 static const char *Settings_UI_GetRestartReasonText(void)
 {
@@ -439,7 +441,7 @@ static const char *Settings_UI_GetSystemStatusText(const system_status_t *status
  *
  * @param[out] buffer Output buffer for the formatted text.
  * @param[in] buffer_size Size of @p buffer in bytes.
- * @param[in] last_update_seconds Monotonic seconds-since-boot timestamp of the last successfull recommendation udatep.
+ * @param[in] last_update_seconds Monotonic seconds-since-boot timestamp of the last successful recommendation update.
  * @param[in] uptime_seconds Current monotonic uptime in seconds.
  */
 static void Settings_UI_FormatLastUpdate(char *buffer, size_t buffer_size, uint32_t last_update_seconds, uint64_t uptime_seconds)

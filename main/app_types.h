@@ -13,9 +13,10 @@
 
 /**
  * @file app_types.h
- * @brief Shared application data types for system state, configuration, and task handles.
+ * @brief Shared application data types for state, configuration, and task handles.
  *
- * Defines the data structures used to share application state between modules.
+ * Defines the common data structures used to exchange application state
+ * between modules.
  */
 
 /**
@@ -36,9 +37,10 @@ typedef enum {
 } recommendation_type_t;
 
 /**
- * @brief Latest BME280 sensor readings.
+ * @brief Latest BME280 sensor readings and validity state.
  *
- * Contains the most recent sensor values and the associated validity flags.
+ * Contains the most recent sensor values together with timestamp and
+ * synchronization flags used by the application.
  */
 typedef struct {
     bool valid; /**< True when the sensor reading is valid. */
@@ -73,7 +75,7 @@ typedef struct {
 typedef struct {
     bool wifi_connected; /**< True when Wi-Fi is connected. */
     bool leop_connected; /**< True when LEOP data is available. */
-    bool sensor_ok; // TODO - Might be uncessecary as the sensor_data_t already tracks if valid or not?
+    bool sensor_ok; /**< True when the sensor path is considered healthy. */
     uint32_t update_counter; /**< Number of completed application updates. */
 } system_status_t;
 
@@ -85,7 +87,7 @@ typedef struct {
 typedef struct {
     const char * name; /**< Task name. */
     TaskHandle_t handle; /**< FreeRTOS task handle. */
-    uint32_t stack_size; /**< Configured stack size in bytes or words, depending on the caller. */
+    uint32_t stack_size; /**< Configured task stack size. */
 } task_info_t;
 
 /**

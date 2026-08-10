@@ -15,9 +15,9 @@ static const char *TAG = "Weather_UI";
 static Weather_UI weather_ui;
 
 /**
- * @brief Implementation of Weather_UI_Initialize.
+ * @brief Creates the hourly weather grid UI.
  *
- * See header for full contract documentation.
+ * Builds the 24-cell forecast layout on the weather tab page.
  */
 void Weather_UI_Initialize()
 {
@@ -48,9 +48,10 @@ void Weather_UI_Initialize()
 }
 
 /**
- * @brief Implementation of Weather_UI_Update.
+ * @brief Updates the hourly weather grid from the weather queue.
  *
- * See header for full contract documentation.
+ * Reads the latest fetched weather snapshot when available and refreshes the
+ * grid labels with time, temperature, UV index, and weather code values.
  */
 void Weather_UI_Update()
 {
@@ -251,7 +252,7 @@ static forecast_row_t create_forecast_row(lv_obj_t *parent)
 /**
  * @brief Creates the weather dashboard view.
  *
- * Initializes the shared LVGL styles and builds the current-conditions card
+ * Initializes the shared LVGL styles and builds the current conditions card
  * plus the 24-hour forecast list on the weather tab page.
  */
 void weather_dashboard_create(void)
@@ -439,9 +440,10 @@ static const char *weather_code_to_text(int code)
 }
 
 /**
- * @brief Implementation of Weather_UI_Update_test.
+ * @brief Updates the dashboard test view from the weather queue.
  *
- * See header for full contract documentation.
+ * Uses the latest fetched weather snapshot to refresh the current conditions
+ * card and the 24-row forecast list.
  */
 void Weather_UI_Update_test()
 {

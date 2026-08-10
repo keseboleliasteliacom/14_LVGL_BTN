@@ -58,6 +58,9 @@ static time_t clock_unix_time() {
 
 /**
  * @brief Logs native shared-bus reachability for the active BME280 address.
+ *
+ * Uses the native ESP-IDF I2C bus handle to distinguish a bus-level failure
+ * from an address probe result.
  */
 void hal::BME280SensorV2::log_i2c_diagnostics() const
 {

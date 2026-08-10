@@ -42,7 +42,7 @@ int Cache_Initialize(Cache_t* cache);
  * The cache object is accepted as part of the module API but is not modified by
  * this function.
  *
- * @param[in,out] cache Pointer to the cache object.
+ * @param[in] cache Cache object associated with the write operation; currently not modified.
  * @param[in] data JSON text to write.
  * @param[in] file_name Target file name.
  *
@@ -61,7 +61,10 @@ int Cache_WriteFileJSON(Cache_t* cache, const char* data, const char* file_name)
 int Cache_LoadFileJSON(Cache_t* cache, const char* file_name);
 
 /**
- * @brief Releases cache resources.
+ * @brief Releases the cached JSON buffer.
+ *
+ * Frees the owned buffer and resets `cache->data` to `NULL`. Calling this
+ * function on an empty cache is safe.
  *
  * @param[in,out] cache Pointer to the cache object to dispose.
  */

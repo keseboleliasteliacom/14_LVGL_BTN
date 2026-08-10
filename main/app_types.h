@@ -44,7 +44,7 @@ typedef enum {
  */
 typedef struct {
     bool valid; /**< True when the sensor reading is valid. */
-    uint32_t last_update_seconds; /**< Seconds since the last sensor update. */
+    uint32_t last_update_seconds; /**< monotonic seconds since boot at the last successfull sensor udpate */
     time_t last_unix_time; /**< Last update time in Unix seconds. */
     bool wall_time_valid; /**< True when wall time has been synchronized. */
     double temperature; /**< Temperature in project-defined units. */
@@ -73,8 +73,8 @@ typedef struct {
  * Tracks connectivity and health indicators used by the application.
  */
 typedef struct {
-    bool wifi_connected; /**< True when Wi-Fi is connected. */
-    bool leop_connected; /**< True when LEOP data is available. */
+    bool wifi_connected; /**< True when station has usable IPv4 connection */
+    bool leop_connected; /**< True when LEOP data is available(CONNECTED or DEGRADED). */
     bool sensor_ok; /**< True when the sensor path is considered healthy. */
     uint32_t update_counter; /**< Number of completed application updates. */
 } system_status_t;

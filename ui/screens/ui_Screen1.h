@@ -2,8 +2,8 @@
  * @file ui_Screen1.h
  * @brief Screen 1 UI entry points and shared UI objects.
  *
- * Declares the screen initialization, teardown, and periodic update hooks used
- * by the generated SquareLine Studio UI code.
+ * Declares the screen initialization, teardown, and periodic update hooks used for the main
+ * LVGL screen. Originated from SquareLine studio and now mantually mainainted
  *
  * @ingroup UI
  */
@@ -12,8 +12,7 @@
  * @defgroup UI UI
  * @brief User interface screens and helpers.
  *
- * Screen-specific entry points for the generated LVGL layout and related
- * update tasks.
+ * Screen-specific entry points for the main LVGL layout and its update task.
  * @{
  */
 

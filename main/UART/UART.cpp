@@ -24,7 +24,7 @@ static const char* TAG = "UART";
 /**
  * @brief Reads a single byte from the UART console.
  *
- * @param[in] byte Destination for the received byte.
+ * @param[out] byte Destination for the received byte.
  * @param[in] timeout UART read timeout in FreeRTOS ticks.
  *
  * @return `true` if a byte was read, otherwise `false`.

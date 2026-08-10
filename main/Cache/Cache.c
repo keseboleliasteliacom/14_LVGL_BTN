@@ -92,6 +92,6 @@ void Cache_Dispose(Cache_t *cache)
     if (cache != NULL && cache->data != NULL)
     {
         free(cache->data);
-        cache = NULL;
+        cache->data = NULL;
     }
 }

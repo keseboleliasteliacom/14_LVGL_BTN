@@ -17,8 +17,9 @@
  * @defgroup SETTINGS_UI SETTINGS_UI
  * @brief Settings tab UI update helpers.
  *
- * Initializes and updates the Settings tab labels. Call initialization after
- * the relevant UI objects exist, and call update while holding the LVGL lock.
+ * Creates the Settings controls and handlers and updates its dynamic labels.
+ * Call initialization after the parent UI containers exist, and call update
+ * while holding the LVGL lock.
  * @{
  */
 
@@ -27,9 +28,9 @@ extern "C" {
 #endif
 
 /**
- * @brief Initializes the Settings tab UI state.
+ * @brief Creates the Settings controls and registers their event handlers.
  *
- * Call after Main_UI_Initialize() has created the Settings labels.
+ * Call after Main_UI_Initialize() has created the Settings containers.
  */
 void Settings_UI_Initialize(void);
 

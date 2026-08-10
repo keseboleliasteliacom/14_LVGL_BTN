@@ -49,6 +49,9 @@ static void *connection_callback_ctx = NULL;
  *
  * The callback is invoked from LEOP worker task context when the published
  * connection state changes.
+ *
+ * @param[in] cb Callback to invoke when the published state changes.
+ * @param[in] ctx Opaque callback context.
  */
 void LEOPFetcher_SetConnectionCallback(leop_connection_cb_t cb, void *ctx)
 {
@@ -280,7 +283,9 @@ int LEOPFetcher_Initialize(LEOPData *leop_data, uint32_t interval)
 /**
  * @brief Implementation of LEOPFetcher_Work.
  *
- * See header for full contract documentation.
+ * Runs in task context, expects an `app_state_t *` argument, and blocks on
+ * notifications, delays, and network health checks while managing LEOP status
+ * and cached data publication.
  */
 void LEOPFetcher_Work(void *arg)
 {

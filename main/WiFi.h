@@ -60,7 +60,7 @@ typedef enum
 /**
  * @brief Shared Wi-Fi connection state.
  *
- * Exposes whether the station is connected to an access point.
+ * Exposes whether the station is associated and connected to the access point.
  */
 typedef struct 
 {

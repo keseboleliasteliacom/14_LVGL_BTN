@@ -45,9 +45,9 @@ typedef enum
  */
 typedef struct
 {
-    leop_connection_state_t state;
-    uint8_t consecutive_failures;
-    int http_status_code;
+    leop_connection_state_t state; /**< Published connectivity state. */
+    uint8_t consecutive_failures; /**< Number of consecutive failed checks. */
+    int http_status_code; /**< Latest HTTP status code associated with the state. */
 } leop_status_message_t;
 
 typedef void (*leop_connection_cb_t)(leop_connection_state_t state, void *ctx);
@@ -55,7 +55,7 @@ typedef void (*leop_connection_cb_t)(leop_connection_state_t state, void *ctx);
 /**
  * @brief Registers a callback for LEOP connection-state changes.
  *
- * The callback runs in LEOP worker task context and must remain non-blocking.
+ * The callback runs in LEOP worker task context when the published state changes.
  *
  * @param[in] cb Callback to invoke when the published state changes.
  * @param[in] ctx Opaque callback context.
@@ -67,6 +67,8 @@ void LEOPFetcher_SetConnectionCallback(leop_connection_cb_t cb, void *ctx);
  *
  * The interval points to the fetch interval in minutes owned by the application
  * state.
+ *
+ * @note The pointed-to value must remain valid while the worker task is running.
  */
 typedef struct{
     uint32_t* time_interval;
@@ -89,21 +91,23 @@ typedef struct{
  * @brief Initializes the LEOP fetcher state and queues.
  *
  * @param[in,out] leop_data Pointer to the LEOP state to initialize.
- * @param[in] interval Fetch interval value passed to the module.
+ * @param[in] interval Fetch interval value accepted by the API; current
+ *        implementation does not use it.
  *
  * @return `0` on success or a negative value on failure.
  *
  * @note Creates single-element FreeRTOS queues used to publish fetched data.
+ * @note Set leop_data->leop_conf.time_interval before starting LEOPFetcher_Work.
  */
 int LEOPFetcher_Initialize(LEOPData *leop_data, uint32_t interval);
 
 /**
  * @brief Worker task entry point for LEOP data fetching.
  *
- * @param[in] arg Pointer to LEOPData passed to the task.
+ * @param[in] arg Pointer to app_state_t passed to the task.
  *
- * @note Runs in task context and blocks while fetching data and delaying
- * between retries or scheduled updates.
+ * @note Runs in task context and blocks while fetching data and waiting for
+ * scheduled updates or notifications.
  */
 void LEOPFetcher_Work(void *arg);
 

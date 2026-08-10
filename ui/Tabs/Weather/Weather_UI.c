@@ -50,8 +50,9 @@ void Weather_UI_Initialize()
 /**
  * @brief Updates the hourly weather grid from the weather queue.
  *
- * Reads the latest fetched weather snapshot when available and refreshes the
- * grid labels with time, temperature, UV index, and weather code values.
+ * Consumes the latest available weather snapshot from the shared queue and
+ * refreshes the grid labels with time, temperature, UV index, and weather code
+ * values.
  */
 void Weather_UI_Update()
 {
@@ -252,7 +253,7 @@ static forecast_row_t create_forecast_row(lv_obj_t *parent)
 /**
  * @brief Creates the weather dashboard view.
  *
- * Initializes the shared LVGL styles and builds the current conditions card
+ * Initializes the shared LVGL styles and builds the current-conditions card
  * plus the 24-hour forecast list on the weather tab page.
  */
 void weather_dashboard_create(void)
@@ -440,10 +441,10 @@ static const char *weather_code_to_text(int code)
 }
 
 /**
- * @brief Updates the dashboard test view from the weather queue.
+ * @brief Updates the dashboard view from the weather queue.
  *
- * Uses the latest fetched weather snapshot to refresh the current conditions
- * card and the 24-row forecast list.
+ * Consumes the latest available weather snapshot from the shared queue and
+ * refreshes the current conditions card and the 24-row forecast list.
  */
 void Weather_UI_Update_test()
 {

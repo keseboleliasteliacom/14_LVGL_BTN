@@ -359,9 +359,18 @@ void WiFi_CreateQueues()
 }
 
 /**
- * @brief Implementation of WiFi_Initialize.
+ * @brief Initializes the Wi-Fi module.
  *
- * See header for full contract documentation.
+ * Sets up NVS, the TCP/IP stack, the default event loop, the station interface,
+ * the internal queues, and the Wi-Fi event handlers.
+ *
+ * @return
+ * - `ESP_OK` on success
+ * - an ESP-IDF error code on failure
+ *
+ * @note Call from task context during system initialization.
+ * @warning Initialization order matters because the module depends on NVS,
+ * network stack, and event loop setup.
  */
 esp_err_t WiFi_Initialize()
 {
@@ -413,6 +422,12 @@ esp_err_t WiFi_Initialize()
  * @brief Scans for nearby Wi-Fi access points.
  *
  * Populates the provided result buffer with up to 10 scan records.
+ *
+ * @param[in,out] w_data Buffer that receives the scan results and count.
+ *
+ * @return
+ * - `ESP_OK` on success
+ * - an ESP-IDF error code on failure
  */
 esp_err_t WiFi_Scan(wifi_data *w_data)
 {

@@ -24,7 +24,10 @@ This document explains the GitHub setup and the intended workflow for the OpenAI
 - automatic runs are restricted to `dev`
 - manual runs support explicit file selection
 - only C/C++ source and header files are processed
-- matching `.h` and `.c/.cpp` files are paired automatically
+- matching `.h` and `.c/.cpp` files are paired automatically in both diff and manual selection
+- pair-aware soft limits never split a discovered pair
+- automatic runs use normal mode; manual runs may select semantic audit mode
+- ordinary comments are preserved unless their separate audit policy is explicitly selected
 - generated output is rejected if non-comment code changed
 - rejected outputs and run manifests are saved as artifacts
 - successful results can be restored into a rerun using `remaining_only`
@@ -34,12 +37,14 @@ This document explains the GitHub setup and the intended workflow for the OpenAI
 1. GitHub shows the workflow UI from the default branch
 2. The run checks out the selected `target_ref`, usually `dev`
 3. The script selects changed files or manually specified files
-4. Matching header/source pairs are added automatically when names match
+4. Matching header/source pairs are added automatically when names match, including unchanged partners in diff mode
 5. The script loads the active embedded documentation standard and templates
 6. The selected model generates full-file documentation updates
 7. Output is rejected if non-comment code changed
 8. Successful files are written to the workflow branch and summarized in GitHub Actions
 9. Rejected outputs and manifests are uploaded as artifacts for troubleshooting or reruns
+
+In audit mode, bounded caller snippets are added as read-only evidence and a second request reviews changed documentation for cross-module semantic contradictions.
 
 ## Manual Run Examples
 
@@ -51,6 +56,8 @@ Use:
 - `model = gpt-5.4-mini` or another allowed model
 - `rerun_mode = all`
 - `file_paths = main/WiFi.h, main/WiFi.c, main/HTTP.h, main/HTTP.c`
+- `mode = normal` for routine work or `audit` for cross-module review
+- `ordinary_comments = preserve` unless this is explicitly a comment-cleanup run
 
 ### Rerun only remaining files
 
@@ -77,3 +84,4 @@ Do not use GitHub's built-in `Re-run failed jobs` button for this purpose. That 
 - the default budget-oriented model is `gpt-5.4-mini`
 - stronger models can be selected manually for comparison or quality-sensitive runs
 - current workflow cost summaries are estimate-only and do not yet auto-switch pricing by selected model
+- audit mode usually costs more because changed proposals receive a second semantic-review request

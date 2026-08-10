@@ -28,7 +28,7 @@
 static constexpr char* TAG = "bme280_sensor_v2.cpp";
 
 /**
- * @brief Constructs the BME280 sensor wrapper and configures I2C settings.
+ * @brief Constructs the BME280 sensor wrapper and configures fallback I2C settings.
  */
 hal::BME280SensorV2::BME280SensorV2()
 {
@@ -36,9 +36,9 @@ hal::BME280SensorV2::BME280SensorV2()
 }
 
 /**
- * @brief Reports whether the BME280 sensor is present.
+ * @brief Reports whether the BME280 sensor is initialized and has an active handle.
  *
- * @return True when the sensor is initialized and has an active device handle.
+ * @return `true` when the sensor is ready, `false` otherwise.
  */
 bool hal::BME280SensorV2::is_present() {
     return this->bme280_ready && this->bme280 != NULL;
@@ -47,7 +47,7 @@ bool hal::BME280SensorV2::is_present() {
 /**
  * @brief Returns the current Unix time.
  *
- * @return Current system time as Unix time.
+ * @return Current system time in seconds since the Unix epoch.
  */
 static time_t clock_unix_time() {
     time_t now;
@@ -57,10 +57,10 @@ static time_t clock_unix_time() {
 }
 
 /**
- * @brief Logs native shared-bus reachability for the active BME280 address.
+ * @brief Logs native I2C diagnostics for the active BME280 address.
  *
- * Uses the native ESP-IDF I2C bus handle to distinguish a bus-level failure
- * from an address probe result.
+ * Uses the shared bus handle to distinguish bus access issues from an address
+ * probe result.
  */
 void hal::BME280SensorV2::log_i2c_diagnostics() const
 {
@@ -152,11 +152,11 @@ hal::SensorError hal::BME280SensorV2::read(hal::EnvironmentReading& reading) {
 }
 
 /**
- * @brief Initializes the BME280 instance at a specific I2C address.
+ * @brief Initializes a BME280 instance at the given I2C address.
  *
  * @param[in] address I2C address to probe.
  *
- * @return True on successful initialization, false otherwise.
+ * @return `true` on successful initialization, `false` otherwise.
  */
 bool hal::BME280SensorV2::bme280_init_at_address(uint8_t address)
 {
@@ -188,7 +188,7 @@ bool hal::BME280SensorV2::bme280_init_at_address(uint8_t address)
 }
 
 /**
- * @brief Configures the default I2C parameters used by the BME280 sensor.
+ * @brief Configures the fallback I2C parameters used by the BME280 sensor.
  */
 void hal::BME280SensorV2::BME280Sensor_config_i2c_fallback()
 {
@@ -201,12 +201,12 @@ void hal::BME280SensorV2::BME280Sensor_config_i2c_fallback()
 }
 
 /**
- * @brief Initializes the BME280 sensor and I2C bus.
+ * @brief Initializes the BME280 sensor and shared I2C bus wrapper.
  *
- * The first successful address probe keeps the created bus and sensor handle.
- * If the bus already exists, it is reused for reconnect attempts.
+ * Reuses the existing bus wrapper when available, then probes the default
+ * BME280 address and the alternate address used when ADDR is tied to GND.
  *
- * @return True on success, false if the bus or sensor cannot be initialized.
+ * @return `true` on success, `false` if the bus or sensor cannot be initialized.
  */
 
 bool hal::BME280SensorV2::bme280_sensor_init() {

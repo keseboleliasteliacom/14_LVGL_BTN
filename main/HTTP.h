@@ -10,6 +10,8 @@
  *
  * Provides helpers for issuing HTTP GET requests and storing response data in
  * a dynamically allocated buffer.
+ *
+ * @ingroup HTTP
  */
 
 /**
@@ -24,7 +26,7 @@
 /**
  * @brief HTTP response buffer owned by the caller.
  *
- * The response data is accumulated in a heap buffer and tracked with its byte
+ * The response body is accumulated in a heap buffer and tracked with its byte
  * length and final HTTP status code.
  */
 typedef struct

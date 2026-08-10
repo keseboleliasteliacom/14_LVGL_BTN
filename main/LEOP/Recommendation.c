@@ -51,8 +51,8 @@ int Recommendation_Initialize(RecommendationList *r_list)
 /**
  * @brief Implementation of Recommendation_Fetch.
  *
- * Fetches recommendation data through the HTTP helper, stores the raw payload
- * in the cache, and parses the result into the provided list.
+ * Retrieves recommendation JSON through the HTTP helper, writes the payload
+ * to cache, and parses the response into the provided list.
  *
  * See header for full contract documentation.
  */
@@ -139,7 +139,7 @@ int Recommendation_FetchCache(RecommendationList *r_list)
 /**
  * @brief Implementation of Recommendation_Dispose.
  *
- * Clears the list contents and resets the entry count.
+ * Resets the list contents and clears the entry count.
  *
  * See header for full contract documentation.
  */

@@ -47,6 +47,9 @@ namespace hal {
             /**
              * @brief Reads the current environment values from the BME280.
              *
+             * Attempts a reconnect if the sensor is currently marked unavailable.
+             * On success, populates the reading timestamps and measurement values.
+             *
              * @param[out] reading Sensor reading output populated on success.
              *
              * @return Sensor error status for the read operation.
@@ -62,6 +65,10 @@ namespace hal {
 
             /**
              * @brief Initializes the BME280 sensor and I2C bus.
+             *
+             * Uses the shared I2C bus if it is already available, then probes the
+             * default BME280 address and the alternate address used when ADDR is
+             * tied to GND.
              *
              * @return `true` on success, `false` if the bus or sensor cannot be initialized.
              */
@@ -88,6 +95,9 @@ namespace hal {
 
             /**
              * @brief Initializes the BME280 instance at a specific I2C address.
+             *
+             * Tries the provided address, applies the device default
+             * initialization, and applies a short delay before returning.
              *
              * @param[in] address I2C address to probe.
              *

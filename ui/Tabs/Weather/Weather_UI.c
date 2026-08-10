@@ -440,7 +440,7 @@ static const char *weather_code_to_text(int code)
 }
 
 /**
- * @brief Updates the dashboard test view from the weather queue.
+ * @brief Updates the dashboard view from the weather queue.
  *
  * Uses the latest fetched weather snapshot to refresh the current conditions
  * card and the 24-row forecast list.

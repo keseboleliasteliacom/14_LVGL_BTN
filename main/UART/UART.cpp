@@ -22,12 +22,9 @@
 
 static const char* TAG = "UART";
 /**
- * @brief Reads up to one byte from the UART console.
+ * @brief Implementation of UART_ReadByte.
  *
- * @param[out] byte Destination for the received byte.
- * @param[in] timeout Read timeout in FreeRTOS ticks.
- *
- * @return `true` if a byte was read, otherwise `false`.
+ * See header for full contract documentation.
  */
 bool UART_ReadByte(uint8_t* byte, TickType_t timeout)
 {
@@ -72,9 +69,10 @@ std::string trim_copy(const std::string& str)
 
 
 /**
- * @brief Configures the UART console for the worker task.
+ * @brief Initializes UART0 for the console worker.
  *
- * Sets up UART0 with the built-in console pins and a blocking RX driver.
+ * Configures the built-in console pins and installs the RX driver used by the
+ * worker task.
  */
 void UART_Init_new(void)
 {
@@ -110,12 +108,9 @@ void UART_Init_new(void)
 }
 
 /**
- * @brief UART worker task entry point.
+ * @brief Implementation of UART_Work.
  *
- * Runs in task context, initializes the UART console, and blocks while waiting
- * for input bytes from the RX driver.
- *
- * @param parameter Pointer to the application state passed to the task.
+ * See header for full contract documentation.
  */
 extern "C" void UART_Work(void* parameter) {
     app_state_t* app = (app_state_t*)parameter;

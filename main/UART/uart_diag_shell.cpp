@@ -1,6 +1,6 @@
 /**
  * @file uart_diag_shell.cpp
- * @brief Implementation of the UART diagnostic shell module.
+ * @brief Implementation of the UART diagnostic shell and command handlers.
  *
  * @ingroup UART
  */

@@ -51,8 +51,8 @@ int Recommendation_Initialize(RecommendationList *r_list)
 /**
  * @brief Implementation of Recommendation_Fetch.
  *
- * Fetches recommendation JSON through the HTTP helper, caches the raw payload,
- * and parses the result into the provided list.
+ * Fetches recommendation data through the HTTP helper, stores the raw payload
+ * in the cache, and parses the result into the provided list.
  *
  * See header for full contract documentation.
  */
@@ -103,7 +103,8 @@ int Recommendation_Fetch(const char *url, RecommendationList *r_list)
 /**
  * @brief Implementation of Recommendation_FetchCache.
  *
- * Loads cached recommendation JSON and parses it into the provided list.
+ * Loads cached recommendation JSON from storage and parses it into the
+ * provided list.
  *
  * See header for full contract documentation.
  */

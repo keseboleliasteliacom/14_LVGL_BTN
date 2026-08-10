@@ -57,7 +57,7 @@ void LEOPFetcher_SetConnectionCallback(leop_connection_cb_t cb, void *ctx)
 }
 
 /**
- * @brief Returns whether the current tick count has reached the deadline.
+ * @brief Checks whether a deadline has been reached.
  *
  * @param[in] now Current tick count.
  * @param[in] deadline Deadline tick count.

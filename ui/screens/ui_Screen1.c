@@ -32,7 +32,7 @@ static const char *TAG = "UI";
  * @brief Updates the LEOP connection label from the status queue.
  *
  * Consumes at most one queued status message per call and updates the label
- * color and text when the shared UI objects are available.
+ * text and color when the shared UI objects are available.
  */
 static void LEOP_UI_Update(void)
 {
@@ -83,13 +83,15 @@ static void LEOP_UI_Update(void)
 }
 
 /**
- * @brief Implementation of ui_update_task.
+ * @brief Background UI update task for Screen 1.
  *
- * See header for full contract documentation.
+ * Runs in task context, takes the LVGL port lock before updating shared UI
+ * objects, and delays between refresh cycles.
+ *
+ * @param arg Task argument cast to app_state_t *.
+ *
+ * @note The update helpers are called while the LVGL port lock is held.
  */
-// If an external call is needed, the caller for any "_UI_Update()" most hold the LVGL port lock
-// The current behavior and design decision is that this function holds the lock and updates everything.
-// Todo - clear up and verify if automated doxygen CI corrects the flow/contract
 void ui_update_task(void *arg)
 {
     app_state_t *app = (app_state_t *)arg;

@@ -30,12 +30,13 @@ extern "C" {
  * @{
  */
 
-
-
 /**
  * @brief Initializes the default NVS flash partition.
  *
- * @return 0 on success, or -1 if the partition must be erased and
+ * Reinitializes the partition after erasing it when ESP-IDF reports that the
+ * NVS pages are exhausted or the stored version is incompatible.
+ *
+ * @return 0 on success, or -1 if the partition had to be erased and
  * reinitialized.
  */
 int NVS_Init();

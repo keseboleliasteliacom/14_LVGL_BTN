@@ -152,9 +152,9 @@ static void format_latest_data(const sensor_data_t *sensor_data,
 }
 
 /**
- * @brief Creates the Home tab sensor widgets.
+ * @brief Implementation of Sensor_UI_Initialize.
  *
- * Initializes the LVGL objects used by the sensor display.
+ * See header for full contract documentation.
  */
 void Sensor_UI_Initialize()
 {
@@ -237,10 +237,9 @@ void Sensor_UI_Initialize()
 }
 
 /**
- * @brief Refreshes the Home tab sensor values.
+ * @brief Implementation of Sensor_UI_Update.
  *
- * Reads one queued sensor update without blocking and updates the LVGL labels
- * when new data is available.
+ * See header for full contract documentation.
  */
 void Sensor_UI_Update(void)
 {

@@ -20,8 +20,9 @@
  * @defgroup UI UI
  * @brief User interface screens and display integration.
  *
- * This module provides the main LVGL screen and its exported widget handles.
- * UI initialization depends on LVGL and the display layer being ready.
+ * Main LVGL screen objects exported for the display layer and application
+ * status updates. Initialization depends on LVGL and the screen setup order
+ * used by the UI bring-up code.
  * @{
  */
 

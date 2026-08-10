@@ -37,6 +37,9 @@ int Price_Initialize(PriceList *p_list)
  *
  * Performs HTTP retrieval, writes the raw JSON to the local cache, and parses
  * the response into the provided list.
+ *
+ * @note Performs network I/O and may leave cached raw data available even if
+ * parsing fails.
  */
 int Price_Fetch(const char *url, PriceList *p_list)
 {
@@ -76,6 +79,9 @@ int Price_Fetch(const char *url, PriceList *p_list)
  * @brief Loads cached price data from local storage and parses it.
  *
  * Uses the cached JSON file, then clears the cache buffer after parsing.
+ *
+ * @note Uses local storage and returns before cache disposal on load or parse
+ * failure.
  */
 int Price_FetchCache(PriceList *p_list)
 {

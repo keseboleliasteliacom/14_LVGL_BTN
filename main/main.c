@@ -2,15 +2,15 @@
  * @file main.c
  * @brief Application entry point for system bring-up and task startup.
  *
- * Initializes board peripherals, LVGL, storage, Wi-Fi, and background tasks.
- * Startup order matters because several modules depend on earlier
- * initialization and on the shared application state.
+ * Initializes time settings, configuration storage, peripherals, LVGL, and
+ * background tasks. Startup order matters because several modules depend on
+ * earlier initialization and on shared application state.
  *
  * @ingroup main
  *
  * @note Intended as system orchestration rather than reusable API logic.
- * @warning Some initialization steps block briefly during hardware bring-up and
- * task startup.
+ * @warning Several initialization steps block briefly during hardware bring-up
+ * and task startup.
  */
 #define LV_CONF_INCLUDE_SIMPLE 1
 
@@ -51,13 +51,18 @@ static TaskHandle_t leop_task_handle = NULL;
 #define LEOP_STACK_SIZE     4096
 
 /**
- * @brief Updates the Wi-Fi connection state in the shared application data.
+ * @brief Reports Wi-Fi connection changes to the shared application state.
+ *
+ * Updates the cached connection flag and wakes the LEOP task so it can react
+ * to the new network state.
  *
  * @param connected New connection state.
  * @param ctx Pointer to the application state.
+ *
+ * @note Runs from a Wi-Fi callback context; keep work short and avoid blocking.
  */
-// This project mainly uses queue as the primary way to send information between modules, mostly UI and other modules.
-// However, we use this callback so LEOP can react instantly on wifi state changes, without making the WiFI module dependent on the LEOP module 
+ // This project mainly uses queue as the primary way to send information between modules, mostly UI and other modules.
+ // However, we use this callback so LEOP can react instantly on wifi state changes, without making the WiFI module dependent on the LEOP module 
 static void on_wifi_connection_changed(bool connected, void *ctx)
 {
     app_state_t *app = (app_state_t *)ctx;
@@ -74,8 +79,10 @@ static void on_wifi_connection_changed(bool connected, void *ctx)
  *
  * @param state Reported LEOP connection state.
  * @param ctx Pointer to the application state.
+ *
+ * @note Called from the LEOP connection callback path.
  */
-// We send this callback so the app->system_status translates to our actual LEOP status without making the module dependent on it
+ // We send this callback so the app->system_status translates to our actual LEOP status without making the module dependent on it
 static void on_leop_connection_changed(leop_connection_state_t state, void *ctx)
 {
     app_state_t *app = (app_state_t *)ctx;
@@ -125,11 +132,11 @@ const char *data =
 /**
  * @brief Application entry point.
  *
- * Initializes time zone settings, loads fallback configuration, brings up
+ * Initializes time zone settings, loads configuration from NVS, brings up
  * peripherals, and starts the worker tasks used by the application.
  *
- * @note Runs in task context and performs several blocking initialization
- * steps before launching background work.
+ * @note Runs in task context and performs blocking initialization steps before
+ * launching background work.
  */
 void app_main()
 {

@@ -144,6 +144,8 @@ void WiFi_UI_Initialize()
  * @brief Sends a Wi-Fi scan request from the scan button event.
  *
  * @param[in] _Event LVGL event object.
+ *
+ * @note Intended for LVGL callback context.
  */
 void WiFi_UI_Scan_cb(lv_event_t *_Event)
 {
@@ -158,6 +160,8 @@ void WiFi_UI_Scan_cb(lv_event_t *_Event)
  * @brief Sends a Wi-Fi disconnect request from the disconnect button event.
  *
  * @param[in] _Event LVGL event object.
+ *
+ * @note Intended for LVGL callback context.
  */
 void WiFi_UI_Disconnect_cb(lv_event_t *_Event)
 {
@@ -172,6 +176,8 @@ void WiFi_UI_Disconnect_cb(lv_event_t *_Event)
  * @brief Handles password entry keyboard events for Wi-Fi connection.
  *
  * @param[in] _Event LVGL event object.
+ *
+ * @note Intended for LVGL callback context.
  */
 void WiFi_UI_Keyboard_cb(lv_event_t *_Event)
 {
@@ -203,6 +209,8 @@ void WiFi_UI_Keyboard_cb(lv_event_t *_Event)
  * @brief Opens an on-screen keyboard for the password text area.
  *
  * @param[in] _Event LVGL event object.
+ *
+ * @note Intended for LVGL callback context.
  */
 void WiFi_UI_TextArea_cb(lv_event_t *_Event)
 {
@@ -220,6 +228,8 @@ void WiFi_UI_TextArea_cb(lv_event_t *_Event)
  * @brief Updates the selected SSID from the dropdown selection.
  *
  * @param[in] _Event LVGL event object.
+ *
+ * @note Intended for LVGL callback context.
  */
 void WiFi_UI_Dropdown_cb(lv_event_t *_Event)
 {

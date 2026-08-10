@@ -20,9 +20,13 @@
  * @file WiFi.h
  * @brief Public API for the Wi-Fi module.
  *
- * Defines the Wi-Fi worker-task interface, connection state, and command and
- * result payloads used by the module.
+ * Defines the Wi-Fi worker task interface, connection state, and the payloads
+ * exchanged through the module queues.
  *
+ * @ingroup WIFI
+ */
+
+/**
  * @defgroup WIFI WiFi
  * @brief Wi-Fi control and worker task interface.
  *
@@ -60,7 +64,7 @@ typedef enum
 /**
  * @brief Shared Wi-Fi connection state.
  *
- * Exposes whether the station is connected to an access point.
+ * Indicates whether the station is currently connected to an access point.
  */
 typedef struct 
 {
@@ -81,8 +85,8 @@ typedef struct
 /**
  * @brief Command and result payload used by the Wi-Fi worker task.
  *
- * Contains the requested command, the resulting status, scan output storage,
- * and the station credentials used for connection.
+ * Carries a worker command, the resulting status, scan storage, and station
+ * credentials for connect operations.
  *
  * @note The scan result buffer stores up to 10 access point records.
  */
@@ -140,7 +144,7 @@ void WiFi_Work(void *arg);
  *
  * @return
  * - `ESP_OK` on success
- * - `ESP_FAIL` if the connection request cannot be started
+ * - an ESP-IDF error code on failure
  */
 esp_err_t WiFi_Connect(wifi_data *w_data);
 

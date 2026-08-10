@@ -50,8 +50,8 @@ void Weather_UI_Initialize()
 /**
  * @brief Updates the hourly weather grid from the weather queue.
  *
- * Reads the latest fetched weather snapshot when available and refreshes the
- * grid labels with time, temperature, UV index, and weather code values.
+ * Reads one queued weather snapshot when available and updates the 24 forecast
+ * cells from the fetched data.
  */
 void Weather_UI_Update()
 {

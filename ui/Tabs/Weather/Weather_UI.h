@@ -44,10 +44,10 @@ typedef struct
 } forecast_row_t;
 
 /**
- * @brief Widget collection for the weather dashboard test view.
+ * @brief Widget collection for the weather dashboard view.
  *
- * Stores references to the current-weather card and the 24-row forecast list.
- * The arrays are used by the implementation to keep per-row widget handles.
+ * Stores references to the current-weather card, the forecast list, and the
+ * per-row widgets created by the implementation.
  */
 typedef struct
 {
@@ -59,10 +59,10 @@ typedef struct
     lv_obj_t* left_card; /**< Left-side card container. */
     lv_obj_t* right_card; /**< Right-side card container. */
 
-    lv_obj_t *forecast_rows1[24]; /**< Reserved forecast row handles. */
-    lv_obj_t *forecast_temp[24]; /**< Reserved forecast temperature handles. */
-    lv_obj_t *forecast_time[24]; /**< Reserved forecast time handles. */
-    lv_obj_t *forecast_icon[24]; /**< Reserved forecast icon handles. */
+    lv_obj_t *forecast_rows1[24]; /**< Unused forecast row handles. */
+    lv_obj_t *forecast_temp[24]; /**< Unused forecast temperature handles. */
+    lv_obj_t *forecast_time[24]; /**< Unused forecast time handles. */
+    lv_obj_t *forecast_icon[24]; /**< Unused forecast icon handles. */
 
     forecast_row_t forecast_rows[24]; /**< Created forecast row widgets. */
 
@@ -79,7 +79,7 @@ void Weather_UI_Initialize();
 void Weather_UI_Update();
 
 /**
- * @brief Updates the dashboard test view from the weather queue.
+ * @brief Updates the dashboard view from the weather queue.
  */
 void Weather_UI_Update_test();
 

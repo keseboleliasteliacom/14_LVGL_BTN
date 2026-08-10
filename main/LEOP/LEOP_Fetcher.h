@@ -30,6 +30,9 @@ extern QueueHandle_t leop_status_queue;
 
 /**
  * @brief Application-level LEOP connectivity state.
+ *
+ * The worker publishes these states to describe Wi-Fi availability and the
+ * current health of the LEOP service path.
  */
 typedef enum
 {
@@ -42,6 +45,9 @@ typedef enum
 
 /**
  * @brief Latest LEOP connectivity result published to consumers.
+ *
+ * Contains the published state, the consecutive failure count used by the
+ * worker, and the most recent HTTP status code when available.
  */
 typedef struct
 {
@@ -55,7 +61,8 @@ typedef void (*leop_connection_cb_t)(leop_connection_state_t state, void *ctx);
 /**
  * @brief Registers a callback for LEOP connection-state changes.
  *
- * The callback runs in LEOP worker task context and must remain non-blocking.
+ * The callback runs in LEOP worker task context when the published state
+ * changes.
  *
  * @param[in] cb Callback to invoke when the published state changes.
  * @param[in] ctx Opaque callback context.
@@ -65,8 +72,8 @@ void LEOPFetcher_SetConnectionCallback(leop_connection_cb_t cb, void *ctx);
 /**
  * @brief Configuration for LEOP fetch timing.
  *
- * The interval points to the fetch interval in minutes owned by the application
- * state.
+ * The interval points to the fetch interval in minutes owned by the
+ * application state.
  */
 typedef struct{
     uint32_t* time_interval;
@@ -94,6 +101,7 @@ typedef struct{
  * @return `0` on success or a negative value on failure.
  *
  * @note Creates single-element FreeRTOS queues used to publish fetched data.
+ * @note The current implementation ignores interval.
  */
 int LEOPFetcher_Initialize(LEOPData *leop_data, uint32_t interval);
 

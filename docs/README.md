@@ -75,7 +75,7 @@ An offline checkout can use the sibling repository's `Docs/architecture.md`.
 | [easy_api_doc.md](easy_api_doc.md) | Lightweight English integration overview | Keep schema-free and direct readers to the canonical references |
 | [UART_COMMANDS.md](UART_COMMANDS.md) | Current canonical UART reference | Update when parser, output, persistence or safety behavior changes |
 | [ESP-IDF build workflow plan](ESP_IDF_BUILD_WORKFLOW_PLAN.md) | Roadmap containing planned CI/test capabilities | Keep clearly labelled as a plan; move implemented workflow into `development.md` |
-| Presentation assets | Rendered architecture/pin/queue/LEOP snapshots | Preserve as presentation snapshots until canonical Mermaid diagrams replace or validate them |
+| [Presentation assets](presentation_assets/README.md) | Historical rendered architecture/pin/queue/LEOP snapshots; several no longer match current `dev` | Do not use as current references; use the maintained Mermaid and hardware guides |
 
 No document in this table is deleted merely because a replacement is planned.
 

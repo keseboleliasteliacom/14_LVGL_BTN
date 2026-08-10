@@ -1,7 +1,8 @@
 # Glennergy LEOP interface contract
 
 > **Quick answer:** Glennergy-ESP performs three unauthenticated HTTP reads for
-> recommendation, weather and price, then parses and caches valid responses.
+> recommendation, weather and price, attempts generic-JSON caching, and then
+> performs dataset-specific parsing.
 
 This document describes the HTTP boundary that is implemented today between
 Glennergy (the LEOP server and JSON producer) and Glennergy-ESP (the consumer).
@@ -45,27 +46,28 @@ sequenceDiagram
     participant PARSER as Dataset parser
     participant UI as Latest-value UI queue
 
-    ESP->>HTTP: GET one dataset for property ID
-    HTTP->>SERVER: Transitional request target
-    SERVER->>SNAPSHOT: Select property and available result count
-    SNAPSHOT-->>SERVER: Capped result snapshot
-    SERVER-->>HTTP: Status and JSON body
-    HTTP-->>ESP: Transport result, status, and optional body
-    opt A body exists
-        ESP->>CACHE: Validate generic JSON and attempt cache write
-        ESP->>PARSER: Validate dataset shape and extract up to 128 objects
-        alt Dataset parse succeeds
-            PARSER-->>ESP: Current typed snapshot
-            Note over ESP,UI: Store result. Publication waits for all three requests.
-        else Dataset parse fails
-            PARSER-->>ESP: Failure. No automatic online cache fallback.
+    loop Recommendation, weather, price (sequential)
+        ESP->>HTTP: GET one dataset for property ID
+        HTTP->>SERVER: Transitional request target
+        SERVER->>SNAPSHOT: Select property and available result count
+        SNAPSHOT-->>SERVER: Capped result snapshot
+        SERVER-->>HTTP: Status and JSON body
+        HTTP-->>ESP: Transport result, status, and optional body
+        opt A body exists
+            ESP->>CACHE: Validate generic JSON and attempt cache write
+            ESP->>PARSER: Validate dataset shape and extract up to 128 objects
+            alt Dataset parse succeeds
+                PARSER-->>ESP: Current typed snapshot
+            else Dataset parse fails
+                PARSER-->>ESP: Failure. No automatic online cache fallback.
+            end
         end
     end
-    Note over ESP,UI: After all three attempts, overwrite all three dataset queues
+    ESP-->>UI: Overwrite all three current dataset queues
 ```
 
-The sequence is one dataset inside the synchronous three-request cycle. Exact
-status and failure behavior is defined below; notably, normal dataset fetches
+The sequence shows the synchronous three-request cycle. Exact status and
+failure behavior is defined below; notably, normal dataset fetches
 do not first require 2xx, the generic cache attempt precedes dataset-specific
 parsing, and all three current containers are published after the cycle even
 when an individual parse failed.
@@ -134,10 +136,11 @@ silently become zero through Jansson accessors, while a missing or non-string
 timestamp can pass a null pointer to `strncpy`. There is no negotiated API
 version.
 
-Property ID `0` is an unsafe edge case rather than a valid selector. The parser
-accepts it, and zero-initialized unused shared-memory result slots also have ID
-zero. A request for ID zero may therefore match unused slots and serialize
-zero/empty datasets instead of returning `[]`.
+Property ID `0` is an ambiguous, unapproved edge case rather than a defined
+selector. The route parser accepts it, and zero-initialized unused shared-memory
+result slots also have ID zero. Those unused slots currently have a result count
+of zero, so the response is normally `200 []`, indistinguishable from an unknown
+positive property rather than a distinct invalid-ID response.
 
 ## Current JSON schemas
 
@@ -257,9 +260,9 @@ instant. A future contract should specify format, offset policy and validation.
 | UV index | Server emits a JSON real after an earlier integer conversion; ESP reads only a JSON integer. |
 | Array bounds | Both sides cap the current contract at 128; the ESP truncates oversized arrays rather than rejecting the complete response. |
 | HTTP status | Data fetchers do not enforce 2xx before caching/parsing the body. |
-| Cache integrity | Raw bodies are cached before validation. |
+| Cache integrity | Syntactically valid JSON can be cached before dataset-specific validation. |
 | Unknown property | Server returns `200 []`; ESP treats the empty array as a parse failure, without a distinct not-found reason. |
-| Property ID zero | Parser accepts zero, which can match zero-initialized unused server result slots and produce misleading zero/empty datasets. |
+| Property ID zero | The parser accepts zero, which collides with unused-slot IDs and normally returns the same `200 []` shape as an unknown property. |
 | Object member validation | ESP validates top-level JSON/array shape but not every member; numeric errors can become zero and invalid timestamps can be unsafe. |
 | Partial data | The server serializes the counted matched forward range; fewer than 128 entries are normal when the available horizon is shorter. |
 | Identity | Current integer property ID `2` is a temporary example and is not authenticated or tied to a device identity. |
@@ -301,7 +304,7 @@ a final product limit or wire-contract guarantee.
 
 The stable remote branches recorded for comparison were:
 
-- Glennergy-ESP `origin/main`: `daf35c538d84586576f8286c2d543eb1c3c89e6a`
+- Glennergy-ESP `origin/main`: `cbdb761d7e2187e9e80e6465e1beb99d3043fc70`
 - Glennergy `origin/main`: `61761b5eda30bee417a0b6e33e10fb061e18db26`
 
 The stable Glennergy-ESP branch contains the three current hard-coded request

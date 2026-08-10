@@ -94,7 +94,7 @@ Current behavior to account for:
 - reconnecting and disconnected results should update both the tab and header;
 - the disconnect button intentionally suppresses automatic reconnect, but its
   zero-wait queue send can be dropped if the command queue is full;
-- after obtaining an IP, initial SNTP synchronization can hold the default
+- after obtaining an IP, time synchronization can hold the default
   event-loop callback for about ten seconds before it returns.
 
 Therefore, a green Wi-Fi label is not sufficient evidence of current

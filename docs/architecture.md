@@ -164,7 +164,7 @@ direct LEOP/UART shared-memory access.
 | `leop_status_queue` | LEOP initialization | LEOP task | UI update task | Depth 1; latest changed LEOP state, published with overwrite |
 | Wi-Fi event queue | Wi-Fi initialization | ESP event callbacks | Wi-Fi task | Depth 1; event handoff uses a mixture of overwrite and non-blocking send |
 | Wi-Fi command queue | Wi-Fi initialization | Wi-Fi UI | Wi-Fi task | Depth 1; non-blocking commands, so a full queue can reject a new command |
-| Wi-Fi result queue | Wi-Fi initialization | Wi-Fi task | Wi-Fi UI | Depth 1; scan/connect results; delivery uses both overwrite and non-blocking send |
+| Wi-Fi result queue | Wi-Fi initialization | Wi-Fi task | Wi-Fi UI | Depth 1; scan and connection-state results; delivery uses both overwrite and non-blocking send |
 | LEOP task notification | `app_main()` callback path | Wi-Fi-state callback | LEOP task | Wakes the LEOP task promptly when Wi-Fi state changes |
 
 “Latest-value” applies directly to the queues written with
@@ -176,7 +176,7 @@ several of those paths use zero-wait `xQueueSend` instead.
 flowchart LR
     Events[ESP Wi-Fi event callbacks] -->|depth-1 events| WiFi[Wi-Fi task]
     WiFiUI[Wi-Fi UI] -->|commands| WiFi
-    WiFi -->|scan/connect results| WiFiUI
+    WiFi -->|scan and connection-state results| WiFiUI
     Events -->|state callback| Shared[(app_state)]
     Events -->|wake notification| LEOP[LEOP task]
 
@@ -187,10 +187,10 @@ flowchart LR
     LEOP -->|latest weather| UI
     LEOP -->|latest price| UI
     LEOP -->|latest LEOP state| UI
-    LEOP --> Shared
+    LEOP -->|unsynchronized response writes| Shared
 
-    UART[UART task] <--> Shared
-    LEOP -.->|unsynchronized writes versus UART reads| UART
+    UART[UART task] -->|unsynchronized LEOP reads| Shared
+    UART -->|configuration writes| Shared
     UI -->|direct reads| Shared
     UI -->|LVGL calls under lock| Widgets[Generated/custom LVGL UI]
 ```
@@ -340,8 +340,8 @@ the current evidence and next verification steps.
 ## Stable-production applicability
 
 This document describes the architecture verified on authoritative `dev` at
-`baf9b58d04e827f024c8975b140f7a417e462370`. The campaign recorded stable `origin/main` at
-`daf35c538d84586576f8286c2d543eb1c3c89e6a`, but no production device or live
+`baf9b58d04e827f024c8975b140f7a417e462370`. The current stable `origin/main` comparison is
+`cbdb761d7e2187e9e80e6465e1beb99d3043fc70`, but no production device or live
 deployment was inspected. Shared files on `main` provide useful comparison
 evidence; they do not prove that every task, queue, failure path, configuration,
 or peripheral behavior documented here is running in production.

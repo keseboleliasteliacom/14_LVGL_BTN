@@ -72,7 +72,8 @@ successfully published. Neither callback is a separate worker thread.
 sequenceDiagram
     participant UI as Wi-Fi UI
     participant WT as WiFi_Work
-    participant IDF as IP callback (default event loop)
+    participant DRIVER as ESP-IDF Wi-Fi driver
+    participant EVENTS as Wi-Fi/IP callbacks (default event loop)
     participant NVS as NVS wifi namespace
     participant LEOP as LEOPFetcher_Work
     participant SNTP as SNTP service
@@ -80,28 +81,37 @@ sequenceDiagram
     alt First Wi-Fi task entry
         WT->>NVS: Read ssid and pw
         alt Both exist and SSID is nonempty
-            WT->>IDF: Apply station config and start Wi-Fi
-            IDF->>IDF: STA_START callback calls esp_wifi_connect()
+            WT->>DRIVER: Apply station config and start Wi-Fi
+            DRIVER-->>EVENTS: WIFI_EVENT_STA_START
+            EVENTS->>DRIVER: Call esp_wifi_connect()
         else Missing, unreadable, or empty
             WT->>WT: Log and wait for UI command
         end
     else User selects Connect
         UI-->>WT: CONNECT command (zero-wait queue)
         WT->>WT: Keep pending credentials
-        WT->>IDF: Apply config and connect/start
+        WT->>DRIVER: Apply config and connect/start
     end
-    IDF-->>LEOP: GOT_IP callback updates state and wakes task
-    IDF-->>WT: CONNECTED event (overwrite)
-    opt Time is not synchronized
-        IDF->>SNTP: Start synchronization and wait
-        Note over IDF,SNTP: Event-loop callback can be held for about 10 seconds
-        SNTP-->>IDF: Synchronized or timeout/error
+    DRIVER-->>EVENTS: IP_EVENT_STA_GOT_IP
+    EVENTS-->>LEOP: Update state and wake task
+    EVENTS-->>WT: CONNECTED event (overwrite)
+    par Time synchronization in the event callback
+        opt Time is not synchronized
+            EVENTS->>SNTP: Start synchronization and wait
+            Note over EVENTS,SNTP: Event-loop callback can be held for about 10 seconds
+            SNTP-->>EVENTS: Synchronized or timeout/error
+        end
+    and Connected-event processing in WiFi_Work
+        opt UI credentials were pending
+            WT->>NVS: Commit ssid, then pw
+        end
+        WT-->>UI: CONNECTED result (overwrite)
     end
-    opt UI credentials were pending
-        WT->>NVS: Commit ssid, then pw
-    end
-    WT-->>UI: CONNECTED result (overwrite)
 ```
+
+The connected event is queued before the callback starts the possible SNTP
+wait. `WiFi_Work` may therefore save credentials and update the UI while the
+event-loop callback is still waiting; neither completion order is guaranteed.
 
 Obtaining an access-point association is not sufficient: the firmware marks
 Wi-Fi connected on `IP_EVENT_STA_GOT_IP`. That callback also starts SNTP when

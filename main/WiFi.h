@@ -20,8 +20,8 @@
  * @file WiFi.h
  * @brief Public API for the Wi-Fi module.
  *
- * Defines the Wi-Fi worker-task interface, connection state, and command and
- * result payloads used by the module.
+ * Provides the public types and functions for configuring Wi-Fi station
+ * connectivity, managing worker-task commands, and reporting connection status.
  *
  * @defgroup WIFI WiFi
  * @brief Wi-Fi control and worker task interface.
@@ -34,9 +34,9 @@
  * @{
  */
 
-extern QueueHandle_t wifi_cmd_queue;
+extern QueueHandle_t wifi_cmd_queue; /**< Command queue consumed by WiFi_Work. */
 
-extern QueueHandle_t wifi_result_queue;
+extern QueueHandle_t wifi_result_queue; /**< Result queue published by WiFi_Work. */
 
 typedef enum
 {
@@ -58,13 +58,13 @@ typedef enum
 } wifi_status;
 
 /**
- * @brief Shared Wi-Fi connection state.
+ * @brief Shared Wi-Fi connectivity state.
  *
- * Exposes whether the station is connected to an access point.
+ * Exposes whether the station currently has usable IP connectivity.
  */
 typedef struct 
 {
-    bool is_connected; /**< `true` when the station is connected. */
+    bool is_connected; /**< `true` after the station has obtained an IP address. */
 }wifi_state;
 
 
@@ -88,11 +88,11 @@ typedef struct
  */
 typedef struct
 {
-    wifi_cmd_t cmd;
-    wifi_status status;
-    uint16_t number;
-    wifi_ap_record_t ap_info[10];
-    wifi_info wifi_info;
+    wifi_cmd_t cmd; /**< Requested command. */
+    wifi_status status; /**< Resulting status. */
+    uint16_t number; /**< Number of valid scan results. */
+    wifi_ap_record_t ap_info[10]; /**< Scan result buffer. */
+    wifi_info wifi_info; /**< Station credentials. */
 } wifi_data;
 
 typedef void (*wifi_connection_cb_t)(bool connected, void *ctx);
@@ -129,6 +129,8 @@ esp_err_t WiFi_Initialize();
  *
  * @param[in] arg Task context pointer supplied by the creator.
  *
+ * @pre WiFi_Initialize() must have created the queues and registered the
+ * event handlers before this task starts.
  * @note Runs in task context and blocks on queues and delays.
  */
 void WiFi_Work(void *arg);
@@ -136,16 +138,22 @@ void WiFi_Work(void *arg);
 /**
  * @brief Connects the station to an access point.
  *
+ * Applies the supplied credentials and requests station start or connect.
+ *
  * @param[in] w_data Connection data containing the SSID and password.
  *
  * @return
  * - `ESP_OK` on success
- * - `ESP_FAIL` if the connection request cannot be started
+ * - an ESP-IDF error code on failure
+ *
+ * @note Call from task context.
+ * @note If the station is not started yet, the request is deferred until the
+ * station start event handler runs.
  */
 esp_err_t WiFi_Connect(wifi_data *w_data);
 
 /**
- * @brief Returns the current Wi-Fi connection state.
+ * @brief Returns whether the station currently has usable IP connectivity.
  *
  * @return `true` when connected, otherwise `false`.
  */

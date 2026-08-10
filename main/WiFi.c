@@ -1,6 +1,6 @@
 /**
  * @file WiFi.c
- * @brief Implementation of the Wi-Fi module.
+ * @brief Implementation of the Wi-Fi module worker, events, and connection helpers.
  *
  * @ingroup WIFI
  */
@@ -455,8 +455,8 @@ esp_err_t WiFi_Scan(wifi_data *w_data)
 /**
  * @brief Wi-Fi worker task.
  *
- * Waits for commands on the Wi-Fi command queue and forwards results after
- * scan, connect, or disconnect operations complete.
+ * Runs in task context, waits for commands and internal events, and forwards
+ * scan and connection state results to the result queue.
  *
  * @param[in] arg Task context pointer supplied by the creator.
  *

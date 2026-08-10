@@ -7,8 +7,7 @@
  * @file Weather_UI.h
  * @brief Public API for the Weather UI module.
  *
- * Provides the UI setup and update functions for the weather tabs and
- * dashboard views.
+ * Provides the LVGL setup and update functions for the weather tab views.
  *
  * @defgroup WEATHER_UI Weather UI
  * @brief Weather tab and dashboard user interface.
@@ -44,10 +43,10 @@ typedef struct
 } forecast_row_t;
 
 /**
- * @brief Widget collection for the weather dashboard test view.
+ * @brief Widget collection for the weather dashboard view.
  *
- * Stores references to the current-weather card and the 24-row forecast list.
- * The arrays are used by the implementation to keep per-row widget handles.
+ * Stores references to the current-weather card and the 24-row forecast list
+ * created by the dashboard builder.
  */
 typedef struct
 {
@@ -79,7 +78,7 @@ void Weather_UI_Initialize();
 void Weather_UI_Update();
 
 /**
- * @brief Updates the dashboard test view from the weather queue.
+ * @brief Updates the dashboard view from the weather queue.
  */
 void Weather_UI_Update_test();
 

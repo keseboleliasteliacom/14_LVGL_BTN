@@ -12,8 +12,8 @@
  * @file LEOP_Fetcher.h
  * @brief Public API for the LEOP fetcher module.
  *
- * Provides the data containers, shared queues, and worker entry points used to
- * fetch LEOP recommendation, weather, and price data.
+ * Provides the shared queues, connection state, and worker entry points used
+ * to fetch LEOP recommendation, weather, and price data.
  *
  * @defgroup LEOP_FETCHER LEOP_FETCHER
  * @brief Fetcher module for LEOP data.
@@ -42,6 +42,9 @@ typedef enum
 
 /**
  * @brief Latest LEOP connectivity result published to consumers.
+ *
+ * Reports the last published state together with the observed failure count
+ * and HTTP status code, when available.
  */
 typedef struct
 {
@@ -55,7 +58,7 @@ typedef void (*leop_connection_cb_t)(leop_connection_state_t state, void *ctx);
 /**
  * @brief Registers a callback for LEOP connection-state changes.
  *
- * The callback runs in LEOP worker task context and must remain non-blocking.
+ * The callback runs in LEOP worker task context and should remain brief.
  *
  * @param[in] cb Callback to invoke when the published state changes.
  * @param[in] ctx Opaque callback context.
@@ -65,8 +68,8 @@ void LEOPFetcher_SetConnectionCallback(leop_connection_cb_t cb, void *ctx);
 /**
  * @brief Configuration for LEOP fetch timing.
  *
- * The interval points to the fetch interval in minutes owned by the application
- * state.
+ * The interval pointer refers to application-owned state that provides the
+ * fetch interval in minutes.
  */
 typedef struct{
     uint32_t* time_interval;
@@ -76,7 +79,7 @@ typedef struct{
  * @brief Aggregated LEOP data and fetch status.
  *
  * Stores the current recommendation, weather, and price payloads together with
- * the fetch configuration used by the worker.
+ * the fetch configuration used by the worker task.
  */
 typedef struct{
     RecommendationList recommendations;

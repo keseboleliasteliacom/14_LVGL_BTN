@@ -46,6 +46,8 @@ This document explains the GitHub setup and the intended workflow for the OpenAI
 
 In audit mode, bounded caller snippets are added as read-only evidence and a second request reviews changed documentation for cross-module semantic contradictions.
 
+For pre-merge validation, a manually dispatched workflow may target the exact branch from which it was dispatched. Other unrelated target refs remain rejected.
+
 ## Manual Run Examples
 
 ### Normal run

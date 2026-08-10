@@ -34,6 +34,22 @@ on:
         description: "Comma-separated file paths for 'all' mode. Leave empty in 'remaining_only' mode"
         required: false
         default: ""
+      mode:
+        description: "normal for routine updates; audit adds caller context and semantic review"
+        required: false
+        default: "normal"
+        type: choice
+        options:
+          - normal
+          - audit
+      ordinary_comments:
+        description: "Preserve ordinary comments, or explicitly audit them"
+        required: false
+        default: "preserve"
+        type: choice
+        options:
+          - preserve
+          - audit
 
 permissions:
   contents: write
@@ -65,6 +81,8 @@ jobs:
       TEST_LABEL: ${{ github.event.inputs.test_label }}
       MANUAL_FILE_PATHS: ${{ github.event.inputs.file_paths }}
       MANIFEST_PATH: tools/doxygen_ai/state/run_manifest.json
+      DOXYGEN_AI_MODE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mode || 'normal' }}
+      ORDINARY_COMMENT_POLICY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ordinary_comments || 'preserve' }}
       BASE_REF: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.target_ref || 'dev' }}
     steps:
       - name: Validate target ref
@@ -215,9 +233,9 @@ jobs:
         id: update_docs
         run: |
           if [ "${RERUN_MODE}" = "remaining_only" ]; then
-            python tools/doxygen_ai/update_docs.py --remaining-only --manifest "${MANIFEST_PATH}" --model "${OPENAI_MODEL}" --reasoning-effort "${OPENAI_REASONING_EFFORT}" --retry-reasoning-effort "${OPENAI_RETRY_REASONING_EFFORT}" --test-label "${TEST_LABEL}"
+            python tools/doxygen_ai/update_docs.py --remaining-only --manifest "${MANIFEST_PATH}" --model "${OPENAI_MODEL}" --reasoning-effort "${OPENAI_REASONING_EFFORT}" --retry-reasoning-effort "${OPENAI_RETRY_REASONING_EFFORT}" --test-label "${TEST_LABEL}" --mode "${DOXYGEN_AI_MODE}" --ordinary-comments "${ORDINARY_COMMENT_POLICY}"
           else
-            python tools/doxygen_ai/update_docs.py --files "${MANUAL_FILE_PATHS}" --manifest "${MANIFEST_PATH}" --model "${OPENAI_MODEL}" --reasoning-effort "${OPENAI_REASONING_EFFORT}" --retry-reasoning-effort "${OPENAI_RETRY_REASONING_EFFORT}" --test-label "${TEST_LABEL}"
+            python tools/doxygen_ai/update_docs.py --files "${MANUAL_FILE_PATHS}" --manifest "${MANIFEST_PATH}" --model "${OPENAI_MODEL}" --reasoning-effort "${OPENAI_REASONING_EFFORT}" --retry-reasoning-effort "${OPENAI_RETRY_REASONING_EFFORT}" --test-label "${TEST_LABEL}" --mode "${DOXYGEN_AI_MODE}" --ordinary-comments "${ORDINARY_COMMENT_POLICY}"
           fi
 
       - name: Detect eligible documentation changes
@@ -281,6 +299,8 @@ jobs:
             Targeted retry reasoning effort: `${{ env.OPENAI_RETRY_REASONING_EFFORT }}`
             Test label: `${{ env.TEST_LABEL }}`
             Rerun mode: `${{ env.RERUN_MODE }}`
+            Workflow mode: `${{ env.DOXYGEN_AI_MODE }}`
+            Ordinary comments: `${{ env.ORDINARY_COMMENT_POLICY }}`
             Target ref: `${{ github.event_name == 'workflow_dispatch' && github.event.inputs.target_ref || github.ref_name }}`
 
             Please review carefully before merging:

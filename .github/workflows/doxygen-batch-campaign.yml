@@ -27,6 +27,22 @@ on:
         description: "Path to the batch list file inside the repository"
         required: false
         default: "tools/doxygen_ai/batches_manual.txt"
+      mode:
+        description: "normal for routine campaigns; audit adds caller context and semantic review"
+        required: false
+        default: "normal"
+        type: choice
+        options:
+          - audit
+          - normal
+      ordinary_comments:
+        description: "Preserve ordinary comments, or explicitly audit them"
+        required: false
+        default: "preserve"
+        type: choice
+        options:
+          - preserve
+          - audit
 
 permissions:
   contents: write
@@ -51,6 +67,8 @@ jobs:
       OPENAI_INPUT_COST_PER_MILLION: "0.75"
       OPENAI_OUTPUT_COST_PER_MILLION: "4.50"
       OPENAI_USD_TO_SEK: "9.19981"
+      DOXYGEN_AI_MODE: ${{ github.event.inputs.mode }}
+      ORDINARY_COMMENT_POLICY: ${{ github.event.inputs.ordinary_comments }}
     steps:
       - name: Derive PR metadata
         run: |
@@ -129,11 +147,17 @@ jobs:
               --reasoning-effort "${OPENAI_REASONING_EFFORT}" \
               --retry-reasoning-effort "${OPENAI_RETRY_REASONING_EFFORT}" \
               --test-label "${batch_label}" \
+              --mode "${DOXYGEN_AI_MODE}" \
+              --ordinary-comments "${ORDINARY_COMMENT_POLICY}" \
               --max-files 20; then
               success_count=$((success_count + 1))
               printf '%s|success|%s\n' "${batch_index}" "${batch_trimmed}" >> "${results_file}"
             else
-              IFS=',' read -ra batch_paths <<< "${batch_trimmed}"
+              if [ -f "${manifest_path}" ]; then
+                mapfile -t batch_paths < <(python -c 'import json, sys; payload=json.load(open(sys.argv[1], "r", encoding="utf-8")); [print(entry["path"]) for entry in payload.get("files", []) if entry.get("path")]' "${manifest_path}")
+              else
+                IFS=',' read -ra batch_paths <<< "${batch_trimmed}"
+              fi
               for raw_path in "${batch_paths[@]}"; do
                 path="$(printf '%s' "${raw_path}" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
                 if [ -n "${path}" ]; then
@@ -174,6 +198,8 @@ jobs:
             echo "- Initial reasoning effort: ${OPENAI_REASONING_EFFORT}"
             echo "- Targeted retry reasoning effort: ${OPENAI_RETRY_REASONING_EFFORT}"
             echo "- Batch file: \`${BATCH_FILE}\`"
+            echo "- Workflow mode: ${DOXYGEN_AI_MODE}"
+            echo "- Ordinary comments: ${ORDINARY_COMMENT_POLICY}"
             echo "- Successful batches: ${success_count}"
             echo "- Failed batches: ${failure_count}"
             echo "- Total input tokens: ${total_input_tokens}"

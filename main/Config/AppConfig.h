@@ -34,7 +34,8 @@ void Config_SetDefaults(config_data_t* config);
  *
  * @param[in,out] config Configuration data to update.
  *
- * @note Reads values from the "config" NVS namespace.
+ * @note Reads values from the "config" NVS namespace and leaves default values
+ * unchanged when a read fails.
  */
 void Config_LoadFromNVS(config_data_t* config);
 

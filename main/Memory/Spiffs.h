@@ -23,6 +23,8 @@
  * @brief Initializes the SPIFFS partition mount.
  *
  * @return `0` on success, non-zero on failure.
+ *
+ * @note Call before any read or write helper in this module.
  */
 int Spiffs_Initialize();
 

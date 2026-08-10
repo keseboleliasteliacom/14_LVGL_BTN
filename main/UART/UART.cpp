@@ -22,9 +22,12 @@
 
 static const char* TAG = "UART";
 /**
- * @brief Implementation of UART_ReadByte.
+ * @brief Reads a single byte from the UART console.
  *
- * See header for full contract documentation.
+ * @param[in] byte Destination for the received byte.
+ * @param[in] timeout UART read timeout in FreeRTOS ticks.
+ *
+ * @return `true` if a byte was read, otherwise `false`.
  */
 bool UART_ReadByte(uint8_t* byte, TickType_t timeout)
 {
@@ -32,7 +35,7 @@ bool UART_ReadByte(uint8_t* byte, TickType_t timeout)
 }
 
 /**
- * @brief Converts a string to lowercase.
+ * @brief Returns a lowercase copy of the input string.
  *
  * @param str Input string.
  *

@@ -11,9 +11,9 @@ static const char* TAG = "WifiConfig";
 
 
 /**
- * @brief Implementation of Config_WriteToNVS_WifiSSID.
+ * @brief Stores the Wi-Fi SSID in NVS.
  *
- * See header for full contract documentation.
+ * Uses the `wifi/ssid` NVS entry and maps storage failures to `-1`.
  */
 int Config_WriteToNVS_WifiSSID(char* ssid) {
     int result = NVS_WriteString("wifi", "ssid", ssid);
@@ -24,9 +24,9 @@ int Config_WriteToNVS_WifiSSID(char* ssid) {
 }
 
 /**
- * @brief Implementation of Config_WriteToNVS_WifiPassword.
+ * @brief Stores the Wi-Fi password in NVS.
  *
- * See header for full contract documentation.
+ * Uses the `wifi/pw` NVS entry and maps storage failures to `-1`.
  */
 int Config_WriteToNVS_WifiPassword(char* pw) {
     int result = NVS_WriteString("wifi", "pw", pw);
@@ -37,9 +37,9 @@ int Config_WriteToNVS_WifiPassword(char* pw) {
 }
 
 /**
- * @brief Implementation of Config_LoadFromNVS_WifiSSID.
+ * @brief Loads the Wi-Fi SSID from NVS.
  *
- * See header for full contract documentation.
+ * Reads the `wifi/ssid` NVS entry into the provided buffer.
  */
 int Config_LoadFromNVS_WifiSSID(char* ssid) {
     int wifi_ssid_result = NVS_ReadString("wifi", "ssid", ssid, WIFI_MAX_SSID_LEN);
@@ -50,9 +50,9 @@ int Config_LoadFromNVS_WifiSSID(char* ssid) {
 }
 
 /**
- * @brief Implementation of Config_LoadFromNVS_WifiPassword.
+ * @brief Loads the Wi-Fi password from NVS.
  *
- * See header for full contract documentation.
+ * Reads the `wifi/pw` NVS entry into the provided buffer.
  */
 int Config_LoadFromNVS_WifiPassword(char* pw) {
     int wifi_password_result = NVS_ReadString("wifi", "pw", pw, WIFI_MAX_PASSWORD_LEN);

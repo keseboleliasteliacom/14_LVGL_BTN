@@ -75,7 +75,7 @@ static void on_wifi_connection_changed(bool connected, void *ctx)
 }
 
 /**
- * @brief Mirrors the authoritative LEOP state into shared diagnostics state.
+ * @brief Mirrors LEOP connection updates into shared application state.
  *
  * @param state Reported LEOP connection state.
  * @param ctx Pointer to the application state.
@@ -94,9 +94,10 @@ static void on_leop_connection_changed(leop_connection_state_t state, void *ctx)
 
 
 /**
- * @brief Initializes the application task metadata.
+ * @brief Initializes task metadata stored in the shared application state.
  *
- * Populates task names and stack sizes in the shared application state.
+ * Populates task names and stack sizes for the worker tasks created during
+ * application startup.
  *
  * @param app Pointer to the application state to update.
  */

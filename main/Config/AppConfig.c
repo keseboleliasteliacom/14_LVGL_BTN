@@ -12,6 +12,9 @@ static const char* TAG = "AppConfig";
 /**
  * @brief Internal helper that loads the fetch interval from NVS.
  *
+ * Reads the value from the "config" namespace and leaves the current setting
+ * unchanged when the read fails.
+ *
  * @param[in,out] config Configuration data to update.
  */
 void Config_LoadFromNVS_FetchIntervalMinutes(config_data_t* config);
@@ -19,12 +22,18 @@ void Config_LoadFromNVS_FetchIntervalMinutes(config_data_t* config);
 /**
  * @brief Internal helper that loads the sensor interval from NVS.
  *
+ * Reads the value from the "config" namespace and leaves the current setting
+ * unchanged when the read fails.
+ *
  * @param[in,out] config Configuration data to update.
  */
 void Config_LoadFromNVS_SensorInterval(config_data_t* config);
 
 /**
  * @brief Internal helper that loads the test mode flag from NVS.
+ *
+ * Reads the value from the "config" namespace and leaves the current setting
+ * unchanged when the read fails.
  *
  * @param[in,out] config Configuration data to update.
  */
@@ -63,6 +72,8 @@ void Config_LoadFromNVS(config_data_t* config) {
 /**
  * @brief Loads the fetch interval from NVS.
  *
+ * Reads the "leop_min" key from the "config" namespace.
+ *
  * @param[in,out] config Configuration data to update.
  */
 void Config_LoadFromNVS_FetchIntervalMinutes(config_data_t* config) {
@@ -79,6 +90,8 @@ void Config_LoadFromNVS_FetchIntervalMinutes(config_data_t* config) {
 /**
  * @brief Loads the sensor interval from NVS.
  *
+ * Reads the "sensor_ms" key from the "config" namespace.
+ *
  * @param[in,out] config Configuration data to update.
  */
 void Config_LoadFromNVS_SensorInterval(config_data_t* config) {
@@ -94,6 +107,8 @@ void Config_LoadFromNVS_SensorInterval(config_data_t* config) {
 
 /**
  * @brief Loads the test mode flag from NVS.
+ *
+ * Reads the "test_mode" key from the "config" namespace.
  *
  * @param[in,out] config Configuration data to update.
  */

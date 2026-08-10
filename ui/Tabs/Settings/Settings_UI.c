@@ -421,7 +421,7 @@ static const char *Settings_UI_GetRestartReasonText(void)
  *
  * @param[in] status Pointer to the system status snapshot.
  *
- * @return Status text used by the UI.
+ * @return Text used for the system status label.
  */
 static const char *Settings_UI_GetSystemStatusText(const system_status_t *status)
 {
@@ -437,7 +437,7 @@ static const char *Settings_UI_GetSystemStatusText(const system_status_t *status
 }
 
 /**
- * @brief Formats the time elapsed since the last successful recommendation update.
+ * @brief Formats the elapsed time since the last recommendation update.
  *
  * @param[out] buffer Output buffer for the formatted text.
  * @param[in] buffer_size Size of @p buffer in bytes.

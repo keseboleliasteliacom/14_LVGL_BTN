@@ -57,6 +57,7 @@ extern lv_obj_t *ui_TimeValueLabel;
  * @brief Initializes the main UI screen and its widgets.
  *
  * Creates the screen, tab view, and status labels used by the application UI.
+ * Call this before code that accesses the exported LVGL objects.
  */
 void Main_UI_Initialize();
 

@@ -39,7 +39,7 @@ typedef enum {
 /**
  * @brief Latest BME280 sensor readings and validity state.
  *
- * Contains the most recent sensor values together with timestamp and
+ * Contains the most recent sensor values together with timestamps and
  * synchronization flags used by the application.
  */
 typedef struct {
@@ -70,7 +70,7 @@ typedef struct {
 /**
  * @brief System status flags.
  *
- * Tracks basic connectivity and health indicators used by the application.
+ * Tracks connectivity and health indicators used by the application.
  */
 typedef struct {
     bool wifi_connected; /**< True when Wi-Fi is connected. */

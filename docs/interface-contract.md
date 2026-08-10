@@ -56,9 +56,9 @@ sequenceDiagram
         ESP->>PARSER: Validate dataset shape and extract up to 128 objects
         alt Dataset parse succeeds
             PARSER-->>ESP: Current typed snapshot
-            Note over ESP,UI: Store result; publication waits for all three requests
+            Note over ESP,UI: Store result. Publication waits for all three requests.
         else Dataset parse fails
-            PARSER-->>ESP: Failure; no automatic online cache fallback
+            PARSER-->>ESP: Failure. No automatic online cache fallback.
         end
     end
     Note over ESP,UI: After all three attempts, overwrite all three dataset queues

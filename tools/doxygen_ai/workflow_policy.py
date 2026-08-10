@@ -198,3 +198,47 @@ def caller_context(
             if len(snippets) >= max_snippets:
                 return "\n\n".join(snippets)
     return "\n\n".join(snippets) or "No external caller references were found."
+
+
+def semantic_claim_issues(target_text: str, paired_text: str, callers: str) -> list[str]:
+    """Detect high-confidence semantic contradictions backed by local code evidence."""
+    issues: list[str] = []
+    combined_code = f"{target_text}\n{paired_text}"
+
+    if "IP_EVENT_STA_GOT_IP" in combined_code and re.search(
+        r"(?i)(?:associated|connected) (?:with|to) an access point", "\n".join(doxygen_comments(target_text))
+    ):
+        issues.append(
+            "Connectivity is described as access-point association, but the supplied implementation "
+            "establishes the true state on IP_EVENT_STA_GOT_IP; describe usable IP connectivity."
+        )
+
+    for block in doxygen_comments(target_text):
+        if not re.search(r"(?i)\btest view\b", block):
+            continue
+        block_end = target_text.find(block) + len(block)
+        following = target_text[block_end : block_end + 500]
+        name_match = re.search(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*\(", following)
+        if name_match and re.search(rf"\b{re.escape(name_match.group(1))}\s*\(", callers):
+            issues.append(
+                f"{name_match.group(1)} is described as a test view but appears in active caller context; "
+                "describe its runtime role without inferring status from its name."
+            )
+
+    cast_pattern = re.compile(
+        r"\bvoid\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*void\s*\*\s*arg\s*\)\s*\{"
+        r"[\s\S]{0,500}?\b([A-Za-z_][A-Za-z0-9_]*)\s*\*\s*[A-Za-z_][A-Za-z0-9_]*\s*="
+        r"\s*\(\s*\2\s*\*\s*\)\s*arg\b"
+    )
+    for function_name, actual_type in cast_pattern.findall(combined_code):
+        contract_match = re.search(
+            rf"(/\*\*[\s\S]*?\*/)[\s\r\n]*void\s+{re.escape(function_name)}\s*\(\s*void\s*\*\s*arg",
+            target_text,
+        )
+        if contract_match and actual_type not in contract_match.group(1):
+            issues.append(
+                f"{function_name} documentation does not identify arg as {actual_type} *, "
+                "which is established by the implementation cast."
+            )
+
+    return issues

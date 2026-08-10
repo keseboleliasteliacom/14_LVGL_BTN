@@ -11,6 +11,7 @@ from tools.doxygen_ai.workflow_policy import (
     function_names,
     limit_pair_groups,
     ordinary_comments_changed,
+    semantic_claim_issues,
 )
 from tools.doxygen_ai.update_docs import changed_files, code_changed, parse_semantic_review
 
@@ -147,6 +148,29 @@ class WorkflowPolicyTests(unittest.TestCase):
         self.assertEqual(sum(item.selection == "paired" for item in selected), 12)
         self.assertEqual(len(accepted), 34)
         self.assertFalse(deferred)
+
+    def test_wifi_ip_connectivity_contradiction_is_deterministic(self) -> None:
+        root = Path(__file__).resolve().parents[3]
+        header = (root / "main/WiFi.h").read_text(encoding="utf-8")
+        source = (root / "main/WiFi.c").read_text(encoding="utf-8")
+        issues = semantic_claim_issues(header, source, "")
+        self.assertTrue(any("IP_EVENT_STA_GOT_IP" in issue for issue in issues))
+
+    def test_active_weather_test_view_is_deterministic(self) -> None:
+        root = Path(__file__).resolve().parents[3]
+        header_path = root / "ui/Tabs/Weather/Weather_UI.h"
+        caller_path = root / "ui/screens/ui_Screen1.c"
+        header = header_path.read_text(encoding="utf-8")
+        callers = caller_context(header_path, header, [header_path, caller_path], root)
+        issues = semantic_claim_issues(header, "", callers)
+        self.assertTrue(any("active caller context" in issue for issue in issues))
+
+    def test_leop_task_argument_mismatch_is_deterministic(self) -> None:
+        root = Path(__file__).resolve().parents[3]
+        header = (root / "main/LEOP/LEOP_Fetcher.h").read_text(encoding="utf-8")
+        source = (root / "main/LEOP/LEOP_Fetcher.c").read_text(encoding="utf-8")
+        issues = semantic_claim_issues(header, source, "")
+        self.assertTrue(any("app_state_t" in issue for issue in issues))
 
 
 if __name__ == "__main__":

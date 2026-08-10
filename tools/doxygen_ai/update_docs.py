@@ -32,6 +32,7 @@ try:
         expand_selections,
         limit_pair_groups,
         ordinary_comments_changed,
+        semantic_claim_issues,
     )
 except ImportError:  # Direct script execution.
     from workflow_policy import (
@@ -41,6 +42,7 @@ except ImportError:  # Direct script execution.
         expand_selections,
         limit_pair_groups,
         ordinary_comments_changed,
+        semantic_claim_issues,
     )
 
 
@@ -751,6 +753,28 @@ Do not make synonym-only, formatting-only, or unrelated documentation changes.
     return combine_openai_results(previous_result, retry_result)
 
 
+def retry_semantic_claims(
+    system_prompt: str,
+    user_prompt: str,
+    model: str,
+    retry_reasoning_effort: str,
+    max_output_tokens: int,
+    previous_result: OpenAIResult,
+    issues: list[str],
+) -> OpenAIResult:
+    issue_list = "\n".join(f"- {issue}" for issue in issues)
+    retry_prompt = f"""{user_prompt}
+
+The previous output failed deterministic semantic-accuracy checks:
+{issue_list}
+
+Regenerate the complete target file and correct every listed documentation claim using the supplied code evidence.
+Preserve every non-comment code token and every unrelated comment. Avoid other wording or formatting changes.
+"""
+    retry_result = call_openai(system_prompt, retry_prompt, model, retry_reasoning_effort, max_output_tokens)
+    return combine_openai_results(previous_result, retry_result)
+
+
 def normalize_file_text(text: str) -> str:
     normalized = text.replace("\r\n", "\n").replace("\r", "\n")
     return normalized if normalized.endswith("\n") else f"{normalized}\n"
@@ -944,6 +968,7 @@ def process_files(
         rel = path.relative_to(REPO_ROOT).as_posix()
         paired_file = find_paired_file(path)
         paired_file_context = "No paired header/source file was found."
+        paired_text = ""
         caller_file_context = "Caller-context discovery is disabled in normal mode."
 
         if not original.strip():
@@ -1011,6 +1036,7 @@ def process_files(
             f"and targeted retry effort {retry_reasoning_effort}"
         )
         coverage_retried = False
+        semantic_retried = False
         try:
             result, retried = call_openai_with_retry(
                 system_prompt=system_prompt,
@@ -1043,6 +1069,31 @@ def process_files(
                         missing_functions=missing_function_docs,
                     )
                     coverage_retried = True
+
+            if (
+                workflow_mode == "audit"
+                and result.text.strip()
+                and not code_changed(original, result.text)
+                and (
+                    ordinary_comment_policy == "audit"
+                    or not ordinary_comments_changed(original, result.text)
+                )
+            ):
+                deterministic_issues = semantic_claim_issues(
+                    result.text, paired_text, caller_file_context
+                )
+                if deterministic_issues:
+                    print(f"Retrying {rel}: deterministic semantic claim check failed")
+                    result = retry_semantic_claims(
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        model=model,
+                        retry_reasoning_effort=retry_reasoning_effort,
+                        max_output_tokens=max_output_tokens,
+                        previous_result=result,
+                        issues=deterministic_issues,
+                    )
+                    semantic_retried = True
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
             file_results.append(
@@ -1066,7 +1117,14 @@ def process_files(
 
         updated = result.text
         semantic_review = SemanticReview("not_run", ())
-        if (
+        deterministic_issues = (
+            semantic_claim_issues(updated, paired_text, caller_file_context)
+            if workflow_mode == "audit" and updated.strip() and not code_changed(original, updated)
+            else []
+        )
+        if deterministic_issues:
+            semantic_review = SemanticReview("reject", tuple(deterministic_issues))
+        elif (
             workflow_mode == "audit"
             and updated.strip()
             and normalize_file_text(original) != normalize_file_text(updated)
@@ -1091,7 +1149,7 @@ def process_files(
                 semantic_review = SemanticReview("reject", (f"Semantic review failed closed: {exc}",))
         usage = result.usage
         actual_model = result.model
-        retry_count = int(retried) + int(coverage_retried)
+        retry_count = int(retried) + int(coverage_retried) + int(semantic_retried)
         effort_path = (
             reasoning_effort
             if retry_count == 0

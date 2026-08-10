@@ -19,6 +19,8 @@ tools/doxygen_ai/rejected/
 Thumbs.db
 *.swp
 *.swo
+__pycache__/
+*.pyc
 
 # Logs
 *.log

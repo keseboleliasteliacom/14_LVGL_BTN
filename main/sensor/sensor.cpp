@@ -26,7 +26,11 @@ QueueHandle_t Sensor_Queue = NULL;
 /**
  * @brief Initializes sensor state and creates the sensor update queue.
  *
+ * Resets the cached snapshot before periodic updates begin.
+ *
  * @param[in,out] app Application state to reset before sensor updates begin.
+ *
+ * @note Creates a queue with depth 1 for the latest sensor snapshot.
  */
 void Sensor_Init_v2(app_state_t* app) 
 {
@@ -48,14 +52,17 @@ void Sensor_Init_v2(app_state_t* app)
 }
 
 /**
- * @brief Reads the BME280 sensor and publishes a snapshot to the queue.
+ * @brief Reads the BME280 sensor and publishes the latest snapshot.
  *
- * Updates the application sensor state only when all sensor reads succeed.
+ * On read failure, marks the snapshot invalid and still overwrites the queue
+ * with the current snapshot contents.
  *
  * @param[in,out] sensor Sensor state to update with the latest measurement.
  * @param[in,out] environment_sensor BME280 sensor wrapper used for hardware access.
  *
  * @return `true` when all readings succeed, otherwise `false`.
+ *
+ * @note Intended for task context because it performs sensor I/O and updates the queue.
  */
 bool Sensor_Read_v3(sensor_data_t* sensor, hal::BME280SensorV2& environment_sensor)
 {
@@ -92,14 +99,9 @@ bool Sensor_Read_v3(sensor_data_t* sensor, hal::BME280SensorV2& environment_sens
 
 
 /**
- * @brief Sensor worker task.
+ * @brief Implementation of Sensor_Work.
  *
- * Initializes the BME280 wrapper, then periodically reads the sensor and
- * stores the latest snapshot in the shared application state.
- *
- * @param[in] parameter Pointer to the application state passed to the task.
- *
- * @note Runs in task context and blocks with `vTaskDelay()`.
+ * See header for full contract documentation.
  */
 void Sensor_Work(void* parameter) {
     app_state_t* app = (app_state_t*)parameter;

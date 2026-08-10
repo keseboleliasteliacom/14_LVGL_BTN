@@ -9,6 +9,8 @@
 | 2026-07-26 | `glennergy` | `origin/main` | `61761b5eda30bee417a0b6e33e10fb061e18db26` | Stable-production snapshot; local `main` was stale |
 | 2026-08-03 | `Glennergy-ESP` | `dev` / `origin/dev` | `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` | Incremental documentation refresh after UI, Wi-Fi, Settings, diagnostics, and 128-entry integration changes |
 | 2026-08-03 | `glennergy` | `dev` / `origin/dev` | `63b1bad306d172e3d8cd337b314843f656715887` | Coordinated server snapshot after forward-window and 128-entry result changes |
+| 2026-08-10 | `Glennergy-ESP` | `dev` / `origin/dev` | `baf9b58d04e827f024c8975b140f7a417e462370` | Documentation rescan after legacy cleanup, UI/UART fixes, connectivity refinements, and Doxygen workflow changes |
+| 2026-08-03 | `glennergy` | `dev` / `origin/dev` | `0048c08ed01fa385d114cd3461e2cad9d7aceb73` | Current server comparison used by the August 10 ESP documentation rescan |
 
 Before incorporating later source changes, record the new commit and assess its
 documentation impact rather than silently moving the campaign baseline.

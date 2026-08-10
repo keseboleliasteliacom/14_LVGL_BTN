@@ -7,11 +7,10 @@
 
 /**
  * @file uart_diag_shell.hpp
- * @brief Public interface for the UART diagnostic shell.
+ * @brief Public interface for the UART diagnostic shell command parser.
  *
- * Provides the command-entry function used by the UART task to parse
- * diagnostic input and dispatch shell commands against shared application
- * state.
+ * Provides the command-entry function used by the UART task to parse shell
+ * input and dispatch diagnostic commands against shared application state.
  *
  * @ingroup UART
  */

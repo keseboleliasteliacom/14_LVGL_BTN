@@ -20,14 +20,15 @@ spelling even when the prose term differs.
 | Meteo | The Glennergy weather-data producer | `Glennergy-Meteo`; production code under `API/Meteocpp` | Implemented; preserve executable/source names |
 | Spotpris | The Glennergy electricity spot-price producer | `Glennergy-Spotpris`; Swedish for spot price | Implemented; preserve executable/source names |
 | Algorithm | The Glennergy calculation process | `Glennergy-Algoritm`, `AlgoritmShared`; Swedish code spelling `Algoritm` | Use “Algorithm” in prose and exact spelling for identifiers |
-| Recommendation dataset | The normal 96-object API response for one matching positive property ID requested with the current `recommendation` command | JSON fields `id`, `type`, `timestamp`, `temp` | Implemented; intended meaning of `type` remains unresolved; ID `0` is a known unsafe exception |
-| Recommendation type | The `type` number in each recommendation object | `recommendation[].type` | Unknown intent; current algorithm discards a categorical result and publishes `average_WindowLow_percent` instead |
-| Weather dataset | The 96-object API response containing forecast temperature, weather code and UV index | JSON fields `timestamp`, `temp`, `weather_code`, `uv_index` | Implemented |
-| Price dataset | The 96-object API response containing electricity prices | JSON fields `timestamp`, `price SEK` | Implemented; the space in `price SEK` is part of the current contract |
+| Recommendation dataset | Up to 128 matched forward entries for one positive property ID requested with the current `recommendation` command | JSON fields `id`, `score`, `recommendation`, `timestamp` | Implemented; final product meaning/presentation remains under review; ID `0` is a known unsafe exception |
+| Recommendation score | Continuous normalized value used for chart height | `recommendation[].score`; legacy cached `type` can still be accepted by the ESP | Implemented wire field; final product interpretation remains under review |
+| Recommendation category | Explicit quartile-based action used for chart color | `recommendation[].recommendation`: `buy`, `hold`, or `sell` | Implemented; final product policy remains under review |
+| Weather dataset | Up to 128 matched forward forecast entries | JSON fields `timestamp`, `temp`, `weather_code`, `uv_index` | Implemented |
+| Price dataset | Up to 128 matched forward electricity-price entries | JSON fields `timestamp`, `price_sek_per_kwh` | Implemented |
 | Electricity area | One of Sweden’s electricity price zones | `SE1`, `SE2`, `SE3`, `SE4`; property field `electricity_area` | Implemented |
-| Quarter-hour sample | A value representing one 15-minute interval | Current API result arrays contain 96 entries | Implemented |
+| Quarter-hour sample | A value representing one 15-minute interval | Current API arrays contain the available matched forward range, capped at 128 entries | Implemented |
 | Live data | A response obtained from Glennergy during current connectivity | Category GET responses | Implemented |
-| Cached data | The latest successfully stored JSON category response used by the ESP while offline | SPIFFS files `Recommendations.json`, `Weather.json`, `Price.json` | Implemented |
+| Cached data | The latest syntactically valid JSON response written to a category cache; it may still fail dataset-specific parsing | SPIFFS files `Recommendations.json`, `Weather.json`, `Price.json` | Implemented; not a last-known-good schema guarantee |
 | Latest-value queue | A depth-one FreeRTOS queue whose previous value is overwritten by a newer snapshot | `xQueueOverwrite` flows | Implemented; not a durable event history |
 | Connected | All three LEOP category fetches succeeded, or the current health probe succeeded | `LEOP_CONNECTION_CONNECTED` | Implemented status |
 | Degraded | Only some LEOP category fetches succeeded | `LEOP_CONNECTION_DEGRADED` | Implemented status |
@@ -42,7 +43,7 @@ spelling even when the prose term differs.
 | Temperature | Degrees Celsius | Used in weather/sensor contexts; recommendation semantics remain separate |
 | Pressure | Hectopascals in the ESP UI/data path | Verify at each public field because lower-level sensor APIs may use different units |
 | Humidity | Percent relative humidity | ESP sensor data |
-| Price | SEK/kWh in algorithm/project intent | Current JSON key is exactly `price SEK`; consumers must preserve it |
+| Price | SEK/kWh in algorithm/project intent | Current JSON key is `price_sek_per_kwh`; the ESP also accepts legacy cached `price SEK` |
 | UV index | Glennergy serializes a JSON real after upstream integer conversion; ESP reads with `json_integer_value` | The current ESP consumer can store zero for the real-valued wire member |
 | Timestamp | Server timestamp string can include an offset; ESP retains at most 19 characters | Longer values lose the offset portion |
 
@@ -56,7 +57,7 @@ spelling even when the prose term differs.
 | Status | Current, with unresolved terms marked explicitly |
 | Canonical owner | Glennergy-ESP |
 | Audience | Readers and contributors across both repositories |
-| Last verified | Glennergy-ESP `b5a502a`; Glennergy `42798be` |
+| Last verified | Glennergy-ESP `baf9b58d04e827f024c8975b140f7a417e462370`; Glennergy `0048c08ed01fa385d114cd3461e2cad9d7aceb73` |
 
 </details>
 

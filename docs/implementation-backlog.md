@@ -23,10 +23,10 @@ linked source documents remain authoritative for detailed current behavior.
 Suggested status values are `Open`, `In progress`, `Blocked by decision`,
 `Ready for verification`, and `Complete`.
 
-Issues discovered while implementing this backlog are tracked separately in
-[Implementation follow-up backlog](implementation-followup-backlog.md). Review
-that list after completing the initial backlog, unless a follow-up blocks or
-invalidates the item currently being implemented.
+Newly confirmed issues are folded into this canonical list so a clean checkout
+has one complete work queue. Local audit notes may provide evidence, but are not
+separate authoritative backlogs unless they are deliberately accepted and
+tracked.
 
 ## Recommended work order
 
@@ -43,7 +43,7 @@ invalidates the item currently being implemented.
 
 | ID | Priority | Decision | Scope | Completion check | Status |
 | --- | --- | --- | --- | --- | --- |
-| D-01 | High | Define the semantic meaning, range and presentation of recommendation `type`; decide whether to publish the calculated category, `average_WindowLow_percent`, or a redesigned field | Both | One documented schema and matching algorithm, serializer, parser, UI and tests | Open |
+| D-01 | High | Confirm the product meaning and presentation policy for the implemented continuous `score` and explicit buy/hold/sell `recommendation` category | Both | One approved meaning and matching algorithm, serializer, parser, UI wording and tests | Open |
 | D-02 | High | Design device identity and property registration: UUID source, provisioning, device/property mapping, enrollment, ownership transfer, rotation and recovery | Both | Approved identity lifecycle and data model | Open |
 | D-03 | High | Define registration route/method, request and response schemas, validation, duplicate/update behavior, idempotency, retry and conflict rules | Both | Versioned contract with success and error examples | Open |
 | D-04 | High | Define authentication, authorization and transport protection before exposing state-changing registration | Both/deployment | Threat-reviewed trust model; no reliance on secret endpoint addresses | Open |
@@ -64,7 +64,7 @@ invalidates the item currently being implemented.
 | S-06 | High | Validate `CacheResponse.data_size` before Algorithm reads a payload | Short, oversized and incompatible payloads are rejected without blocking or misinterpretation | Open |
 | S-07 | Medium | Add an IPC compatibility strategy for raw native structures, such as versioned framing/serialization or strict release validation | Mixed layouts fail explicitly; partial deployment risk is documented and tested | Open |
 | S-08 | Medium | Normalize UV representation so the server does not convert upstream data to integer and then emit a conflicting JSON real | Producer schema and consumer parser use the same JSON type and tested value behavior | Open |
-| S-09 | Medium | Stop treating unpopulated result slots as meaningful 96-entry data, or expose validity explicitly | Clients can distinguish populated current values from zero-filled slots | Open |
+| S-09 | Medium | Stop treating unpopulated result slots as meaningful data by serializing the maintained per-result count, capped at 128 | Clients can distinguish populated values from unused storage slots | Complete |
 | S-10 | Medium | Add freshness/readiness information for provider data, algorithm snapshots and the HTTP surface | A listening port and `200` response can be distinguished from ready/current data | Open |
 | S-11 | Medium | Decide and implement restart recovery for dated Meteo/Spotpris caches, or explicitly keep them as records only | Restart behavior is tested and matches documented policy | Open |
 | S-12 | Medium | Return stable HTTP errors for malformed input, unknown property, internal failure and oversized output | Status and structured body match D-08 and route tests | Blocked by D-08 |
@@ -74,25 +74,28 @@ invalidates the item currently being implemented.
 
 | ID | Priority | Work item | Completion check | Status |
 | --- | --- | --- | --- | --- |
-| E-01 | High | Add bounds checks before writing server arrays into fixed 96-entry storage | Empty, 96-entry and oversized arrays are tested without out-of-bounds writes | Open |
+| E-01 | High | Verify the implemented 128-entry parser cap and truncation behavior with empty, exact-cap and oversized fixtures | Empty, 128-entry and oversized arrays are tested without out-of-bounds writes | Ready for verification |
 | E-02 | High | Validate every required JSON member and type, including safe timestamp handling | Missing/wrong-type members fail cleanly instead of becoming zero or unsafe strings | Open |
 | E-03 | High | Require acceptable HTTP status before parsing or caching normal data responses | Non-2xx bodies cannot be treated as successful datasets | Open |
 | E-04 | High | Validate a response before replacing the previous cache | Malformed/incompatible online data cannot destroy the last known-good cache | Open |
 | E-05 | Medium | Define and implement cache fallback for malformed online responses, not only offline/no-Wi-Fi periods | Controlled tests demonstrate the intended online-failure fallback policy | Open |
-| E-06 | High | Fix UART and Sensor `xTaskCreate` name arguments, which currently pass the address of a pointer | Runtime task names are reliably `UART` and `Sensor` | Open |
-| E-07 | High | Put the Wi-Fi connected-result LVGL mutations under the required LVGL lock | Every widget mutation uses the same serialization rule | Open |
-| E-08 | High | Make Wi-Fi UI state consume and display later disconnect/loss events | Label, color and SSID return to an accurate disconnected state | Open |
+| E-06 | High | Fix UART and Sensor `xTaskCreate` name arguments, which passed the address of a pointer | Runtime task names are reliably `UART` and `Sensor` | Complete |
+| E-07 | High | Put Wi-Fi result widget mutations under the required LVGL lock | Every periodic widget mutation uses the same serialization rule | Complete |
+| E-08 | High | Make Wi-Fi UI state consume and display later disconnect/loss events | Label, color and SSID return to an accurate disconnected state | Complete |
 | E-09 | Medium | Define synchronization/ownership for shared `app_state_t` access | Shared reads/writes are protected or replaced by clear snapshot/message ownership | Open |
-| E-10 | Medium | Complete Settings `System status` and `Last data update` instead of returning constant placeholders | All five Settings fields reflect live, defined state | Open |
-| E-11 | Medium | Update or remove UART `sensor_ok` and `update_counter` placeholders | `status` reports maintained fields or clearly omits them | Open |
-| E-12 | Medium | Resolve the fetch-interval contradiction: default/fetcher accept `1`, while UART currently accepts only `2-1440` despite saying `1-1440` | Code, validation text, default and docs agree on one range | Open |
+| E-10 | Medium | Complete the remaining Settings `System status` placeholder; `Last data update` now reports recommendation age | All five Settings fields reflect live, defined state | Open |
+| E-11 | Medium | Remove or formalize the remaining legacy `update_counter` field; current sensor validity/status output is maintained | Shared state contains only fields with a defined producer and consumer | Open review |
+| E-12 | Medium | Keep fetch-interval validation, help, defaults and documentation aligned at `1-1440` minutes | Code, validation text, default and docs agree on one range | Complete |
 | E-13 | Medium | Define rollback when an accepted runtime configuration change fails to persist to NVS | Runtime and reboot-restored values cannot silently diverge, or divergence is reported explicitly | Open |
 | E-14 | Medium | Preserve the agreed timestamp format without truncating offsets at 19 characters | Full valid timestamps survive server-to-ESP transfer | Blocked by D-07 |
 | E-15 | Medium | Parse `uv_index` using the producer's agreed JSON type | Nonzero and fractional fixtures behave as defined | Blocked by S-08 |
 | E-16 | Medium | Move the hard-coded property ID and concrete server address into an appropriate configuration/identity mechanism | Builds are environment-portable and do not require source edits for endpoint/property selection | Blocked by D-02 and D-04 |
 | E-17 | Low | Check and report task-creation and LEOP-initialization failures in startup orchestration | Startup cannot silently continue after a required task/module fails | Open |
-| E-18 | Low | Decide whether dropped depth-one queue sends need counters, replacement behavior or diagnostics | Important state loss is observable and tested | Open |
+| E-18 | Low | Decide whether unchecked overwrite/send results and silent latest-value replacement need counters or diagnostics | Important state loss or replacement is observable where required | Open review |
 | E-19 | Low | Distinguish cached/live data and data age in the UI where useful | Users can tell connectivity from freshness and cached from current snapshots | Blocked by S-10 |
+| E-20 | Medium | Avoid waiting for SNTP synchronization inside the default got-IP event callback | Time synchronization cannot hold default event-loop processing for about ten seconds | Open |
+| E-21 | Medium | Decide whether Wi-Fi recovery or a successful health probe should trigger an immediate full three-dataset fetch | Recovery behavior and freshness guarantees are documented and tested | Open review |
+| E-22 | Medium | Dispose or safely replace loaded cache buffers on every parser-failure exit | Repeated invalid cache loads cannot leak or silently overwrite an owned allocation | Open |
 
 ## Cross-project integration and test work
 
@@ -144,12 +147,12 @@ history first.
 
 | ID | Repository/path | Candidate action | Gate before change |
 | --- | --- | --- | --- |
-| C-01 | ESP `main/LEOP/leop.cpp`, `fake_leop.*` | Remove or archive legacy/fake LEOP path | Confirm no teaching/test or registration use |
+| C-01 | ESP former LEOP V1 and fake-LEOP files | Removed after confirming the active `LEOPFetcher_Work` path | None — cleanup complete |
 | C-02 | ESP `main/fake/*`, `main/sensor/fake_sensor.*` | Remove, archive or formalize simulation support | Confirm intended simulation strategy |
-| C-03 | ESP `main/hal/bme280_sensor.*` | Remove/archive V1 while V2 is active | Confirm no fallback requirement |
+| C-03 | ESP former `main/hal/bme280_sensor.*` V1 wrapper | Removed; V2 is the tracked active wrapper | None — cleanup complete |
 | C-04 | ESP `main/main.c` sample JSON | Remove unused example data | Confirm no generated/debug consumer |
 | C-05 | ESP `main/CMakeLists.txt` | Remove duplicate/legacy source entries | Validate full build and link map |
-| C-06 | ESP generated UI/comment blocks | Remove or archive commented legacy UI | Respect SquareLine regeneration ownership |
+| C-06 | ESP generated UI/comment blocks | Large commented legacy block removed while preserving the generated/manual-maintenance boundary | None — cleanup complete |
 | C-07 | ESP board-support components | Review apparently unused components | Confirm component discovery and indirect dependencies |
 | C-08 | Glennergy `API/Meteo/` | Archive/remove older excluded C implementation | Confirm historical/course value |
 | C-09 | Glennergy `Client-CPP/` | Document, archive or remove standalone client | Identify manual/demo purpose |
@@ -184,7 +187,7 @@ both sides of every changed interface.
 <summary>Source and verification scope</summary>
 
 This backlog consolidates the canonical documentation verified against
-Glennergy-ESP `dev` snapshot `b5a502a` and Glennergy `dev` snapshot `42798be`,
+Glennergy-ESP `dev` snapshot `baf9b58d04e827f024c8975b140f7a417e462370` and Glennergy `dev` snapshot `0048c08ed01fa385d114cd3461e2cad9d7aceb73`,
 plus the campaign cleanup register. It is based primarily on static repository
 inspection. Hardware, production deployment and live endpoint behavior remain
 unverified unless an item explicitly records later observed evidence.

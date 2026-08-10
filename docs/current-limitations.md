@@ -18,6 +18,8 @@ change or delete source code.
 | UI | Settings System Status remains a placeholder; command-queue delivery errors are not shown |
 | HTTP | Current routes are backwards, unauthenticated and plain HTTP |
 | Compatibility | Timestamp, UV type, cache validation and bounds behavior have known gaps |
+| Recovery | Reconnection can report LEOP connected before the independently scheduled full dataset refresh |
+| Responsiveness | Time synchronization after obtaining an IP can hold the default event-loop callback for about ten seconds |
 | Verification | Full hardware, production and stable end-to-end behavior was not tested in this campaign |
 
 The sections below explain each item precisely and distinguish confirmed
@@ -77,6 +79,9 @@ without a common mutex. Depth-one queues provide snapshots for selected UI
 flows, but they do not protect every shared-state access. This is an implemented
 concurrency limitation, not evidence that a race has been reproduced.
 
+In particular, the LEOP task can modify response counts and arrays while the
+UART `leop` command reads and iterates the same containers directly.
+
 ### LVGL locking
 
 The periodic UI task now places Wi-Fi and the other tab updates under its LVGL
@@ -84,6 +89,21 @@ lock. This protects that update path's widget mutations, but does not provide a
 common mutex for the shared `app_state_t` values read by UI and other tasks.
 
 ## Current interface limitations
+
+### Event-loop time synchronization
+
+After Wi-Fi obtains an IP address, the ESP-IDF event callback starts time
+synchronization when required and can wait for up to about ten seconds. This
+can delay other work on the default event loop. Static inspection confirms the
+blocking path; it does not establish a reproduced device failure.
+
+### Reconnection and data freshness
+
+Wi-Fi recovery makes the LEOP health deadline immediately due but preserves the
+separate full-fetch deadline. A successful recommendation-route probe can
+therefore publish `CONNECTED` while recommendation, weather, and price remain
+unchanged until the next scheduled full fetch. Connectivity state must not be
+interpreted as proof that all displayed datasets were just refreshed.
 
 ### Server property-configuration error propagation
 
@@ -162,6 +182,8 @@ loading is tied to offline/no-Wi-Fi behavior.
 - Persist validated registration information safely on Glennergy.
 - Complete the remaining System Status placeholder.
 - Provide user-visible delivery/error feedback for Wi-Fi commands.
+- Decide whether successful recovery should trigger an immediate full dataset
+  fetch rather than waiting for the previous periodic deadline.
 - Decide whether the current quartile recommendation categories are the final
   product policy.
 - Remove or archive confirmed obsolete code/comments through separate reviewed
@@ -182,7 +204,7 @@ to delete merely because static reference searches did not find an active call.
 | Item | Value |
 | --- | --- |
 | Audience | Users, evaluators, developers, and maintainers |
-| Applies to | Glennergy-ESP `dev` at `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` and Glennergy `dev` at `63b1bad306d172e3d8cd337b314843f656715887` |
+| Applies to | Glennergy-ESP `dev` at `baf9b58d04e827f024c8975b140f7a417e462370` and Glennergy `dev` at `0048c08ed01fa385d114cd3461e2cad9d7aceb73` |
 | Verification boundary | Static repository inspection; unresolved behavior remains explicitly unresolved |
 
 </details>

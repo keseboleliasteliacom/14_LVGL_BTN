@@ -113,7 +113,7 @@ supported ESP-IDF port; the table retains the exact configured values.
 | `UI_Update` | `ui_update_task` | 16384 | 5 | `&app` | Poll snapshots and update Wi-Fi, sensor, electricity, weather, price, Settings, and LEOP widgets under the outer LVGL lock |
 | `UART` | `UART_Work` | 4096 | 4 | `&app` | Blocking UART input and diagnostic/configuration commands |
 | `Sensor` | `Sensor_Work` | 4096 | 4 | `&app` | Initialize and periodically read the active BME280 V2 wrapper |
-| `LEOP` | `LEOPFetcher_Work` | 4096 | 4 | `&app.leop_data` | Fetch, cache, health-check, and publish server data and LEOP state |
+| `LEOP` | `LEOPFetcher_Work` | 4096 | 4 | `&app` | Fetch, cache, health-check, and publish server data and LEOP state |
 
 The table gives the names stored in task metadata and passed to `xTaskCreate`.
 
@@ -148,6 +148,11 @@ and writes to the shared object. The LVGL port lock protects LVGL calls; it is
 not an `app_state_t` lock. This is a concurrency limitation, not evidence that
 a race has been reproduced at runtime.
 
+One concrete pair is the LEOP task writing the response containers while the
+UART `leop` diagnostic iterates their counts and arrays directly. The UI
+normally receives copied queue snapshots, so that path is different from the
+direct LEOP/UART shared-memory access.
+
 ### Queues and notifications
 
 | Queue/notification | Created by | Producer | Consumer | Current semantics |
@@ -159,7 +164,7 @@ a race has been reproduced at runtime.
 | `leop_status_queue` | LEOP initialization | LEOP task | UI update task | Depth 1; latest changed LEOP state, published with overwrite |
 | Wi-Fi event queue | Wi-Fi initialization | ESP event callbacks | Wi-Fi task | Depth 1; event handoff uses a mixture of overwrite and non-blocking send |
 | Wi-Fi command queue | Wi-Fi initialization | Wi-Fi UI | Wi-Fi task | Depth 1; non-blocking commands, so a full queue can reject a new command |
-| Wi-Fi result queue | Wi-Fi initialization | Wi-Fi task | Wi-Fi UI | Depth 1; scan/connect results; delivery uses both overwrite and non-blocking send |
+| Wi-Fi result queue | Wi-Fi initialization | Wi-Fi task | Wi-Fi UI | Depth 1; scan and connection-state results; delivery uses both overwrite and non-blocking send |
 | LEOP task notification | `app_main()` callback path | Wi-Fi-state callback | LEOP task | Wakes the LEOP task promptly when Wi-Fi state changes |
 
 “Latest-value” applies directly to the queues written with
@@ -171,7 +176,7 @@ several of those paths use zero-wait `xQueueSend` instead.
 flowchart LR
     Events[ESP Wi-Fi event callbacks] -->|depth-1 events| WiFi[Wi-Fi task]
     WiFiUI[Wi-Fi UI] -->|commands| WiFi
-    WiFi -->|scan/connect results| WiFiUI
+    WiFi -->|scan and connection-state results| WiFiUI
     Events -->|state callback| Shared[(app_state)]
     Events -->|wake notification| LEOP[LEOP task]
 
@@ -182,9 +187,10 @@ flowchart LR
     LEOP -->|latest weather| UI
     LEOP -->|latest price| UI
     LEOP -->|latest LEOP state| UI
-    LEOP --> Shared
+    LEOP -->|unsynchronized response writes| Shared
 
-    UART[UART task] <--> Shared
+    UART[UART task] -->|unsynchronized LEOP reads| Shared
+    UART -->|configuration writes| Shared
     UI -->|direct reads| Shared
     UI -->|LVGL calls under lock| Widgets[Generated/custom LVGL UI]
 ```
@@ -216,9 +222,8 @@ update shared sensor state and publish a depth-one snapshot. Failed V2 reads
 mark the state invalid and publish that invalid snapshot. Reconnection details
 belong in the hardware and troubleshooting documentation.
 
-The older `BME280Sensor` V1 code remains compiled/referenced in the module but
-its active instantiation and read call are commented out. It is not the current
-sensor path.
+The former V1 BME280 wrapper has been removed. The V2 wrapper is the only
+tracked hardware-sensor implementation used by `Sensor_Work`.
 
 ```mermaid
 sequenceDiagram
@@ -298,7 +303,7 @@ documented in [UART commands](UART_COMMANDS.md).
 | Area | Current handling | Boundary or limitation |
 | --- | --- | --- |
 | Startup | Several hardware/driver calls use `ESP_ERROR_CHECK`; other failures are logged | Task creation and LEOP initialization results are not coordinated or checked by `app_main()` |
-| Wi-Fi | Event-driven state, saved-credential startup, and delayed reconnect attempts | The UI may retain a connected color after loss; queue sends can be dropped when full |
+| Wi-Fi | Event-driven state, saved-credential startup, delayed reconnect attempts, and current disconnected/reconnecting UI states | The initialized event uses a zero-wait queue send; later state publications use latest-value overwrite semantics |
 | LEOP transport | Partial success becomes degraded; repeated total failures become unavailable; health retry is faster after failure | Plain HTTP, no API authentication, no dedicated health endpoint, and no individual fetch retry |
 | LEOP cache | Cached snapshots are loaded once per offline period | Malformed online responses do not automatically fall back to cache; raw bodies can replace cache before validation |
 | Sensor | Failed reads publish an invalid snapshot; V2 wrapper periodically attempts recovery | No campaign hardware observation proves recovery timing or electrical behavior |
@@ -315,14 +320,16 @@ ESP32-S3.
 The following are tracked as cleanup candidates rather than active
 architecture or deletion-authorized code:
 
-- `main/LEOP/leop.cpp` and `main/LEOP/fake_leop.*`, superseded in current
-  startup by `LEOPFetcher_Work`;
 - `main/fake/*` and `main/sensor/fake_sensor.*`, whose active calls were not
   found during discovery;
-- the older `main/hal/bme280_sensor.*` V1 path, while V2 is active;
 - unused sample JSON in `main/main.c`;
-- large commented legacy UI implementation blocks and possible duplicate or
-  legacy source entries.
+- `main/lvgl_demo.*`, which is not in the current component source list and
+  whose `gui_init()` entry point is not called;
+- possible duplicate or legacy source entries in `main/CMakeLists.txt`.
+
+The former LEOP V1/fake-LEOP files, BME280 V1 wrapper, and large commented
+legacy UI block were removed after the earlier documentation baseline. They are
+historical cleanup results, not current inactive paths.
 
 Static non-use is not enough to prove safe deletion in an embedded build.
 Conditional compilation, registration mechanisms, generated references, and
@@ -333,8 +340,8 @@ the current evidence and next verification steps.
 ## Stable-production applicability
 
 This document describes the architecture verified on authoritative `dev` at
-`693dc8819ac5b6d8fb29ce057d287814a3b9a14d`. The campaign recorded stable `origin/main` at
-`daf35c538d84586576f8286c2d543eb1c3c89e6a`, but no production device or live
+`baf9b58d04e827f024c8975b140f7a417e462370`. The current stable `origin/main` comparison is
+`cbdb761d7e2187e9e80e6465e1beb99d3043fc70`, but no production device or live
 deployment was inspected. Shared files on `main` provide useful comparison
 evidence; they do not prove that every task, queue, failure path, configuration,
 or peripheral behavior documented here is running in production.
@@ -347,7 +354,7 @@ or peripheral behavior documented here is running in production.
 | Item | Value |
 | --- | --- |
 | Audience | Firmware developers and maintainers |
-| Applies to | Glennergy-ESP `dev` at `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
+| Applies to | Glennergy-ESP `dev` at `baf9b58d04e827f024c8975b140f7a417e462370` |
 | Evidence | Static source inspection and documentation checks |
 | Not verified | Runtime, physical hardware, serial devices, real VPS, or production services |
 

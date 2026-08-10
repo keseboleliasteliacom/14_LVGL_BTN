@@ -1,35 +1,23 @@
-# LEOP Server API (historical overview)
+# Quick HTTP integration overview
 
-> **Noncanonical historical draft:** This Swedish overview is retained for
-> reference but may contain stale behavior or encoding. Use the current
-> [ESP interface contract](interface-contract.md) and Glennergy
-> [server API reference](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/http-api.md)
-> for implementation work.
+Glennergy-ESP requests three read-only datasets from the Glennergy LEOP server:
 
-ESP32-terminalen hämtar data från LEOP-servern via tre HTTP GET-endpoints.
-
-| Endpoint | Syfte | Används av |
-| --- | --- | --- |
-| `GET /id=2?recommendation` | Hämtar rekommendationer för elförbrukning | Electricity view |
-| `GET /id=2?weather` | Hämtar väderprognos | Weather dashboard |
-| `GET /id=2?price` | Hämtar elpriser | Price view |
-
-Alla endpoints returnerar JSON-arrayer med tidsstämplade värden. ESP32-klienten parsar svaret, sparar giltig data i SPIFFS-cache och skickar datan vidare till UI:t via FreeRTOS-köer.
-
-### Response fields
-
-| Endpoint | Viktiga fält |
+| Dataset | Used by |
 | --- | --- |
-| `recommendation` | `id`, `type`, `timestamp` |
-| `weather` | `temp`, `uv_index`, `weather_code`, `timestamp` |
-| `price` | `price SEK`, `timestamp` |
+| Recommendation | Electricity screen and last-update status |
+| Weather | Weather screen |
+| Electricity price | Electricity screen |
 
-### Error handling
+The firmware initiates the requests, parses up to 128 objects per dataset, and
+publishes latest-value snapshots to the UI. It can attempt to reuse SPIFFS
+caches while Wi-Fi is unavailable. A connected status does not by itself prove
+that every dataset is fresh.
 
-- Om WiFi är anslutet hämtar ESP32 live-data från servern.
-- Giltig serverdata sparas lokalt som JSON-cache.
-- Om WiFi saknas används senaste cachade JSON-data från SPIFFS.
-- Om JSON är tom eller ogiltig avvisas den av parsern och fetch-status markeras som misslyckad.
+For exact routes, JSON fields, status behavior, parsing limitations, and cache
+consequences, read the [ESP interface contract](interface-contract.md). For the
+complete producer-side API, read the
+[Glennergy server HTTP API reference](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/http-api.md).
 
-Den historiska fullversionen finns i [`API_ENDPOINTS.md`](API_ENDPOINTS.md).
-Använd de kanoniska dokumenten ovan för aktuellt beteende.
+The route order, identity model, authentication, and future two-way property
+registration remain planned work. Public examples intentionally omit the real
+server address.

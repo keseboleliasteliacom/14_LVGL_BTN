@@ -2,6 +2,9 @@
  * @file HTTP.c
  * @brief Implementation of the HTTP client module.
  *
+ * Provides helpers for HTTP GET requests, response accumulation, probe
+ * requests, and releasing caller-owned response storage.
+ *
  * @ingroup HTTP
  */
 

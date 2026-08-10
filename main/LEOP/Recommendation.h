@@ -9,16 +9,16 @@
  * @file Recommendation.h
  * @brief Public API for the recommendation module.
  *
- * Provides the data types and functions used to initialize, fetch, cache, and
- * clear recommendation data.
+ * Declares the fixed-size recommendation list, fetch status, and cache-based
+ * helper functions used by the LEOP recommendation workflow.
  */
 
 /**
  * @defgroup RECOMMENDATION Recommendation
  * @brief Recommendation data handling and cache access.
  *
- * The module stores recommendation entries in a fixed-size list, tracks fetch
- * state, and uses the cache helper for persisted JSON data.
+ * Stores recommendation entries in a fixed-size list, tracks whether fresh
+ * data has been fetched, and uses the cache helper for persisted JSON data.
  *
  * @note Functions operate on a caller-provided RecommendationList instance.
  * @note Fetch functions depend on the HTTP and JSON parsing pipeline used by

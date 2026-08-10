@@ -3,11 +3,17 @@
 
 /**
  * @file UART.hpp
- * @brief Public declarations for the UART task and helper functions.
+ * @brief Public declarations for the UART console worker and helper functions.
  *
- * Provides the C and C++ entry points used by the UART console worker.
+ * Declares the C and C++ entry points used by the UART console task.
  *
  * @ingroup UART
+ * @defgroup UART UART
+ * @brief UART console worker and helper functions.
+ *
+ * Provides the UART task entry point and byte-oriented console input helper
+ * used by the application.
+ * @{
  */
 
 #include <stdint.h> // c-version since main compiles this file
@@ -45,5 +51,7 @@ void UART_Work(void* parameter);
 #ifdef __cplusplus
     }
 #endif
+
+/** @} */
 
 #endif

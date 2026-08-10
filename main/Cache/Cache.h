@@ -5,10 +5,10 @@
 
 /**
  * @file Cache.h
- * @brief Public API for the cache module.
+ * @brief Public API for the CACHE module.
  *
- * Provides a small heap-backed cache wrapper around SPIFFS JSON file loading
- * and saving.
+ * Provides a small heap-backed wrapper around SPIFFS JSON file loading and
+ * saving.
  *
  * @defgroup CACHE CACHE
  * @brief Cache management helpers for JSON file data.
@@ -39,7 +39,10 @@ int Cache_Initialize(Cache_t* cache);
 /**
  * @brief Writes JSON data to a file.
  *
- * @param[in,out] cache Pointer to the cache object.
+ * The cache object is accepted as part of the module API but is not modified by
+ * this function.
+ *
+ * @param[in] cache Cache object associated with the write operation; currently not modified.
  * @param[in] data JSON text to write.
  * @param[in] file_name Target file name.
  *
@@ -58,7 +61,10 @@ int Cache_WriteFileJSON(Cache_t* cache, const char* data, const char* file_name)
 int Cache_LoadFileJSON(Cache_t* cache, const char* file_name);
 
 /**
- * @brief Releases cache resources.
+ * @brief Releases the cached JSON buffer.
+ *
+ * Frees the owned buffer and resets `cache->data` to `NULL`. Calling this
+ * function on an empty cache is safe.
  *
  * @param[in,out] cache Pointer to the cache object to dispose.
  */

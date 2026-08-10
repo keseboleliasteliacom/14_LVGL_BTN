@@ -70,19 +70,15 @@ all three LEOP datasets.
 
 ### `sensor`
 
-Always prints `Debug valid` and the raw temperature. If `valid` is false, it
-then prints `Sensor: No valid data yet.` and stops. For a valid snapshot it also
-prints:
+If `valid` is false, the command prints `Sensor: No valid data yet.` and stops.
+For a valid snapshot it prints:
 
-- monotonic last-update seconds (the source output misspells this as
-  `monotinic`);
+- monotonic last-update seconds;
 - local last-update time, or `not synced yet` when wall time is not valid;
-- temperature, pressure, and humidity.
+- temperature in degrees Celsius, pressure in hPa, and humidity as a percent.
 
 The command reads shared state directly without a common application mutex. A
 coherent multi-field snapshot is not guaranteed while the Sensor task writes.
-Units are not included consistently in UART output; use the sensor/hardware
-documentation rather than inferring a formal unit contract from these lines.
 
 ### `leop`
 
@@ -149,9 +145,8 @@ Important current validation details:
 
 - decimal parsing must consume the entire token, but it does not explicitly
   detect `strtol` overflow before casting to `int`;
-- an invalid `test_mode` value produces no user-facing error;
-- the generic syntax text omits `sensor_interval_ms`, even though it is
-  implemented;
+- an invalid `test_mode` value produces a user-facing error;
+- the generic syntax text includes all three supported keys;
 - `config` changes live task behavior and performs flash writes, so it is not a
   read-only diagnostic command.
 
@@ -190,7 +185,7 @@ for the hardware authorization boundary.
 | --- | --- |
 | Status | Current implementation, including known defects |
 | Audience | Firmware developers and authorized device testers |
-| Last verified | Glennergy-ESP `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
+| Last verified | Glennergy-ESP `baf9b58d04e827f024c8975b140f7a417e462370` |
 | Evidence | Static source inspection; no serial session was opened |
 
 </details>

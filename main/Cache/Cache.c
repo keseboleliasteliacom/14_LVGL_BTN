@@ -35,6 +35,8 @@ int Cache_Initialize(Cache_t *cache)
 /**
  * @brief Implementation of Cache_WriteFileJSON.
  *
+ * Writes the provided JSON text through the SPIFFS layer.
+ *
  * See header for full contract documentation.
  */
 int Cache_WriteFileJSON(Cache_t *cache, const char *data, const char *file_name)
@@ -52,6 +54,8 @@ int Cache_WriteFileJSON(Cache_t *cache, const char *data, const char *file_name)
 
 /**
  * @brief Implementation of Cache_LoadFileJSON.
+ *
+ * Loads JSON from SPIFFS and stores a heap copy in the cache object.
  *
  * See header for full contract documentation.
  */
@@ -79,6 +83,8 @@ int Cache_LoadFileJSON(Cache_t *cache, const char *file_name)
 /**
  * @brief Implementation of Cache_Dispose.
  *
+ * Releases the cached heap buffer when present.
+ *
  * See header for full contract documentation.
  */
 void Cache_Dispose(Cache_t *cache)
@@ -86,6 +92,6 @@ void Cache_Dispose(Cache_t *cache)
     if (cache != NULL && cache->data != NULL)
     {
         free(cache->data);
-        cache = NULL;
+        cache->data = NULL;
     }
 }

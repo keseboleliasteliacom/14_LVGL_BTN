@@ -2,10 +2,18 @@
  * @file ui_Screen1.h
  * @brief Screen 1 UI entry points and shared UI objects.
  *
- * Declares the screen initialization, teardown, and periodic update hooks used
- * by the generated SquareLine Studio UI code.
+ * Declares the screen initialization, teardown, and periodic update hooks used for the main
+ * LVGL screen. Originated from SquareLine studio and now mantually mainainted
  *
  * @ingroup UI
+ */
+
+/**
+ * @defgroup UI UI
+ * @brief User interface screens and helpers.
+ *
+ * Screen-specific entry points for the main LVGL layout and its update task.
+ * @{
  */
 
 #ifndef UI_SCREEN1_H
@@ -21,7 +29,9 @@ extern "C" {
  *
  * Runs periodic UI refresh work for the screen in task context.
  *
- * @param[in] arg Task argument passed from the caller.
+ * @param[in] arg Pointer to `app_state_t` passed from the task creator.
+ *
+ * @note The task uses the LVGL port lock while updating shared UI objects.
  */
 void ui_update_task(void *arg);
 
@@ -43,3 +53,5 @@ extern lv_obj_t * uic_WiFi;
 #endif
 
 #endif
+
+/** @} */

@@ -171,7 +171,7 @@ boundary is recorded in [current limitations](current-limitations.md).
 | --- | --- |
 | Status | Current implementation |
 | Storage | ESP-IDF NVS default partition |
-| Last verified | Glennergy-ESP `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
+| Last verified | Glennergy-ESP `baf9b58d04e827f024c8975b140f7a417e462370` |
 
 </details>
 

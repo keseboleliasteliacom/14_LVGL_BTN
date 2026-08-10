@@ -14,6 +14,7 @@ being present in the repository does not by itself make it current.
 | HTTP integration details | [ESP interface contract](interface-contract.md) | [Connectivity](connectivity.md) and the [server API reference](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/http-api.md) |
 | UI or serial-console behavior | [UI guide](ui-guide.md) | [UART command reference](UART_COMMANDS.md) |
 | A problem to diagnose | [Troubleshooting](troubleshooting.md) | The relevant implementation guide above |
+| Coding defects, cleanup, or unresolved design work | [Implementation backlog](implementation-backlog.md) | The linked current guides and server documentation |
 
 You do not need to read every document in order. Each detailed guide begins
 with its normal-use model before moving into limitations and source evidence.
@@ -52,6 +53,8 @@ with its normal-use model before moving into limitations and source evidence.
   known display/locking limitations.
 - [Troubleshooting](troubleshooting.md) — read-only-first firmware diagnosis and
   gates for hardware-affecting tests.
+- [Implementation backlog](implementation-backlog.md) — consolidated current
+  defects, decisions, verification work, and cleanup status across both projects.
 
 Paths shown without links are approved campaign artifacts that have not yet
 been accepted. Older files should not be used as substitutes for missing
@@ -60,20 +63,19 @@ canonical guides without checking current code.
 ## Server-side architecture
 
 The detailed five-process, IPC, scheduling and server-recovery architecture is
-maintained in Glennergy `Docs/architecture.md`. During branch review, open that
-file in the sibling Glennergy checkout on
-`docs/documentation-campaign-2026-07-26`. A stable GitHub link will replace this
-branch-review instruction when the Glennergy documentation is published.
+maintained in Glennergy's
+[server architecture guide](https://github.com/Glennergy-Optimizer/glennergy/blob/dev/Docs/architecture.md).
+An offline checkout can use the sibling repository's `Docs/architecture.md`.
 
 ## Existing documents under review
 
 | Document | Current classification | Intended action |
 | --- | --- | --- |
-| [API_ENDPOINTS.md](API_ENDPOINTS.md) | Detailed but stale API draft; contains old error, queue and timing assumptions | Replaced by the ESP interface contract and Glennergy HTTP API reference; retain/banner or archive after review |
-| [easy_api_doc.md](easy_api_doc.md) | Swedish duplicate overview with stale navigation/encoding | Redirect/banner or archive after unique information is checked |
+| [API_ENDPOINTS.md](API_ENDPOINTS.md) | Compatibility pointer for the former detailed duplicate | Keep as a short redirect to the ESP contract and server API reference |
+| [easy_api_doc.md](easy_api_doc.md) | Lightweight English integration overview | Keep schema-free and direct readers to the canonical references |
 | [UART_COMMANDS.md](UART_COMMANDS.md) | Current canonical UART reference | Update when parser, output, persistence or safety behavior changes |
 | [ESP-IDF build workflow plan](ESP_IDF_BUILD_WORKFLOW_PLAN.md) | Roadmap containing planned CI/test capabilities | Keep clearly labelled as a plan; move implemented workflow into `development.md` |
-| Presentation assets | Rendered architecture/pin/queue/LEOP snapshots | Preserve as presentation snapshots until canonical Mermaid diagrams replace or validate them |
+| [Presentation assets](presentation_assets/README.md) | Historical rendered architecture/pin/queue/LEOP snapshots; several no longer match current `dev` | Do not use as current references; use the maintained Mermaid and hardware guides |
 
 No document in this table is deleted merely because a replacement is planned.
 
@@ -91,6 +93,8 @@ tracks whether each should be retained, updated, archived or redirected.
 - [Doxygen standard](Doxygen_Standard.md) — source-comment conventions.
 - [Doxygen workflow guide](Doxygen_Workflow_Guide.md) — automated/manual source
   documentation workflow.
+- [Doxygen audit mode](Doxygen_Audit_Mode.md) — deeper semantic/caller-context
+  review behavior and its interpretation.
 - [Doxygen TODO](Doxygen_TODO.md) — tooling backlog, not product behavior.
 - `template_C.c`, `template_H.h`, and `template_Main.c` — comment templates.
 - Generated Doxygen output is derived from source comments and is not the
@@ -126,7 +130,7 @@ review; they are not the primary onboarding path.
 | Status | Current navigation index; migration from older documents is in progress |
 | Audience | Newcomers, developers, maintainers, operators, and evaluators |
 | Applies to | Authoritative `dev` documentation campaign |
-| Last verified | Glennergy-ESP `693dc8819ac5b6d8fb29ce057d287814a3b9a14d`; Glennergy `63b1bad306d172e3d8cd337b314843f656715887` |
+| Last verified | Glennergy-ESP `baf9b58d04e827f024c8975b140f7a417e462370`; Glennergy `0048c08ed01fa385d114cd3461e2cad9d7aceb73` |
 
 </details>
 

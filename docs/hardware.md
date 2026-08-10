@@ -91,9 +91,9 @@ whether every attached device meets the resulting timing.
 
 ## BME280 environmental sensor
 
-`Sensor_Work` actively instantiates `hal::BME280SensorV2`; the older V1 wrapper
-remains in the tree but is not the active read path. V2 reads temperature,
-relative humidity, and pressure through the managed Espressif BME280 component.
+`Sensor_Work` instantiates `hal::BME280SensorV2`, the only tracked hardware
+sensor wrapper. It reads temperature, relative humidity, and pressure through
+the managed Espressif BME280 component.
 
 At initialization it tries address `0x77` first, then `0x76`. After five
 consecutive failed read cycles it marks the sensor disconnected, deletes its
@@ -148,7 +148,7 @@ for the boundary between source-derived claims and runtime evidence.
 | Status | Source-derived board configuration; physical behavior unverified |
 | Firmware target | ESP32-S3 |
 | Repository-declared board | Waveshare ESP32-S3-Touch-LCD-4.3 |
-| Last verified | Glennergy-ESP `b5a502a` |
+| Last verified | Glennergy-ESP `baf9b58d04e827f024c8975b140f7a417e462370` |
 
 </details>
 

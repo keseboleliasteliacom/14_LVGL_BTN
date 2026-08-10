@@ -10,7 +10,7 @@
  * @file Main_UI.h
  * @brief Public declarations for the main LVGL screen.
  *
- * Declares the LVGL objects created by the main screen setup code and the
+ * Declares the LVGL objects created by the main UI modules and the
  * initialization entry point used during display bring-up.
  *
  * @ingroup UI
@@ -54,9 +54,12 @@ extern lv_obj_t *ui_TimeInfoLabel;
 extern lv_obj_t *ui_TimeValueLabel;
 
 /**
- * @brief Initializes the main UI screen and its widgets.
+ * @brief Creats the LVGL objects objects owned by main screen module.
  *
- * Creates the screen, tab view, and status labels used by the application UI.
+ * Creates the main screen, tab view and pages, Settings containers, and status labels.
+ * Tab-specific modules create their own widgets after this function returns
+ * 
+ * @note Exported pointers owned by other UI modules may remain NULL until those modules are initialized
  */
 void Main_UI_Initialize();
 

@@ -53,8 +53,8 @@ policy:
 | Queue | Producer → consumer | Write behavior | Consequence |
 | --- | --- | --- | --- |
 | Command | Wi-Fi UI → Wi-Fi task | Zero-wait `xQueueSend` | A command can be rejected while the queue is full |
-| Internal event | ESP event callbacks → Wi-Fi task | Connected uses overwrite; initialized/disconnected use zero-wait send | Connected replaces an older event; other events can be dropped |
-| Result | Wi-Fi task → Wi-Fi UI | Connected uses overwrite; scan/disconnect use zero-wait send | Connected is latest-value; other results can be dropped |
+| Internal event | ESP event callbacks → Wi-Fi task | Initialized uses zero-wait send; connected, reconnecting, and disconnected use overwrite | Initialization can be rejected while full; later connection states replace an older event |
+| Result | Wi-Fi task → Wi-Fi UI | Scan uses zero-wait send; connected, reconnecting, and disconnected use overwrite | A scan result can be rejected; connection states replace an older result |
 
 The LEOP recommendation, weather, price, and state queues also have depth one,
 but use `xQueueOverwrite`, so they carry the latest complete snapshot/state and
@@ -72,9 +72,10 @@ successfully published. Neither callback is a separate worker thread.
 sequenceDiagram
     participant UI as Wi-Fi UI
     participant WT as WiFi_Work
-    participant IDF as ESP-IDF event loop
+    participant IDF as IP callback (default event loop)
     participant NVS as NVS wifi namespace
     participant LEOP as LEOPFetcher_Work
+    participant SNTP as SNTP service
 
     alt First Wi-Fi task entry
         WT->>NVS: Read ssid and pw
@@ -91,6 +92,11 @@ sequenceDiagram
     end
     IDF-->>LEOP: GOT_IP callback updates state and wakes task
     IDF-->>WT: CONNECTED event (overwrite)
+    opt Time is not synchronized
+        IDF->>SNTP: Start synchronization and wait
+        Note over IDF,SNTP: Event-loop callback can be held for about 10 seconds
+        SNTP-->>IDF: Synchronized or timeout/error
+    end
     opt UI credentials were pending
         WT->>NVS: Commit ssid, then pw
     end
@@ -232,6 +238,7 @@ sequenceDiagram
             HTTP-->>LEOP: Probe success
             LEOP->>LEOP: Publish CONNECTED and reset failures
             LEOP->>LEOP: Schedule next probe after 60 seconds
+            Note over LEOP,UI: Datasets remain unchanged until the independent full-fetch deadline
         else Transport failure or non-2xx
             HTTP-->>LEOP: Probe failure and available status
             LEOP->>LEOP: Increment consecutive failures
@@ -253,7 +260,7 @@ connection state but does not refresh all three datasets.
 stateDiagram-v2
     [*] --> NO_WIFI
     NO_WIFI --> CHECKING: Wi-Fi obtains IP
-    CHECKING --> CONNECTED: all full fetches succeed
+    CHECKING --> CONNECTED: all full fetches succeed or 2xx probe
     CHECKING --> DEGRADED: partial full-fetch success
     CHECKING --> UNAVAILABLE: three total failures
     CHECKING --> NO_WIFI: Wi-Fi lost
@@ -271,6 +278,9 @@ stateDiagram-v2
 The diagram shows published state transitions, not every internal attempt.
 Because publication suppresses duplicate states, `CHECKING` may remain the
 last published state through early failures before the threshold is reached.
+`CONNECTED` and `DEGRADED` likewise retain their last published state through
+failures one and two; the updated count/status is not queued until a state
+transition occurs.
 
 ## Offline cache behavior
 
@@ -374,7 +384,7 @@ GET behavior.
 | Item | Value |
 | --- | --- |
 | Transport | ESP-initiated HTTP reads over the current LEOP interface |
-| Applies to | Glennergy-ESP `dev` at `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
+| Applies to | Glennergy-ESP `dev` at `baf9b58d04e827f024c8975b140f7a417e462370` |
 | Verification boundary | Static source inspection; no live network, VPS, or hardware testing |
 
 </details>

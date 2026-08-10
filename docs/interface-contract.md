@@ -23,7 +23,8 @@ current API design is final.
 Glennergy-ESP currently performs read-only HTTP `GET` requests. Glennergy reads
 the requested property's latest algorithm snapshot from shared memory and
 returns one JSON array. The ESP fetches recommendation, weather and price as
-three separate requests and caches each raw response in SPIFFS.
+three separate requests. It attempts to cache each syntactically valid JSON
+response in SPIFFS before dataset-specific validation.
 
 Use a deployment-specific placeholder for the server address:
 
@@ -33,6 +34,41 @@ LEOP_BASE_URL=http://leop.example.com
 
 The production VPS address is intentionally not part of public documentation.
 The address is not a security control; it belongs in deployment configuration.
+
+```mermaid
+sequenceDiagram
+    participant ESP as ESP LEOP task
+    participant HTTP as HTTP client
+    participant SERVER as Glennergy route handler
+    participant SNAPSHOT as Shared-memory result snapshot
+    participant CACHE as SPIFFS JSON cache
+    participant PARSER as Dataset parser
+    participant UI as Latest-value UI queue
+
+    ESP->>HTTP: GET one dataset for property ID
+    HTTP->>SERVER: Transitional request target
+    SERVER->>SNAPSHOT: Select property and available result count
+    SNAPSHOT-->>SERVER: Capped result snapshot
+    SERVER-->>HTTP: Status and JSON body
+    HTTP-->>ESP: Transport result, status, and optional body
+    opt A body exists
+        ESP->>CACHE: Validate generic JSON and attempt cache write
+        ESP->>PARSER: Validate dataset shape and extract up to 128 objects
+        alt Dataset parse succeeds
+            PARSER-->>ESP: Current typed snapshot
+            Note over ESP,UI: Store result; publication waits for all three requests
+        else Dataset parse fails
+            PARSER-->>ESP: Failure; no automatic online cache fallback
+        end
+    end
+    Note over ESP,UI: After all three attempts, overwrite all three dataset queues
+```
+
+The sequence is one dataset inside the synchronous three-request cycle. Exact
+status and failure behavior is defined below; notably, normal dataset fetches
+do not first require 2xx, the generic cache attempt precedes dataset-specific
+parsing, and all three current containers are published after the cycle even
+when an individual parse failed.
 
 ## Transport and security limitations
 
@@ -311,9 +347,9 @@ For each such change:
 | Audience | Glennergy-ESP developers, Glennergy maintainers, and integration reviewers |
 | Canonical owner | Glennergy-ESP for firmware consumption, parsing, cache, retry and compatibility behavior |
 | Applies to | Authoritative `dev`; stable-production differences are noted below |
-| Last verified | 2026-08-03 |
-| Glennergy-ESP `dev` | `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
-| Glennergy `dev` | `63b1bad306d172e3d8cd337b314843f656715887` |
+| Last verified | 2026-08-10 |
+| Glennergy-ESP `dev` | `baf9b58d04e827f024c8975b140f7a417e462370` |
+| Glennergy `dev` | `0048c08ed01fa385d114cd3461e2cad9d7aceb73` |
 
 </details>
 

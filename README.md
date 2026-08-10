@@ -187,6 +187,7 @@ and [connectivity guide](docs/connectivity.md) before changing live settings.
 | Use the serial diagnostics safely | [UART command reference](docs/UART_COMMANDS.md) |
 | Diagnose a problem read-only-first | [Troubleshooting guide](docs/troubleshooting.md) |
 | Implement or review the server boundary | [Interface contract](docs/interface-contract.md) |
+| Work through known defects, decisions, and cleanup | [Implementation backlog](docs/implementation-backlog.md) |
 | Find all current and historical documents | [Documentation index](docs/README.md) |
 
 Start with the README and system context, then follow the guide matching your
@@ -198,7 +199,7 @@ remains approachable for users, evaluators, and developers.
 
 | Project status | Reference |
 | --- | --- |
-| Authoritative implementation | `dev` at `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
+| Authoritative implementation | `dev` at `baf9b58d04e827f024c8975b140f7a417e462370` |
 | Stable production line | `main` |
 | Documentation scope | Current `dev` behavior, with planned work labelled |
 

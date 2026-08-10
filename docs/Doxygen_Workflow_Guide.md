@@ -8,6 +8,7 @@ This document explains the GitHub setup and the intended workflow for the OpenAI
 - Update script: `tools/doxygen_ai/update_docs.py`
 - Workflow usage guide: `tools/doxygen_ai/README.md`
 - Active documentation standard: `docs/Doxygen_Standard.md`
+- Audit-mode behavior: `docs/Doxygen_Audit_Mode.md`
 - Future follow-ups and open questions: `docs/Doxygen_TODO.md`
 - AI context used by the updater: `AI_CONTEXT.md`
 

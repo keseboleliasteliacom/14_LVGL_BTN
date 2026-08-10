@@ -153,15 +153,17 @@ The following are part of the current or temporary system state:
   five properties. This is a test limit, not the intended final capacity.
 - **Temporary example data:** the server repository contains premade property
   data, including entries that are not all valid for current consumers.
-- **Unresolved recommendation semantics:** the server calculates and discards a
-  categorical result, then publishes `average_WindowLow_percent` in the
-  relevant field. The intended meaning remains deliberately unresolved.
+- **Recommendation policy still under review:** the implemented interface now
+  separates a continuous `score` from an explicit quartile-based buy/hold/sell
+  `recommendation`, but the final product meaning and presentation policy
+  remain deliberately unresolved.
 - **Read-only, unauthenticated integration:** no registration or property-write
   route exists, and the current GET API uses plain HTTP without API
   authentication or authorization.
-- **Partial device UI:** three of five Settings fields work; two remain
-  placeholders. The Wi-Fi status can become green after connecting but may not
-  return to a disconnected display after a later loss.
+- **Partial device UI:** four of five Settings fields work; System Status
+  remains the `Starting...` placeholder. Wi-Fi now displays connected,
+  reconnecting, and disconnected states, although depth-one command delivery
+  can still fail without user-facing feedback.
 - **Compatibility and resilience gaps:** timestamp offsets can be truncated by
   the ESP. Glennergy serializes UV as a JSON real after earlier integer
   conversion, while the ESP reads it with `json_integer_value`; the current
@@ -217,8 +219,8 @@ security-reviewed before documentation can describe a final protocol.
 | --- | --- |
 | Owner | Glennergy-ESP documentation |
 | Applies to | Authoritative `dev` branches in both repositories |
-| Glennergy-ESP snapshot | `b5a502a` |
-| Glennergy snapshot | `42798be` |
+| Glennergy-ESP snapshot | `baf9b58d04e827f024c8975b140f7a417e462370` |
+| Glennergy snapshot | `0048c08ed01fa385d114cd3461e2cad9d7aceb73` |
 | Verification boundary | Static repository inspection; no production or hardware access |
 
 </details>

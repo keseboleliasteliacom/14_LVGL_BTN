@@ -23,6 +23,25 @@ been observed on a physical panel.
 | WiFi | Scan, connect, reconnect and disconnect | Queue delivery can fail without UI feedback |
 | Settings | Device status plus sensor/LEOP interval configuration | System Status remains a placeholder |
 
+```mermaid
+flowchart LR
+    Sensor[BME280 sensor task] -->|latest snapshot| Home[Home tab]
+    LEOP[LEOP fetcher] -->|recommendation snapshot| Electricity[Electricity tab]
+    LEOP -->|price snapshot| Electricity
+    LEOP -->|weather snapshot| Weather[Weather tab]
+    LEOP -->|connection state| Header[Persistent header]
+    Cache[(SPIFFS cache)] -->|offline parse| LEOP
+    WiFi[Wi-Fi callbacks and task] -->|network/result state| WiFiTab[WiFi tab]
+    WiFi --> Header
+    Settings[Settings controls] -->|runtime values| Sensor
+    Settings -->|runtime values| LEOP
+    Settings -->|independent writes| NVS[(NVS configuration)]
+```
+
+The diagram distinguishes data producers from presentation. Queue snapshots do
+not by themselves prove freshness, and applying both Settings intervals can
+partly succeed because each value is persisted independently.
+
 ## Header status
 
 ### Wi-Fi name
@@ -183,7 +202,7 @@ ownership, and [troubleshooting](troubleshooting.md) for safe diagnosis.
 | Item | Value |
 | --- | --- |
 | Audience | Users, evaluators, firmware developers, and maintainers |
-| Applies to | Glennergy-ESP `dev` at `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
+| Applies to | Glennergy-ESP `dev` at `baf9b58d04e827f024c8975b140f7a417e462370` |
 | Evidence | Static source and generated UI inspection |
 | Not verified | Display, touch, layout, timing, or other physical-hardware behavior |
 

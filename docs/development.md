@@ -149,7 +149,7 @@ levels, not current general coverage.
 | Status | Current development workflow |
 | Target | ESP32-S3 |
 | ESP-IDF baseline | 5.3.5 |
-| Last verified | Glennergy-ESP `b5a502a` |
+| Last verified | Glennergy-ESP `baf9b58d04e827f024c8975b140f7a417e462370` |
 
 </details>
 

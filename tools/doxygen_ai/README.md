@@ -37,6 +37,8 @@ Use the `Run workflow` form in GitHub Actions.
 | --- | --- |
 | `target_ref` | Branch to check out and process, usually `dev` |
 | `model` | OpenAI model to use for the run |
+| `reasoning_effort` | Primary request reasoning: `none`, `low`, `medium`, `high`, or `xhigh`; default `low` |
+| `retry_reasoning_effort` | Targeted retry reasoning using the same values; default `medium` |
 | `test_label` | Optional label for comparison runs and separate PR branches |
 | `rerun_mode` | `all` for a normal run, `remaining_only` for rejected/deferred files from an earlier run |
 | `file_paths` | Comma-separated file paths for `all` mode; leave empty for `remaining_only` |

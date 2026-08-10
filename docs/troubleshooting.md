@@ -93,7 +93,9 @@ Current behavior to account for:
   100 scheduled attempts;
 - reconnecting and disconnected results should update both the tab and header;
 - the disconnect button intentionally suppresses automatic reconnect, but its
-  zero-wait queue send can be dropped if the command queue is full.
+  zero-wait queue send can be dropped if the command queue is full;
+- after obtaining an IP, initial SNTP synchronization can hold the default
+  event-loop callback for about ten seconds before it returns.
 
 Therefore, a green Wi-Fi label is not sufficient evidence of current
 connectivity. Compare the LEOP header state and, in an authorized serial
@@ -165,6 +167,8 @@ Check the known synchronization boundaries before assuming a hardware fault:
 - the common `app_state_t` has no common mutex;
 - queue consumers receive copied snapshots, while UI/UART also read shared
   state directly;
+- the LEOP task can write response counts and arrays while the UART `leop`
+  command reads and iterates those same containers;
 - the periodic tab updates, including `WiFi_UI_Update()`, run under the outer
   LVGL port lock;
 - generated and custom UI code are coupled through object names.
@@ -207,7 +211,7 @@ task stack figures are estimates. Do not use hidden `reboot` or persistent
 | --- | --- |
 | Status | Current source-backed diagnostic guide |
 | Audience | Developers, maintainers, and authorized device testers |
-| Last verified | Glennergy-ESP `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
+| Last verified | Glennergy-ESP `baf9b58d04e827f024c8975b140f7a417e462370` |
 | Evidence boundary | Static inspection; no hardware, serial port, or live endpoint used |
 
 </details>

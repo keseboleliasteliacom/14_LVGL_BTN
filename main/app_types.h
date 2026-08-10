@@ -9,7 +9,7 @@
 #include "Price.h"
 #include "Recommendation.h"
 #include "LEOP_Fetcher.h"
-#include "Weather.h"
+#include "Weather.h" 
 
 /**
  * @file app_types.h

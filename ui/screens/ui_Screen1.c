@@ -88,7 +88,7 @@ static void LEOP_UI_Update(void)
  * Runs in task context, takes the LVGL port lock before updating shared UI
  * objects, and delays between refresh cycles.
  *
- * @param arg Task argument cast to app_state_t *.
+ * @param arg Task argument cast to app_state_t * passed from the task creator.
  *
  * @note The update helpers are called while the LVGL port lock is held.
  */

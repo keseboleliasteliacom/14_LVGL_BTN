@@ -8,7 +8,7 @@
  * @file WifiConfig.h
  * @brief Public API for Wi-Fi configuration storage helpers.
  *
- * Provides helpers for saving and loading Wi-Fi credentials in NVS.
+ * Provides helpers for storing and loading Wi-Fi credentials in NVS.
  *
  * @ingroup WIFI_CONFIG
  */
@@ -18,7 +18,7 @@
  * @brief Wi-Fi configuration storage helpers.
  *
  * Wraps NVS access for Wi-Fi SSID and password persistence. The helpers are
- * intended for task context during configuration save/load operations.
+ * intended for task context during configuration save and load operations.
  * @{
  */
 

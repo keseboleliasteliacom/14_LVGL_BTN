@@ -1,6 +1,6 @@
 /**
  * @file uart_diag_shell.cpp
- * @brief Implementation of the UART diagnostic shell and command handlers.
+ * @brief Implementation of the UART diagnostic shell command parser and handlers.
  *
  * @ingroup UART
  */
@@ -80,6 +80,8 @@ void print_config(app_state_t *state);
  * @brief Print shell help text.
  *
  * @param[in] wait_for_enter When `true`, pauses between help lines.
+ *
+ * @note May block on UART input when `wait_for_enter` is true.
  */
 void handle_help(bool wait_for_enter);
 
@@ -95,6 +97,8 @@ void print_help_line(const std::string message, bool wait_for_enter);
  * @brief Print a message and wait for Enter on UART.
  *
  * @param[in] message Message shown before blocking for input.
+ *
+ * @note Blocks in task context while waiting for UART input.
  */
 void print_and_wait_for_enter(const std::string);
 
@@ -539,6 +543,8 @@ void handle_diag(app_state_t *app)
  * @brief Print shell help text.
  *
  * @param[in] wait_for_enter When `true`, pauses between help lines.
+ *
+ * @note When enabled, this function blocks on UART input between lines.
  */
 void handle_help(bool wait_for_enter)
 {

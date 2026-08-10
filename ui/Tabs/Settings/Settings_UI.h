@@ -15,7 +15,7 @@
 
 /**
  * @defgroup SETTINGS_UI SETTINGS_UI
- * @brief Settings tab UI update helpers
+ * @brief Settings tab UI update helpers.
  *
  * Initializes and updates the Settings tab labels. Call initialization after
  * the relevant UI objects exist, and call update while holding the LVGL lock.

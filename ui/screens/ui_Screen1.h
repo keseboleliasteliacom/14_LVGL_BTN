@@ -8,6 +8,15 @@
  * @ingroup UI
  */
 
+/**
+ * @defgroup UI UI
+ * @brief User interface screens and helpers.
+ *
+ * Screen-specific entry points for the generated LVGL layout and related
+ * update tasks.
+ * @{
+ */
+
 #ifndef UI_SCREEN1_H
 #define UI_SCREEN1_H
 
@@ -21,7 +30,9 @@ extern "C" {
  *
  * Runs periodic UI refresh work for the screen in task context.
  *
- * @param[in] arg Task argument passed from the caller.
+ * @param[in] arg Pointer to `app_state_t` passed from the task creator.
+ *
+ * @note The task uses the LVGL port lock while updating shared UI objects.
  */
 void ui_update_task(void *arg);
 
@@ -43,3 +54,5 @@ extern lv_obj_t * uic_WiFi;
 #endif
 
 #endif
+
+/** @} */

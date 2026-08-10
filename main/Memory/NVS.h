@@ -25,8 +25,8 @@ extern "C" {
  * @defgroup NVS NVS
  * @brief Helpers for ESP-IDF NVS storage access.
  *
- * The module wraps common NVS operations used by the firmware. Functions
- * perform NVS open, read/write, and commit operations as needed.
+ * The module wraps common NVS operations used by the firmware, including
+ * initialization, namespace open/close, reads, writes, and commits.
  * @{
  */
 
@@ -44,6 +44,8 @@ int NVS_Init();
 /**
  * @brief Writes a string value to the default storage namespace.
  *
+ * The implementation stores the value in the default `"storage"` namespace.
+ *
  * @param key NVS key to write.
  * @param value Null-terminated string value to store.
  *
@@ -53,6 +55,8 @@ int NVS_WriteToFile(const char* key, const char* value);
 
 /**
  * @brief Loads a string value from the default storage namespace.
+ *
+ * The implementation reads the value from the default `"storage"` namespace.
  *
  * @param key NVS key to read.
  * @param value Output buffer for the stored string.
@@ -110,6 +114,8 @@ int NVS_WriteU32(const char* nvs_namespace, const char* key, uint32_t value);
 /**
  * @brief Reads a boolean value from an NVS namespace.
  *
+ * The stored value is interpreted as zero or non-zero.
+ *
  * @param nvs_namespace NVS namespace to open.
  * @param key NVS key to read.
  * @param out_value Output value.
@@ -120,6 +126,8 @@ int NVS_ReadBool(const char* nvs_namespace, const char* key, bool* out_value);
 
 /**
  * @brief Writes a boolean value to an NVS namespace.
+ *
+ * The value is stored as a uint8_t of 0 or 1.
  *
  * @param nvs_namespace NVS namespace to open.
  * @param key NVS key to write.

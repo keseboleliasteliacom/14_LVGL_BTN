@@ -156,6 +156,12 @@ class WorkflowPolicyTests(unittest.TestCase):
         issues = semantic_claim_issues(header, source, "")
         self.assertTrue(any("IP_EVENT_STA_GOT_IP" in issue for issue in issues))
 
+        associated_variant = header.replace(
+            "connected to an access point", "associated and connected to the access point"
+        )
+        variant_issues = semantic_claim_issues(associated_variant, source, "")
+        self.assertTrue(any("IP_EVENT_STA_GOT_IP" in issue for issue in variant_issues))
+
     def test_active_weather_test_view_is_deterministic(self) -> None:
         root = Path(__file__).resolve().parents[3]
         header_path = root / "ui/Tabs/Weather/Weather_UI.h"

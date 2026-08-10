@@ -205,13 +205,16 @@ def semantic_claim_issues(target_text: str, paired_text: str, callers: str) -> l
     issues: list[str] = []
     combined_code = f"{target_text}\n{paired_text}"
 
-    if "IP_EVENT_STA_GOT_IP" in combined_code and re.search(
-        r"(?i)(?:associated|connected) (?:with|to) an access point", "\n".join(doxygen_comments(target_text))
-    ):
-        issues.append(
-            "Connectivity is described as access-point association, but the supplied implementation "
-            "establishes the true state on IP_EVENT_STA_GOT_IP; describe usable IP connectivity."
-        )
+    if "IP_EVENT_STA_GOT_IP" in combined_code:
+        for block in doxygen_comments(target_text):
+            access_point_claim = re.search(r"(?i)\b(?:associated|connected)\b[^.\n]*\baccess point\b", block)
+            ip_qualified = re.search(r"(?i)\bIP(?:v4|v6)?\b", block)
+            if access_point_claim and not ip_qualified:
+                issues.append(
+                    "Connectivity is described as access-point association, but the supplied implementation "
+                    "establishes the true state on IP_EVENT_STA_GOT_IP; describe usable IP connectivity."
+                )
+                break
 
     for block in doxygen_comments(target_text):
         if not re.search(r"(?i)\btest view\b", block):

@@ -12,8 +12,9 @@
  * @file LEOP_Fetcher.h
  * @brief Public API for the LEOP fetcher module.
  *
- * Provides the data containers, shared queues, and worker entry points used to
- * fetch LEOP recommendation, weather, and price data.
+ * The module fetches recommendation, weather, and price data, falls back to
+ * cached snapshots when Wi-Fi is unavailable, and publishes state through
+ * FreeRTOS queues.
  *
  * @defgroup LEOP_FETCHER LEOP_FETCHER
  * @brief Fetcher module for LEOP data.
@@ -29,7 +30,7 @@ extern QueueHandle_t price_queue;
 extern QueueHandle_t leop_status_queue;
 
 /**
- * @brief Application-level LEOP connectivity state.
+ * @brief Application-level LEOP connectivity state published by the worker.
  */
 typedef enum
 {
@@ -42,12 +43,15 @@ typedef enum
 
 /**
  * @brief Latest LEOP connectivity result published to consumers.
+ *
+ * Contains the current worker-published state together with the failure count
+ * and associated HTTP status code.
  */
 typedef struct
 {
-    leop_connection_state_t state;
-    uint8_t consecutive_failures;
-    int http_status_code;
+    leop_connection_state_t state; /**< Current published connection state. */
+    uint8_t consecutive_failures; /**< Number of consecutive failed attempts. */
+    int http_status_code; /**< HTTP status code associated with the state. */
 } leop_status_message_t;
 
 typedef void (*leop_connection_cb_t)(leop_connection_state_t state, void *ctx);
@@ -55,7 +59,8 @@ typedef void (*leop_connection_cb_t)(leop_connection_state_t state, void *ctx);
 /**
  * @brief Registers a callback for LEOP connection-state changes.
  *
- * The callback runs in LEOP worker task context and must remain non-blocking.
+ * The callback runs in LEOP worker task context when the published state
+ * changes.
  *
  * @param[in] cb Callback to invoke when the published state changes.
  * @param[in] ctx Opaque callback context.
@@ -65,11 +70,11 @@ void LEOPFetcher_SetConnectionCallback(leop_connection_cb_t cb, void *ctx);
 /**
  * @brief Configuration for LEOP fetch timing.
  *
- * The interval points to the fetch interval in minutes owned by the application
- * state.
+ * The interval points to the fetch interval in minutes owned by the
+ * application state.
  */
 typedef struct{
-    uint32_t* time_interval;
+    uint32_t* time_interval; /**< Pointer to the fetch interval in minutes. */
 }LEOPConfig;
 
 /**
@@ -79,17 +84,17 @@ typedef struct{
  * the fetch configuration used by the worker.
  */
 typedef struct{
-    RecommendationList recommendations;
-    WeatherList weather;
-    PriceList price_list;
-    LEOPConfig leop_conf;
+    RecommendationList recommendations; /**< Latest recommendation payload. */
+    WeatherList weather; /**< Latest weather payload. */
+    PriceList price_list; /**< Latest price payload. */
+    LEOPConfig leop_conf; /**< Fetch configuration shared with the worker. */
 }LEOPData;
 
 /**
  * @brief Initializes the LEOP fetcher state and queues.
  *
  * @param[in,out] leop_data Pointer to the LEOP state to initialize.
- * @param[in] interval Fetch interval value passed to the module.
+ * @param[in] interval Initial interval value supplied by the caller.
  *
  * @return `0` on success or a negative value on failure.
  *
@@ -100,10 +105,10 @@ int LEOPFetcher_Initialize(LEOPData *leop_data, uint32_t interval);
 /**
  * @brief Worker task entry point for LEOP data fetching.
  *
- * @param[in] arg Pointer to LEOPData passed to the task.
+ * @param[in] arg Pointer to `app_state_t` passed to the task.
  *
- * @note Runs in task context and blocks while fetching data and delaying
- * between retries or scheduled updates.
+ * @note Runs in task context and blocks on delays, notifications, and network
+ * operations while fetching data.
  */
 void LEOPFetcher_Work(void *arg);
 

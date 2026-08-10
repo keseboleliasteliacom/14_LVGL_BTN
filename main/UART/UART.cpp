@@ -17,17 +17,14 @@
 
 #define UART_PORT UART_NUM_0
 #define UART_BAUD 115200
-#define BUF_SIZE 1024
+#define BUF_SIZE 2048
 
 
 static const char* TAG = "UART";
 /**
- * @brief Reads up to one byte from the UART console.
+ * @brief Implementation of UART_ReadByte.
  *
- * @param[out] byte Destination for the received byte.
- * @param[in] timeout Read timeout in FreeRTOS ticks.
- *
- * @return `true` if a byte was read, otherwise `false`.
+ * See header for full contract documentation.
  */
 bool UART_ReadByte(uint8_t* byte, TickType_t timeout)
 {
@@ -72,9 +69,10 @@ std::string trim_copy(const std::string& str)
 
 
 /**
- * @brief Configures the UART console for the worker task.
+ * @brief Initializes UART0 for the console worker.
  *
- * Sets up UART0 with the built-in console pins and a blocking RX driver.
+ * Configures the built-in console pins and installs the RX driver used by the
+ * worker task.
  */
 void UART_Init_new(void)
 {
@@ -99,7 +97,7 @@ void UART_Init_new(void)
 
     // Installing drivers.
     ESP_ERROR_CHECK(uart_driver_install(UART_PORT, 
-        BUF_SIZE * 2, // RX buffer, *2 why?
+        BUF_SIZE, //Size of uart's ring buffer
         0, //TX buffer so it becomes blocking
         0, // event queue size - No queue
         NULL, // event queue handle, dont want this atm
@@ -110,12 +108,9 @@ void UART_Init_new(void)
 }
 
 /**
- * @brief UART worker task entry point.
+ * @brief Implementation of UART_Work.
  *
- * Runs in task context, initializes the UART console, and blocks while waiting
- * for input bytes from the RX driver.
- *
- * @param parameter Pointer to the application state passed to the task.
+ * See header for full contract documentation.
  */
 extern "C" void UART_Work(void* parameter) {
     app_state_t* app = (app_state_t*)parameter;
@@ -125,12 +120,9 @@ extern "C" void UART_Work(void* parameter) {
    ESP_LOGI(TAG, "UART_Work started.");
    ESP_LOGI(TAG, "Type HELP for commands");
 
-   char input[8];
    char line[128];
    int line_pos = 0;
-   bool prompt_needed = true;
 
-   uint8_t *buf = new uint8_t[BUF_SIZE];
    
    ESP_LOGI(TAG, "Uart WORK now entering main loop.");   
 
@@ -147,7 +139,6 @@ extern "C" void UART_Work(void* parameter) {
                 handle_input(to_lower_copy(trim_copy(line)), app);
 
                 line_pos = 0;
-                prompt_needed = true;
             }
             else {
                 if (line_pos < sizeof(line) -1) {

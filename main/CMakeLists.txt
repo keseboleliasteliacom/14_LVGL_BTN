@@ -6,7 +6,7 @@ idf_component_register(
     SRCS "HTTP.c" "../ui/ui.c" "../ui/ui_helpers.c" "../ui/screens/ui_Screen1.c" "HTTP.c" "WiFi.c" "main.c"
     "SNTP/time_sync.c"
     "fake/fake_config.cpp" "fake/fake_system_status.cpp" 
-    "LEOP/leop.cpp" "LEOP/fake_leop.cpp"
+    
     "sensor/sensor.cpp" "sensor/fake_sensor.cpp"
     "UART/UART.cpp" "UART/uart_diag_shell.cpp"
     "../ui/screens/Main_UI.c"
@@ -19,7 +19,7 @@ idf_component_register(
     "LEOP/LEOP_Fetcher.c" "Cache/Cache.c"
     "LEOP/Price.c"
     "LEOP/LEOP_Fetcher.c"
-    "hal/bme280_sensor.cpp" "hal/bme280_sensor_v2.cpp"
+    "hal/bme280_sensor_v2.cpp"
     "Memory/Spiffs.c" "Memory/NVS.c" 
     "Config/AppConfig.c" "Config/WifiConfig.c"
     "Utils/TimeFormat.c"

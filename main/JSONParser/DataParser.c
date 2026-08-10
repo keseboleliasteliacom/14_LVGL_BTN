@@ -13,7 +13,7 @@
 static const char *TAG = "DataParser";
 
 /**
- * @brief Implementation of DataParser_ParseRecommendation.
+ * @brief Parses a recommendation JSON array into a recommendation list.
  *
  * See header for full contract documentation.
  */
@@ -44,6 +44,12 @@ int DataParser_ParseRecommendation(const char *raw_data, RecommendationList *r_l
         return 3;
     }
 
+    if (array_size > LEOP_FORECAST_MAX_ENTRIES)
+    {
+        ESP_LOGW(TAG, "Recommendation array truncated from %u to %u entries",
+                 (unsigned)array_size, LEOP_FORECAST_MAX_ENTRIES);
+        array_size = LEOP_FORECAST_MAX_ENTRIES;
+    }
     r_list->count = array_size;
 
     for (int i = 0; i < array_size; i++)
@@ -51,11 +57,42 @@ int DataParser_ParseRecommendation(const char *raw_data, RecommendationList *r_l
         json_t *obj = json_array_get(root, i);
 
         json_t *id = json_object_get(obj, "id");
-        json_t *rec = json_object_get(obj, "type");
+        json_t *rec = json_object_get(obj, "score");
+        json_t *recommendation = json_object_get(obj, "recommendation");
         json_t *timestamp = json_object_get(obj, "timestamp");
+
+        /* Accept cached responses written before the API field rename. */
+        if (rec == NULL)
+        {
+            rec = json_object_get(obj, "type");
+        }
 
         r_list->rec[i].id = json_integer_value(id);
         r_list->rec[i].recommendation = json_real_value(rec);
+        r_list->rec[i].action = LEOP_RECOMMENDATION_UNKNOWN;
+
+        const char *action = json_string_value(recommendation);
+        if (action != NULL)
+        {
+            if (strcmp(action, "buy") == 0)
+                r_list->rec[i].action = LEOP_RECOMMENDATION_BUY;
+            else if (strcmp(action, "hold") == 0)
+                r_list->rec[i].action = LEOP_RECOMMENDATION_HOLD;
+            else if (strcmp(action, "sell") == 0)
+                r_list->rec[i].action = LEOP_RECOMMENDATION_SELL;
+        }
+        else if (r_list->rec[i].recommendation < 0.25)
+        {
+            r_list->rec[i].action = LEOP_RECOMMENDATION_BUY;
+        }
+        else if (r_list->rec[i].recommendation < 0.75)
+        {
+            r_list->rec[i].action = LEOP_RECOMMENDATION_HOLD;
+        }
+        else
+        {
+            r_list->rec[i].action = LEOP_RECOMMENDATION_SELL;
+        }
         strncpy(r_list->rec[i].timestamp,
                 json_string_value(timestamp),
                 sizeof(r_list->rec[i].timestamp) - 1);
@@ -68,7 +105,7 @@ int DataParser_ParseRecommendation(const char *raw_data, RecommendationList *r_l
 }
 
 /**
- * @brief Implementation of DataParser_ParseWeather.
+ * @brief Parses a weather JSON array into a weather list.
  *
  * See header for full contract documentation.
  */
@@ -99,6 +136,12 @@ int DataParser_ParseWeather(const char *raw_data, WeatherList *w_list)
         return 3;
     }
 
+    if (array_size > LEOP_FORECAST_MAX_ENTRIES)
+    {
+        ESP_LOGW(TAG, "Weather array truncated from %u to %u entries",
+                 (unsigned)array_size, LEOP_FORECAST_MAX_ENTRIES);
+        array_size = LEOP_FORECAST_MAX_ENTRIES;
+    }
     w_list->count = array_size;
 
     for (int i = 0; i < array_size; i++)
@@ -125,7 +168,7 @@ int DataParser_ParseWeather(const char *raw_data, WeatherList *w_list)
 }
 
 /**
- * @brief Implementation of DataParser_ParsePrice.
+ * @brief Parses a price JSON array into a price list.
  *
  * See header for full contract documentation.
  */
@@ -156,14 +199,26 @@ int DataParser_ParsePrice(const char *raw_data, PriceList *p_list)
         return 3;
     }
 
+    if (array_size > LEOP_FORECAST_MAX_ENTRIES)
+    {
+        ESP_LOGW(TAG, "Price array truncated from %u to %u entries",
+                 (unsigned)array_size, LEOP_FORECAST_MAX_ENTRIES);
+        array_size = LEOP_FORECAST_MAX_ENTRIES;
+    }
     p_list->count = array_size;
 
     for (int i = 0; i < array_size; i++)
     {
         json_t *obj = json_array_get(root, i);
 
-        json_t *price = json_object_get(obj, "price SEK");
+        json_t *price = json_object_get(obj, "price_sek_per_kwh");
         json_t *timestamp = json_object_get(obj, "timestamp");
+
+        /* Accept cached responses written before the API field rename. */
+        if (price == NULL)
+        {
+            price = json_object_get(obj, "price SEK");
+        }
 
         p_list->price[i].current_prices = json_real_value(price);
         strncpy(p_list->price[i].timestamp,

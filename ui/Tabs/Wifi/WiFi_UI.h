@@ -7,8 +7,8 @@
  * @file WiFi_UI.h
  * @brief Public API for the Wi-Fi settings UI.
  *
- * Provides the LVGL widgets and update hooks used by the settings tab to
- * display scan results and connection status.
+ * Provides the LVGL widgets and update hook used by the Wi-Fi settings tab to
+ * show scan results and connection status.
  */
 
 /**
@@ -17,7 +17,7 @@
  *
  * Creates and updates the LVGL controls used for Wi-Fi scanning and
  * connection feedback. The UI depends on the shared Wi-Fi command/result
- * queues and must be initialized after the LVGL screen objects are available.
+ * queues and on the LVGL screen objects being available before initialization.
  * @{
  */
 
@@ -33,6 +33,7 @@ typedef struct{
     lv_obj_t* status_label_sta;
     lv_obj_t* status_label_dyn;
     lv_obj_t* scan_button_dyn;
+    lv_obj_t* disconnect_button_dyn;
     lv_obj_t* wifi_label;
     lv_obj_t* ssid_label;
     lv_obj_t* group_label;
@@ -51,6 +52,9 @@ void WiFi_UI_Initialize();
  *
  * Call from the UI task context to consume queued Wi-Fi status updates and
  * refresh the visible labels and dropdown options.
+ *
+ * @note Requires the LVGL port lock when the caller accesses LVGL from a
+ * non-LVGL task context.
  */
 void WiFi_UI_Update();
 

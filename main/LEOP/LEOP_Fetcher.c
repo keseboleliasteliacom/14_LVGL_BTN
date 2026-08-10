@@ -11,6 +11,8 @@
 #include "esp_log.h"
 #include "freertos/task.h"
 #include <limits.h>
+#include "../app_types.h"
+#include "esp_timer.h"
 
 static const char *TAG = "LEOP";
 
@@ -55,7 +57,7 @@ void LEOPFetcher_SetConnectionCallback(leop_connection_cb_t cb, void *ctx)
 }
 
 /**
- * @brief Returns whether the current tick count has reached the deadline.
+ * @brief Checks whether a deadline has been reached.
  *
  * @param[in] now Current tick count.
  * @param[in] deadline Deadline tick count.
@@ -133,6 +135,9 @@ static void LEOPFetcher_PublishData(const LEOPData *leop_data)
 /**
  * @brief Loads cached LEOP data and publishes the resulting snapshots.
  *
+ * Updates the fetch flags from the cache helpers before publishing the local
+ * snapshots to the shared queues.
+ *
  * @param[in,out] leop_data LEOP state to update from cache.
  */
 static void LEOPFetcher_LoadCachedData(LEOPData *leop_data)
@@ -150,11 +155,16 @@ static void LEOPFetcher_LoadCachedData(LEOPData *leop_data)
 /**
  * @brief Fetches all LEOP remote payloads.
  *
+ * Updates the in-memory snapshots, publishes them to the shared queues, and
+ * records the last successful recommendation update time in monotonic seconds.
+ *
  * @param[in,out] leop_data LEOP state to update with fetched data.
+ * @param[in,out] last_update_recommendation_success Monotonic seconds since boot for the
+ *        last successful recommendation fetch.
  *
  * @return Per-source fetch success flags.
  */
-static leop_fetch_result_t LEOPFetcher_FetchAll(LEOPData *leop_data)
+static leop_fetch_result_t LEOPFetcher_FetchAll(LEOPData *leop_data, uint32_t *last_update_recommendation_success)
 {
     leop_fetch_result_t result = {0};
 
@@ -162,6 +172,13 @@ static leop_fetch_result_t LEOPFetcher_FetchAll(LEOPData *leop_data)
     result.recommendation_ok =
         (Recommendation_Fetch(LEOP_RECOMMENDATION_ENDPOINT, &leop_data->recommendations) == 0);
     leop_data->recommendations.status.recommendation_fetched = result.recommendation_ok;
+    
+    // Add a monotonic timestamp of the last time we fetched a successful recommendation.
+    // Currently used to display as info on the settings tab
+    if (result.recommendation_ok == true)
+    {
+        *last_update_recommendation_success = (uint32_t)(esp_timer_get_time() / 1000000ULL);
+    }
 
     ESP_LOGI(TAG, "Fetching %s", LEOP_WEATHER_ENDPOINT);
     result.weather_ok =
@@ -179,6 +196,9 @@ static leop_fetch_result_t LEOPFetcher_FetchAll(LEOPData *leop_data)
 
 /**
  * @brief Converts the configured fetch interval to RTOS ticks.
+ *
+ * Uses the application-provided interval in minutes and clamps the result to
+ * the RTOS tick range.
  *
  * @param[in] leop_data LEOP state containing the interval pointer.
  *
@@ -210,7 +230,6 @@ static TickType_t LEOPFetcher_FetchIntervalTicks(const LEOPData *leop_data)
  */
 int LEOPFetcher_Initialize(LEOPData *leop_data, uint32_t interval)
 {
-
     if (leop_data == NULL)
     {
         ESP_LOGE(TAG, "leop_data is NULL");
@@ -220,9 +239,6 @@ int LEOPFetcher_Initialize(LEOPData *leop_data, uint32_t interval)
     Recommendation_Initialize(&leop_data->recommendations);
     Weather_Initialize(&leop_data->weather);
     Price_Initialize(&leop_data->price_list);
-
-    //leop_data->leop_conf.time_interval = interval;
-
 
     recommendation_queue = xQueueCreate(1, sizeof(RecommendationList));
 
@@ -268,11 +284,15 @@ int LEOPFetcher_Initialize(LEOPData *leop_data, uint32_t interval)
  */
 void LEOPFetcher_Work(void *arg)
 {
-    LEOPData *leop_data = (LEOPData *)arg;
+    app_state_t *app_data = (app_state_t *)arg;
+    LEOPData *leop_data = &app_data->leop_data;
+
+    uint32_t *last_recommendation_success_seconds = &app_data->last_recommendation_update_seconds;
 
     if (leop_data == NULL)
         return;
 
+    // Init tracking variables
     TickType_t now = xTaskGetTickCount();
     TickType_t next_fetch = now;
     TickType_t next_health_check = now;
@@ -287,6 +307,8 @@ void LEOPFetcher_Work(void *arg)
         now = xTaskGetTickCount();
         bool wifi_connected = WiFi_IsConnected();
 
+        // If wifi is not connected, try:
+        // publish NO WIFI, then load local cached data(once per offline period), then reset failure tracking and wait for wifi state change or fallback timeout
         if (!wifi_connected)
         {
             if (previous_wifi_connected || !status_has_been_published)
@@ -309,6 +331,8 @@ void LEOPFetcher_Work(void *arg)
 
         offline_cache_loaded = false;
 
+        // If we recovered WIFI:
+        // Reset our tracking variables, try to connect to the LEOp service and then do a health check
         if (!previous_wifi_connected)
         {
             previous_wifi_connected = true;
@@ -317,9 +341,12 @@ void LEOPFetcher_Work(void *arg)
             LEOPFetcher_PublishStatus(LEOP_CONNECTION_CHECKING, 0, 0);
         }
 
+        // Online scheduling:
+        // Try to do a full data fetch when its timer, or health check when deadline is reached.
+        // Publishes CONNECTED or DEGRADED based on result, consecutive failures will yield unavailable after reaching LEOP_FAILURE_THRESHOLD
         if (LEOPFetcher_DeadlineReached(now, next_fetch))
         {
-            leop_fetch_result_t result = LEOPFetcher_FetchAll(leop_data);
+            leop_fetch_result_t result = LEOPFetcher_FetchAll(leop_data, last_recommendation_success_seconds);
             bool any_succeeded = result.recommendation_ok || result.weather_ok || result.price_ok;
             bool all_succeeded = result.recommendation_ok && result.weather_ok && result.price_ok;
 
@@ -377,7 +404,8 @@ void LEOPFetcher_Work(void *arg)
                 next_health_check = xTaskGetTickCount() + pdMS_TO_TICKS(LEOP_FAILURE_RETRY_INTERVAL_MS);
             }
         }
-
+        // Does either fecth or health check depending on whichever is closest scheduled, unless taks notification wakes worker earlier
+        // A task notification in this case is when wifi connectivity changes
         now = xTaskGetTickCount();
         TickType_t next_deadline = next_fetch;
         if ((int32_t)(next_health_check - next_deadline) < 0)

@@ -14,15 +14,13 @@
 #include "lvgl_port.h"
 #include "../../screens/ui_Screen1.h"
 #include "../../../main/app_queues.h"
-//#include "../../../main/sensor/sensor.h"
-//#include "../../../main/hal/temperature_sensor.hpp";
-//#include "../../../main/hal/temperature_sensor_c_api.h";
 #include "../../../main/app_types.h"
 
 /**
  * @brief Cached LVGL handles for the sensor tab.
  *
- * The pointers are initialized during UI setup and updated by the refresh path.
+ * The pointers are initialized during UI setup and refreshed by the update
+ * path.
  */
 static Sensor_UI sensor_ui = {
     .arc_humidity_dyn = NULL,
@@ -115,6 +113,9 @@ static void format_elapsed(elapsed_seconds_t diff,
 /**
  * @brief Builds the latest-data status text.
  *
+ * Uses the monotonic update timestamp when available, and includes the wall
+ * clock timestamp only when the source data reports it as valid.
+ *
  * @param[in] sensor_data Source sensor data snapshot.
  * @param[out] buffer Destination buffer for the formatted string.
  * @param[in] buffer_size Size of @p buffer in bytes.
@@ -151,9 +152,9 @@ static void format_latest_data(const sensor_data_t *sensor_data,
 }
 
 /**
- * @brief Creates the Home tab sensor widgets.
+ * @brief Implementation of Sensor_UI_Initialize.
  *
- * Initializes the LVGL objects used by the sensor display.
+ * See header for full contract documentation.
  */
 void Sensor_UI_Initialize()
 {
@@ -255,28 +256,19 @@ void Sensor_UI_Update(void)
         char humidity[50];
         char pressure[50];
 
-        snprintf(temperature, sizeof(temperature), "%2.1f", sensor_data.temperature);
+        snprintf(temperature, sizeof(temperature), "%2.1f°C", sensor_data.temperature);
         snprintf(humidity, sizeof(humidity), "%2.1f%%", sensor_data.humidity);
         snprintf(pressure, sizeof(pressure), "%.1f hPa", sensor_data.pressure);
 
-        if (lvgl_port_lock(-1))
-        {
-            lv_label_set_text(sensor_ui.temperature_label_dyn, temperature);
-            lv_label_set_text(sensor_ui.humidity_label_dyn, humidity);
-            lv_label_set_text(sensor_ui.pressure_label_dyn, pressure);
-            lv_label_set_text(sensor_ui.latest_data_label, "");
-            lvgl_port_unlock();
-        }
+        lv_label_set_text(sensor_ui.temperature_label_dyn, temperature);
+        lv_label_set_text(sensor_ui.humidity_label_dyn, humidity);
+        lv_label_set_text(sensor_ui.pressure_label_dyn, pressure);
+        lv_label_set_text(sensor_ui.latest_data_label, "");
     }
     else
     {
         char latest_data[128];
         format_latest_data(&sensor_data, latest_data, sizeof(latest_data));
-
-        if (lvgl_port_lock(-1))
-        {
-            lv_label_set_text(sensor_ui.latest_data_label, latest_data);
-            lvgl_port_unlock();
-        }
+        lv_label_set_text(sensor_ui.latest_data_label, latest_data);
     }
 }

@@ -14,6 +14,10 @@ on:
       reasoning_effort:
         description: "Reasoning effort: none, low, medium, high, or xhigh"
         required: false
+        default: "low"
+      retry_reasoning_effort:
+        description: "Reasoning effort for targeted retries"
+        required: false
         default: "medium"
       campaign_label:
         description: "Optional label used in branch names, summaries, and PR titles"
@@ -23,6 +27,22 @@ on:
         description: "Path to the batch list file inside the repository"
         required: false
         default: "tools/doxygen_ai/batches_manual.txt"
+      mode:
+        description: "normal for routine campaigns; audit adds caller context and semantic review"
+        required: false
+        default: "normal"
+        type: choice
+        options:
+          - audit
+          - normal
+      ordinary_comments:
+        description: "Preserve ordinary comments, or explicitly audit them"
+        required: false
+        default: "preserve"
+        type: choice
+        options:
+          - preserve
+          - audit
 
 permissions:
   contents: write
@@ -37,6 +57,7 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_MODEL: ${{ github.event.inputs.model }}
       OPENAI_REASONING_EFFORT: ${{ github.event.inputs.reasoning_effort }}
+      OPENAI_RETRY_REASONING_EFFORT: ${{ github.event.inputs.retry_reasoning_effort }}
       TARGET_REF: ${{ github.event.inputs.target_ref }}
       CAMPAIGN_LABEL: ${{ github.event.inputs.campaign_label }}
       BATCH_FILE: ${{ github.event.inputs.batch_file }}
@@ -46,6 +67,8 @@ jobs:
       OPENAI_INPUT_COST_PER_MILLION: "0.75"
       OPENAI_OUTPUT_COST_PER_MILLION: "4.50"
       OPENAI_USD_TO_SEK: "9.19981"
+      DOXYGEN_AI_MODE: ${{ github.event.inputs.mode }}
+      ORDINARY_COMMENT_POLICY: ${{ github.event.inputs.ordinary_comments }}
     steps:
       - name: Derive PR metadata
         run: |
@@ -122,12 +145,19 @@ jobs:
               --manifest "${manifest_path}" \
               --model "${OPENAI_MODEL}" \
               --reasoning-effort "${OPENAI_REASONING_EFFORT}" \
+              --retry-reasoning-effort "${OPENAI_RETRY_REASONING_EFFORT}" \
               --test-label "${batch_label}" \
+              --mode "${DOXYGEN_AI_MODE}" \
+              --ordinary-comments "${ORDINARY_COMMENT_POLICY}" \
               --max-files 20; then
               success_count=$((success_count + 1))
               printf '%s|success|%s\n' "${batch_index}" "${batch_trimmed}" >> "${results_file}"
             else
-              IFS=',' read -ra batch_paths <<< "${batch_trimmed}"
+              if [ -f "${manifest_path}" ]; then
+                mapfile -t batch_paths < <(python -c 'import json, sys; payload=json.load(open(sys.argv[1], "r", encoding="utf-8")); [print(entry["path"]) for entry in payload.get("files", []) if entry.get("path")]' "${manifest_path}")
+              else
+                IFS=',' read -ra batch_paths <<< "${batch_trimmed}"
+              fi
               for raw_path in "${batch_paths[@]}"; do
                 path="$(printf '%s' "${raw_path}" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
                 if [ -n "${path}" ]; then
@@ -165,7 +195,11 @@ jobs:
             echo
             echo "- Target ref: ${TARGET_REF}"
             echo "- Requested model: ${OPENAI_MODEL}"
+            echo "- Initial reasoning effort: ${OPENAI_REASONING_EFFORT}"
+            echo "- Targeted retry reasoning effort: ${OPENAI_RETRY_REASONING_EFFORT}"
             echo "- Batch file: \`${BATCH_FILE}\`"
+            echo "- Workflow mode: ${DOXYGEN_AI_MODE}"
+            echo "- Ordinary comments: ${ORDINARY_COMMENT_POLICY}"
             echo "- Successful batches: ${success_count}"
             echo "- Failed batches: ${failure_count}"
             echo "- Total input tokens: ${total_input_tokens}"
@@ -216,6 +250,8 @@ jobs:
             This draft PR contains successful documentation updates from a Doxygen batch campaign.
 
             Requested model: `${{ env.OPENAI_MODEL }}`
+            Initial reasoning effort: `${{ env.OPENAI_REASONING_EFFORT }}`
+            Targeted retry reasoning effort: `${{ env.OPENAI_RETRY_REASONING_EFFORT }}`
             Target ref: `${{ env.TARGET_REF }}`
             Campaign label: `${{ env.CAMPAIGN_LABEL || env.SAFE_LABEL }}`
             Batch file: `${{ env.BATCH_FILE }}`

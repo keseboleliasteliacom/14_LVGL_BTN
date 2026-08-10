@@ -13,8 +13,7 @@
  * @file time_sync.h
  * @brief Public API for the SNTP time synchronization module.
  *
- * Starts SNTP and exposes a simple status query for the rest of the
- * application.
+ * Starts SNTP and exposes a status query for the rest of the application.
  *
  * @defgroup SNTP SNTP
  * @brief Time synchronization support based on ESP-IDF SNTP services.
@@ -24,12 +23,22 @@
  * @{
  */
 
+#ifdef __cplusplus
+    extern "C" {
+#endif
+
 /**
  * @brief Starts SNTP time synchronization.
+ *
+ * Initializes the SNTP service on first use and waits for synchronization to
+ * complete.
  *
  * @return
  * - `ESP_OK` on success
  * - an ESP-IDF error code on failure
+ *
+ * @note Call from task context; this function blocks while waiting for time
+ * synchronization.
  */
 esp_err_t TimeSync_Start();
 
@@ -40,6 +49,9 @@ esp_err_t TimeSync_Start();
  */
 bool TimeSync_IsSynced();
 
+#ifdef __cplusplus
+    }
+#endif
 /** @} */
 
 #endif

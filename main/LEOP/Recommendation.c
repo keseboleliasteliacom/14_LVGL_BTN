@@ -36,7 +36,7 @@ static const char *TAG = "Recommendation";
 int Recommendation_Initialize(RecommendationList *r_list)
 {
     r_list->count = 0;
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < LEOP_FORECAST_MAX_ENTRIES; i++)
     {
         r_list->rec[i] = (Recommendation){0};
     }
@@ -50,6 +50,9 @@ int Recommendation_Initialize(RecommendationList *r_list)
 
 /**
  * @brief Implementation of Recommendation_Fetch.
+ *
+ * Fetches recommendation data through the HTTP helper, stores the raw payload
+ * in the cache, and parses the result into the provided list.
  *
  * See header for full contract documentation.
  */
@@ -85,10 +88,12 @@ int Recommendation_Fetch(const char *url, RecommendationList *r_list)
         return 2;
     }
 
+    /* debug
     for (int i = 0; i < r_list->count; i++)
     {
-        //ESP_LOGI(TAG, "%lf", r_list->rec[i].recommendation);
+        ESP_LOGI(TAG, "%lf", r_list->rec[i].recommendation);
     }
+    */
 
     HTTPClient_Dispose(&http_response);
 
@@ -97,6 +102,9 @@ int Recommendation_Fetch(const char *url, RecommendationList *r_list)
 
 /**
  * @brief Implementation of Recommendation_FetchCache.
+ *
+ * Loads cached recommendation JSON from storage and parses it into the
+ * provided list.
  *
  * See header for full contract documentation.
  */
@@ -131,13 +139,15 @@ int Recommendation_FetchCache(RecommendationList *r_list)
 /**
  * @brief Implementation of Recommendation_Dispose.
  *
+ * Clears the list contents and resets the entry count.
+ *
  * See header for full contract documentation.
  */
 void Recommendation_Dispose(RecommendationList *r_list)
 {
     r_list->count = 0;
 
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < LEOP_FORECAST_MAX_ENTRIES; i++)
     {
         r_list->rec[i] = (Recommendation){0};
     }

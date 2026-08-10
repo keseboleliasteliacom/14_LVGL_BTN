@@ -10,7 +10,7 @@
  * @file Main_UI.h
  * @brief Public declarations for the main LVGL screen.
  *
- * Exposes the screen objects created by the UI setup code and the
+ * Declares the LVGL objects created by the main screen setup code and the
  * initialization entry point used during display bring-up.
  *
  * @ingroup UI
@@ -20,8 +20,9 @@
  * @defgroup UI UI
  * @brief User interface screens and display integration.
  *
- * This module provides LVGL screen setup and related UI objects used by the
- * application. UI initialization depends on the display and LVGL being ready.
+ * Main LVGL screen objects exported for the display layer and application
+ * status updates. Initialization depends on LVGL and the screen setup order
+ * used by the UI bring-up code.
  * @{
  */
 
@@ -38,7 +39,8 @@ extern lv_obj_t * ui_LEOP_Label;
 extern lv_obj_t * ui_LEOP_Connected_Label;
 extern lv_obj_t * ui_TabPage_Settings;
 extern lv_obj_t * ui_SettingsContainer;
-//extern lv_obj_t * ui_Group_Settings; 
+extern lv_obj_t * ui_SettingsConfigContainer;
+extern lv_obj_t * ui_SettingsConfigTitle;
 
 extern lv_obj_t *ui_UptimeInfoLabel;
 extern lv_obj_t *ui_UptimeValueLabel;
@@ -53,6 +55,8 @@ extern lv_obj_t *ui_TimeValueLabel;
 
 /**
  * @brief Initializes the main UI screen and its widgets.
+ *
+ * Creates the screen, tab view, and status labels used by the application UI.
  */
 void Main_UI_Initialize();
 

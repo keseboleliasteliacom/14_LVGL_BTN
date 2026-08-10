@@ -2,15 +2,15 @@
  * @file main.c
  * @brief Application entry point for system bring-up and task startup.
  *
- * Initializes board peripherals, LVGL, storage, Wi-Fi, and background tasks.
- * Startup order matters because several modules depend on earlier
- * initialization and on the shared application state.
+ * Initializes time settings, configuration storage, peripherals, LVGL, and
+ * background tasks. Startup order matters because several modules depend on
+ * earlier initialization and on shared application state.
  *
  * @ingroup main
  *
  * @note Intended as system orchestration rather than reusable API logic.
- * @warning Some initialization steps block briefly during hardware bring-up and
- * task startup.
+ * @warning Several initialization steps block briefly during hardware bring-up
+ * and task startup.
  */
 #define LV_CONF_INCLUDE_SIMPLE 1
 
@@ -34,9 +34,6 @@
 #include "Config/AppConfig.h"
 
 
-//#define WIFI_PASS "rockyunit953"
-//#define WIFI_SSID "NETGEAR49"
-
 
 static app_state_t app;
 
@@ -54,11 +51,18 @@ static TaskHandle_t leop_task_handle = NULL;
 #define LEOP_STACK_SIZE     4096
 
 /**
- * @brief Updates the Wi-Fi connection state in the shared application data.
+ * @brief Reports Wi-Fi connection changes to the shared application state.
+ *
+ * Updates the cached connection flag and wakes the LEOP task so it can react
+ * to the new network state.
  *
  * @param connected New connection state.
  * @param ctx Pointer to the application state.
+ *
+ * @note Runs from a Wi-Fi callback context; keep work short and avoid blocking.
  */
+ // This project mainly uses queue as the primary way to send information between modules, mostly UI and other modules.
+ // However, we use this callback so LEOP can react instantly on wifi state changes, without making the WiFI module dependent on the LEOP module 
 static void on_wifi_connection_changed(bool connected, void *ctx)
 {
     app_state_t *app = (app_state_t *)ctx;
@@ -72,7 +76,13 @@ static void on_wifi_connection_changed(bool connected, void *ctx)
 
 /**
  * @brief Mirrors the authoritative LEOP state into shared diagnostics state.
+ *
+ * @param state Reported LEOP connection state.
+ * @param ctx Pointer to the application state.
+ *
+ * @note Called from the LEOP connection callback path.
  */
+ // We send this callback so the app->system_status translates to our actual LEOP status without making the module dependent on it
 static void on_leop_connection_changed(leop_connection_state_t state, void *ctx)
 {
     app_state_t *app = (app_state_t *)ctx;
@@ -122,11 +132,11 @@ const char *data =
 /**
  * @brief Application entry point.
  *
- * Initializes time zone settings, loads fallback configuration, brings up
+ * Initializes time zone settings, loads configuration from NVS, brings up
  * peripherals, and starts the worker tasks used by the application.
  *
- * @note Runs in task context and performs several blocking initialization
- * steps before launching background work.
+ * @note Runs in task context and performs blocking initialization steps before
+ * launching background work.
  */
 void app_main()
 {
@@ -136,9 +146,6 @@ void app_main()
 
     NVS_Init();
 
-
-    // Inits with "fake" config data, should be used as a default fallback if settings from NVS can't be loaded
-    //fake_config_data(&app.config_data);
     Config_SetDefaults(&app.config_data);
     Config_LoadFromNVS(&app.config_data);
 
@@ -147,7 +154,6 @@ void app_main()
     ESP_LOGI(TAG, "test_mode: %d", app.config_data.test_mode);
     ESP_LOGI(TAG, "sensor_interval_ms: %lu", app.config_data.sensor_interval_ms);
     
-
     // Init the name and stack sizes for our tasks
     init_app_system_task_handlers(&app);    
 
@@ -184,9 +190,9 @@ void app_main()
 
     xTaskCreate(ui_update_task, app.system_task_handlers.ui_task.name, app.system_task_handlers.ui_task.stack_size, &app, 5, &ui_task_handle);
 
-    xTaskCreate(UART_Work, &app.system_task_handlers.uart_task.name, app.system_task_handlers.uart_task.stack_size, &app, 4, &uart_task_handle);
+    xTaskCreate(UART_Work, app.system_task_handlers.uart_task.name, app.system_task_handlers.uart_task.stack_size, &app, 4, &uart_task_handle);
 
-    xTaskCreate(Sensor_Work, &app.system_task_handlers.sensor_task.name, app.system_task_handlers.sensor_task.stack_size, &app, 4, &sensor_task_handle);
+    xTaskCreate(Sensor_Work, app.system_task_handlers.sensor_task.name, app.system_task_handlers.sensor_task.stack_size, &app, 4, &sensor_task_handle);
 
 
     // Använd appens leop_data istället för en statisk lokal här.
@@ -196,9 +202,7 @@ void app_main()
     app.leop_data.leop_conf.time_interval = &app.config_data.fetch_interval_minutes;
     ESP_LOGI(TAG, "Leop data config time interval: %ld", *app.leop_data.leop_conf.time_interval);
 
-    //xTaskCreate(LEOPFetcher_Work, "LEOP", LEOP_STACK_SIZE, &leop_data, 4, NULL);
-    xTaskCreate(LEOPFetcher_Work, app.system_task_handlers.leop_task.name, app.system_task_handlers.leop_task.stack_size, &app.leop_data, 4, &leop_task_handle);
-    //  ESP_ERROR_CHECK(WiFi_Dispose());
+    xTaskCreate(LEOPFetcher_Work, app.system_task_handlers.leop_task.name, app.system_task_handlers.leop_task.stack_size, &app, 4, &leop_task_handle);
 
     // Set the task handles after the tasks has been started, so we actually store info/data instead of NULL
     app.system_task_handlers.wifi_task.handle = wifi_task_handle;

@@ -15,9 +15,9 @@ static const char *TAG = "Weather_UI";
 static Weather_UI weather_ui;
 
 /**
- * @brief Implementation of Weather_UI_Initialize.
+ * @brief Creates the hourly weather grid UI.
  *
- * See header for full contract documentation.
+ * Builds the 24-cell forecast layout on the weather tab page.
  */
 void Weather_UI_Initialize()
 {
@@ -48,9 +48,10 @@ void Weather_UI_Initialize()
 }
 
 /**
- * @brief Implementation of Weather_UI_Update.
+ * @brief Updates the hourly weather grid from the weather queue.
  *
- * See header for full contract documentation.
+ * Reads the latest fetched weather snapshot when available and refreshes the
+ * grid labels with time, temperature, UV index, and weather code values.
  */
 void Weather_UI_Update()
 {
@@ -136,15 +137,11 @@ static void init_styles(void)
     lv_style_set_border_color(&style_forecast_row, lv_color_hex(0x345070));
 }
 
+static Weather_UI_test test;
+
 /*********************
  * WEATHER ICON
  *********************/
-
-/*********************
- * FORECAST ROW
- *********************/
-
-static Weather_UI_test test;
 
 LV_IMG_DECLARE(icons8_summer_50);
 LV_IMG_DECLARE(icons8_partly_cloudy_day_50);
@@ -166,22 +163,41 @@ static void set_icon(lv_obj_t *obj, int weather_code)
     case 0:
         lv_img_set_src(obj, &icons8_summer_50);
         break;
+    case 1:
     case 2:
         lv_img_set_src(obj, &icons8_partly_cloudy_day_50);
         break;
     case 3:
+    case 45:
+    case 48:
         lv_img_set_src(obj, &icons8_clouds_50);
         break;
+    case 51:
+    case 53:
+    case 55:
+    case 56:
+    case 57:
     case 61:
-    case 62:
+    case 66:
+    case 80:
+    case 81:
         lv_img_set_src(obj, &icons8_rain_50);
         break;
     case 63:
+    case 65:
+    case 67:
+    case 82:
+    case 95:
+    case 96:
+    case 99:
         lv_img_set_src(obj, &icons8_heavy_rain_50);
         break;
     case 71:
-    case 72:
     case 73:
+    case 75:
+    case 77:
+    case 85:
+    case 86:
         lv_img_set_src(obj, &icons8_snow_50);
         break;
     default:
@@ -189,6 +205,11 @@ static void set_icon(lv_obj_t *obj, int weather_code)
         break;
     }
 }
+
+
+/*********************
+ * FORECAST ROW
+ *********************/
 
 /**
  * @brief Creates one forecast row widget set.
@@ -231,7 +252,7 @@ static forecast_row_t create_forecast_row(lv_obj_t *parent)
 /**
  * @brief Creates the weather dashboard view.
  *
- * Initializes the shared LVGL styles and builds the current-conditions card
+ * Initializes the shared LVGL styles and builds the current conditions card
  * plus the 24-hour forecast list on the weather tab page.
  */
 void weather_dashboard_create(void)
@@ -260,7 +281,7 @@ void weather_dashboard_create(void)
 
     
 
-    test.icon = lv_img_create(test.left_card); // ✅ correct widget
+    test.icon = lv_img_create(test.left_card);
     lv_img_set_zoom(test.icon, 512);
     lv_obj_align(test.icon, LV_ALIGN_TOP_MID, 0, 120);
 
@@ -358,26 +379,71 @@ static const char *weather_code_to_text(int code)
     switch (code)
     {
     case 0:
-        return "Sunny";
+        return "Clear sky";
+    case 1:
+        return "Mainly clear";
     case 2:
         return "Partly cloudy";
     case 3:
-        return "Cloudy";
+        return "Overcast";
+    case 45:
+        return "Fog";
+    case 48:
+        return "Rime fog";
+    case 51:
+        return "Light drizzle";
+    case 53:
+        return "Drizzle";
+    case 55:
+        return "Heavy drizzle";
+    case 56:
+        return "Light freezing drizzle";
+    case 57:
+        return "Freezing drizzle";
     case 61:
-        return "Rain";
+        return "Light rain";
     case 63:
+        return "Rain";
+    case 65:
         return "Heavy rain";
+    case 66:
+        return "Light freezing rain";
+    case 67:
+        return "Freezing rain";
     case 71:
+        return "Light snow";
+    case 73:
         return "Snow";
+    case 75:
+        return "Heavy snow";
+    case 77:
+        return "Snow grains";
+    case 80:
+        return "Light rain showers";
+    case 81:
+        return "Rain showers";
+    case 82:
+        return "Heavy rain showers";
+    case 85:
+        return "Light snow showers";
+    case 86:
+        return "Heavy snow showers";
+    case 95:
+        return "Thunderstorm";
+    case 96:
+        return "Thunderstorm with hail";
+    case 99:
+        return "Heavy thunderstorm with hail";
     default:
         return "Unknown";
     }
 }
 
 /**
- * @brief Implementation of Weather_UI_Update_test.
+ * @brief Updates the dashboard test view from the weather queue.
  *
- * See header for full contract documentation.
+ * Uses the latest fetched weather snapshot to refresh the current conditions
+ * card and the 24-row forecast list.
  */
 void Weather_UI_Update_test()
 {
@@ -390,7 +456,7 @@ void Weather_UI_Update_test()
             return;
 
         char current_temp[10];
-        snprintf(current_temp, sizeof(current_temp), "%.2f", weather_list.weather[0].temp);
+        snprintf(current_temp, sizeof(current_temp), "%.1f °C", weather_list.weather[0].temp);
 
         lv_label_set_text(test.current_temp, current_temp);
         lv_label_set_text(test.current_weather, weather_code_to_text(weather_list.weather[0].weather_code));
@@ -414,7 +480,7 @@ void Weather_UI_Update_test()
 
             char temp_buf[10];
             snprintf(temp_buf, sizeof(temp_buf),
-                     "%.2f", weather_list.weather[i].temp);
+                     "%.1f °C", weather_list.weather[i].temp);
 
             forecast_row_t *r = &test.forecast_rows[j];
 

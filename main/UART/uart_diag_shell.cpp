@@ -1,6 +1,6 @@
 /**
  * @file uart_diag_shell.cpp
- * @brief Implementation of the UART diagnostic shell module.
+ * @brief Implementation of the UART diagnostic shell and command handlers.
  *
  * @ingroup UART
  */
@@ -17,9 +17,9 @@
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "../app_types.h"
-//#include "../WiFi.h"
 #include "UART.hpp"
 #include <ctime>
+#include "../Utils/TimeFormat.h"
 
 #include "../LEOP/Price.h"
 #include "../LEOP/Recommendation.h"
@@ -83,6 +83,12 @@ void print_config(app_state_t *state);
  */
 void handle_help(bool wait_for_enter);
 
+/**
+ * @brief Print a single help line.
+ *
+ * @param[in] message Text to print.
+ * @param[in] wait_for_enter When `true`, waits for Enter after printing.
+ */
 void print_help_line(const std::string message, bool wait_for_enter);
 
 /**
@@ -130,7 +136,6 @@ std::vector<std::string> split(const std::string &str, char delimiter)
     return result;
 }
 
-// todo - maybe change to enum instead of simple format helpers?
 /**
  * @brief Return connection-state text for shell output.
  *
@@ -180,7 +185,7 @@ static void print_local_time(time_t& time) {
 
 
 // Takes in a std::string,
-// .c_str() converts to C-style char*,
+// .c_str() converts to C-style const char*,
 // so std::strtol:
 // Converts our c++ string to a C char *
 // Reds and attempts to convert char to long.
@@ -231,8 +236,6 @@ void handle_input(const std::string &input, app_state_t *state)
     if (cmd == "reboot"){
         std::cout << "restarting device.. " << std::endl;
         std::cout.flush();
-        //vTaskDelay(pdMS_TO_TICKS(200));
-
         esp_restart();
     }
 
@@ -274,7 +277,6 @@ void handle_input(const std::string &input, app_state_t *state)
     }
 }
 
-// Todo - Update counter currently throttled to once a second. Disable this?
 /**
  * @brief Print current system status flags.
  *
@@ -282,13 +284,49 @@ void handle_input(const std::string &input, app_state_t *state)
  */
 void handle_status(app_state_t* state)
 {
-    //bool live_wifi_connected = WiFi_IsConnected();
+    bool wifiStatus = state->system_status.wifi_connected;
+    bool LEOPStatus = state->system_status.leop_connected;
+    bool sensorValid = state->sensor_data.valid;
+    bool TimeSynced = TimeSync_IsSynced();
+    bool AllOK = false;
+    if (!wifiStatus || !LEOPStatus || !sensorValid || !TimeSynced)
+    {
+        std::cout << "Degraded." << std::endl;
+    }
+    else {
+        std::cout << "All systems OK." << std::endl;
+    }
+    
+    uint64_t uptime_seconds = (uint64_t)esp_timer_get_time() / 1000000ULL;
+    std::cout << "\nUptime: " << uptime_seconds << std::endl;
 
-    std::cout << "Wifi(system): " << connected_text(state->system_status.wifi_connected) << std::endl;
-    //std::cout << "Wifi(live): " << connected_text(live_wifi_connected) << std::endl;
-    std::cout << "LEOP: " << connected_text(state->system_status.leop_connected) << std::endl;
-    std::cout << "Sensor: " << ok_text(state->system_status.sensor_ok) << std::endl;
-    std::cout << "Update counter: " << state->system_status.update_counter << std::endl;
+
+    std::cout << "Wifi: " << connected_text(wifiStatus) << std::endl;
+    std::cout << "LEOP: " << connected_text(LEOPStatus) << std::endl;
+    
+    if (sensorValid) {
+        std::cout << "Sensor: OK" << std::endl;
+    }
+    else if (state->sensor_data.last_update_seconds == 0) {
+        std::cout << "Sensor: Not OK(no successful reading since startup)"<< std::endl; 
+    }
+    else {
+        char duration[32];
+        uint64_t now = esp_timer_get_time() / 1000000ULL;
+        uint64_t age = now - state->sensor_data.last_update_seconds;
+
+        TimeFormat_FormatDuration(duration, sizeof(duration), age);
+
+        std::cout << "Sensor: Not OK (last worked " << duration << " ago)" << std::endl;
+    }
+
+    if (TimeSynced) {
+        std::cout << "Time sync: Synchronized" << std::endl;
+    }
+    else {
+        std::cout << "Time sync: Not synchronized" << std::endl;
+    }
+
 }
 
 /**
@@ -298,15 +336,15 @@ void handle_status(app_state_t* state)
  */
 void handle_sensor(app_state_t *state)
 {
-    std::cout << "Debug valid: " << state->sensor_data.valid << std::endl;
-    std::cout << "Temperature raw: " << state->sensor_data.temperature << std::endl;
+    //std::cout << "Debug valid: " << state->sensor_data.valid << std::endl;
+    //std::cout << "Temperature raw: " << state->sensor_data.temperature << std::endl;
 
     if (!state->sensor_data.valid) {
         std::cout << "Sensor: No valid data yet." << std::endl;
         return;
     }
 
-    std::cout << "Last updated monotinic time: " << state->sensor_data.last_update_seconds << std::endl;
+    std::cout << "Last successful sensor read done in monotonic time since boot: " << state->sensor_data.last_update_seconds << std::endl;
     // If we have synced our local clock to SNTP via wifi and have a valid unix time, we print that to user
     if (state->sensor_data.wall_time_valid) {
         print_local_time(state->sensor_data.last_unix_time);
@@ -314,9 +352,9 @@ void handle_sensor(app_state_t *state)
     else {
         std::cout << "Last updated local time: not synced yet" << std::endl;
     }
-    std::cout << "Temperature - " << state->sensor_data.temperature << std::endl;
-    std::cout << "Pressure    - " << state->sensor_data.pressure << std::endl;
-    std::cout << "Humidity    - " << state->sensor_data.humidity << std::endl;
+    std::cout << "Temperature - " << state->sensor_data.temperature << " °C" << std::endl;
+    std::cout << "Pressure    - " << state->sensor_data.pressure << " hPa" << std::endl;
+    std::cout << "Humidity    - " << state->sensor_data.humidity << " %" << std::endl;
 }
 
 /**
@@ -326,9 +364,9 @@ void handle_sensor(app_state_t *state)
  */
 void print_config(app_state_t *state)
 {
-    std::cout << "fetch_interval_minutes: " << state->config_data.fetch_interval_minutes << std::endl;
-    std::cout << "sensor_interval_ms: " << state->config_data.sensor_interval_ms << std::endl;
-    std::cout << "test_mode: " << enabled_text(state->config_data.test_mode) << std::endl;
+    std::cout << "fetch_interval_minutes: " << state->config_data.fetch_interval_minutes << ".\tAccepted value between 1-1440" << std::endl;
+    std::cout << "sensor_interval_ms: " << state->config_data.sensor_interval_ms << ". \t Accepted values between 1000-60000" << std::endl;
+    std::cout << "test_mode: " << enabled_text(state->config_data.test_mode) << ".\t Accepted inputs: \"true\"|\"false\"" << std::endl;
 }
 
 /**
@@ -339,7 +377,7 @@ void print_config(app_state_t *state)
  */
 void handle_config(std::vector<std::string> tokens, app_state_t *state)
 {
-    std::string help_msg = "syntax: \"config <config_name> <value>\".\nFields (name) (value):\n \tfetch_interval_minutes uint32_t\n\ttest_mode bool\n";
+    std::string help_msg = "syntax: \"config <config_name> <value>\".\nFields (name) (value):\n fetch_interval_minutes int\nsensor_interval_ms int\ntest_mode bool\n";
     if (tokens.size() != 3)
     {
         std::cout << help_msg;
@@ -349,18 +387,17 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
     const std::string &value = tokens[2];
     if (key == "fetch_interval_minutes")
     {
-        // production TODO - Fetch interval can be set by any value from 1min to 24h. In production change this to 15min?
         int int_value;
         // Use helper function to see if we can parse something as int
-        if (parse_int(value, int_value) && int_value > 1 && int_value <= 1440)
+        if (parse_int(value, int_value) && int_value >= 1 && int_value <= 1440)
         {            
-            std::cout << "Now setting \"fetch_interval_minutes\" to \"" << int_value << "\"." << std::endl;
             state->config_data.fetch_interval_minutes = int_value;
             // Also save the changed settings to NVS
             int result = Config_WriteToNVS_FetchIntervalMinutes(int_value);
             if (result != 0) {
                 ESP_LOGW(TAG, "Something failed when attempting to write \"new fetch_interval_minutes\" to NVS.");
             }
+            std::cout << "Set \"fetch_interval_minutes\" to \"" << int_value << "\"." << std::endl;
         }
         else { 
             std::cout << "You must enter a int value between 1(1 minute) and 1440 minutes(1 day)." << std::endl;
@@ -374,12 +411,12 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
         {
             if (int_value >= 1000 && int_value <= 60000)
             {
-                std::cout << "Now setting \"sensor_interval_ms\" to \"" << int_value << "\"." << std::endl;
                 state->config_data.sensor_interval_ms = int_value;
                 int result = Config_WriteToNVS_SensorIntervalMs(int_value);
                 if (result != 0) {
                     ESP_LOGW(TAG, "Something failed when attempting to write new \"sensor_interval_ms\" to NVS.");
                 }
+                std::cout << "Set \"sensor_interval_ms\" to \"" << int_value << "\"." << std::endl;
             }
             else {
                 std::cout << "You must enter a int value between 1 000 and 60 000ms(1-60s)" << std::endl;
@@ -394,7 +431,7 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
         // TODO - add logic to not unecessecarily write new config if new value is same as old(true -> true)?
         if (value == "true")
         {
-            std::cout << "Now setting \test_mode\" to \"true\"." << std::endl;
+            std::cout << "Now setting \"test_mode\" to \"true\"." << std::endl;
             state->config_data.test_mode = true;
             int result = Config_WriteToNVS_TestMode(true);
             if (result != 0) {
@@ -404,12 +441,15 @@ void handle_config(std::vector<std::string> tokens, app_state_t *state)
         }
         else if (value == "false")
         {
-            std::cout << "Now setting \test_mode\" to \"false\"." << std::endl;
+            std::cout << "Now setting \"test_mode\" to \"false\"." << std::endl;
             state->config_data.test_mode = false;
             int result = Config_WriteToNVS_TestMode(false);
             if (result != 0) {
                 ESP_LOGW(TAG, "Something failed when attempting to write new \"test_mode=false\" to NVS.");
             }
+        }
+        else {
+            std::cout << "needs to be \"true\" or \"false\"" << std::endl;
         }
     }
     else
@@ -427,8 +467,10 @@ void handle_leop(app_state_t *app)
 {
     if (app == NULL) {
         ESP_LOGE(TAG, "app is null in handle_leop");
+        return;
     }
     LEOPData &leop = app->leop_data;
+
     uint32_t total_entries = leop.recommendations.count;
     std::cout << "--- Latest leop data --- " << std::endl;
     std::cout << "Number of entries: " << total_entries << std::endl;
@@ -440,7 +482,6 @@ void handle_leop(app_state_t *app)
     
 }
 
-// Diagnostics helper function - prints info about a task
 /**
  * @brief Print basic FreeRTOS stack usage information for one task.
  *
@@ -460,7 +501,7 @@ void print_task_stack(const char* name, TaskHandle_t handle, uint32_t stack_size
     uint32_t used = stack_size - free;
     uint32_t used_percent = (used * 100) / stack_size;
 
-    std::cout << name << ": used " << used << "/" << stack_size << " {" << used_percent << "%), min free " << free << std::endl;
+    std::cout << name << ": used " << used << "/" << stack_size << " (" << used_percent << "%), min free " << free << std::endl;
 }
 
 /**
@@ -486,7 +527,6 @@ void handle_diag(app_state_t *app)
     std::cout << "Minimum free heap: " << min_free_heap << " bytes." << std::endl;
     std::cout << "Task count: " << task_count << std::endl;
 
-    // New helper stuff
     print_task_stack(app->system_task_handlers.wifi_task.name, app->system_task_handlers.wifi_task.handle, app->system_task_handlers.wifi_task.stack_size);
     print_task_stack(app->system_task_handlers.ui_task.name, app->system_task_handlers.ui_task.handle, app->system_task_handlers.ui_task.stack_size);
     print_task_stack(app->system_task_handlers.sensor_task.name, app->system_task_handlers.sensor_task.handle, app->system_task_handlers.sensor_task.stack_size);

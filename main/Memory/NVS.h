@@ -20,28 +20,23 @@ extern "C" {
  * @brief Public API for the NVS helper module.
  *
  * Provides helpers for initializing NVS and reading or writing simple values
- * in storage namespaces.
+ * in the default storage namespace or a named namespace.
  *
  * @defgroup NVS NVS
  * @brief Helpers for ESP-IDF NVS storage access.
  *
- * The module wraps common NVS operations used by the firmware. Some functions
- * open the default storage namespace, and the demonstration routine performs a
- * blocking delay before restarting the device.
+ * The module wraps common NVS operations used by the firmware. Functions
+ * perform NVS open, read/write, and commit operations as needed.
  * @{
  */
-
-//int NVS_Initialize();
-
-/**
- * @brief Demonstrates NVS initialization, read-modify-write, and restart flow.
- */
-void FullNVS();
 
 /**
  * @brief Initializes the default NVS flash partition.
  *
- * @return 0 on success, or -1 if the partition must be erased and
+ * Reinitializes the partition after erasing it when ESP-IDF reports that the
+ * NVS pages are exhausted or the stored version is incompatible.
+ *
+ * @return 0 on success, or -1 if the partition had to be erased and
  * reinitialized.
  */
 int NVS_Init();

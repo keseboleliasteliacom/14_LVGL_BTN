@@ -17,6 +17,7 @@ static WiFi_UI wifi_ui = {
     .network_dropdown_dyn = NULL,
     .password_textarea_dyn = NULL,
     .scan_button_dyn = NULL,
+    .disconnect_button_dyn = NULL,
     .status_label_dyn = NULL,
     .status_label_sta = NULL,
 };
@@ -94,6 +95,27 @@ void WiFi_UI_Initialize()
     lv_obj_set_style_bg_grad_color(wifi_ui.scan_button_dyn, lv_color_hex(0x5F06CF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(wifi_ui.scan_button_dyn, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    lv_obj_t *scan_label = lv_label_create(wifi_ui.scan_button_dyn);
+    lv_label_set_text(scan_label, "SCAN");
+    lv_obj_center(scan_label);
+
+    wifi_ui.disconnect_button_dyn = lv_btn_create(ui_Group_WiFi);
+    lv_obj_set_width(wifi_ui.disconnect_button_dyn, 95);
+    lv_obj_set_height(wifi_ui.disconnect_button_dyn, 25);
+    lv_obj_set_x(wifi_ui.disconnect_button_dyn, -20);
+    lv_obj_set_y(wifi_ui.disconnect_button_dyn, -131);
+    lv_obj_set_align(wifi_ui.disconnect_button_dyn, LV_ALIGN_CENTER);
+    lv_obj_add_flag(wifi_ui.disconnect_button_dyn, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+    lv_obj_clear_flag(wifi_ui.disconnect_button_dyn, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_color(wifi_ui.disconnect_button_dyn, lv_color_hex(0x370859), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(wifi_ui.disconnect_button_dyn, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_color(wifi_ui.disconnect_button_dyn, lv_color_hex(0x5F06CF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_dir(wifi_ui.disconnect_button_dyn, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t *disconnect_label = lv_label_create(wifi_ui.disconnect_button_dyn);
+    lv_label_set_text(disconnect_label, "Disconnect");
+    lv_obj_center(disconnect_label);
+
     wifi_ui.wifi_label = lv_label_create(ui_Screen1);
     lv_obj_set_width(wifi_ui.wifi_label, LV_SIZE_CONTENT);  /// 1
     lv_obj_set_height(wifi_ui.wifi_label, LV_SIZE_CONTENT); /// 1
@@ -112,7 +134,7 @@ void WiFi_UI_Initialize()
     lv_obj_set_y(wifi_ui.ssid_label, -264);
     lv_obj_set_align(wifi_ui.ssid_label, LV_ALIGN_CENTER);
     lv_label_set_text(wifi_ui.ssid_label, "Not Connected");
-    lv_obj_set_style_text_color(wifi_ui.ssid_label, lv_color_hex(0x00FF07), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(wifi_ui.ssid_label, lv_color_hex(0xFF0000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(wifi_ui.ssid_label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     WiFi_UI_Set_Callbacks();
@@ -122,11 +144,31 @@ void WiFi_UI_Initialize()
  * @brief Sends a Wi-Fi scan request from the scan button event.
  *
  * @param[in] _Event LVGL event object.
+ *
+ * @note Intended for LVGL callback context.
  */
 void WiFi_UI_Scan_cb(lv_event_t *_Event)
 {
+    (void)_Event;
+
     wifi_data w_data = {0};
     w_data.cmd = WIFI_CMD_SCAN;
+    xQueueSend(wifi_cmd_queue, &w_data, 0);
+}
+
+/**
+ * @brief Sends a Wi-Fi disconnect request from the disconnect button event.
+ *
+ * @param[in] _Event LVGL event object.
+ *
+ * @note Intended for LVGL callback context.
+ */
+void WiFi_UI_Disconnect_cb(lv_event_t *_Event)
+{
+    (void)_Event;
+
+    wifi_data w_data = {0};
+    w_data.cmd = WIFI_CMD_DISCONNECT;
     xQueueSend(wifi_cmd_queue, &w_data, 0);
 }
 
@@ -134,6 +176,8 @@ void WiFi_UI_Scan_cb(lv_event_t *_Event)
  * @brief Handles password entry keyboard events for Wi-Fi connection.
  *
  * @param[in] _Event LVGL event object.
+ *
+ * @note Intended for LVGL callback context.
  */
 void WiFi_UI_Keyboard_cb(lv_event_t *_Event)
 {
@@ -165,6 +209,8 @@ void WiFi_UI_Keyboard_cb(lv_event_t *_Event)
  * @brief Opens an on-screen keyboard for the password text area.
  *
  * @param[in] _Event LVGL event object.
+ *
+ * @note Intended for LVGL callback context.
  */
 void WiFi_UI_TextArea_cb(lv_event_t *_Event)
 {
@@ -182,6 +228,8 @@ void WiFi_UI_TextArea_cb(lv_event_t *_Event)
  * @brief Updates the selected SSID from the dropdown selection.
  *
  * @param[in] _Event LVGL event object.
+ *
+ * @note Intended for LVGL callback context.
  */
 void WiFi_UI_Dropdown_cb(lv_event_t *_Event)
 {
@@ -204,34 +252,63 @@ void WiFi_UI_Update(void)
         if (w_data.status == WIFI_STATUS_SCAN_DONE)
         {
             ESP_LOGI(TAG, "Scan finished!");
-            if (lvgl_port_lock(pdMS_TO_TICKS(100)))
+            lv_dropdown_clear_options(wifi_ui.network_dropdown_dyn);
+            for (int i = 0; i < w_data.number; i++)
             {
-                lv_dropdown_clear_options(wifi_ui.network_dropdown_dyn);
-                for (int i = 0; i < w_data.number; i++)
-                {
-                    lv_dropdown_add_option(wifi_ui.network_dropdown_dyn, (char *)w_data.ap_info[i].ssid, LV_DROPDOWN_POS_LAST);
-                }
-                lvgl_port_unlock();
+                lv_dropdown_add_option(wifi_ui.network_dropdown_dyn, (char *)w_data.ap_info[i].ssid, LV_DROPDOWN_POS_LAST);
             }
+
         }
         if (w_data.status == WIFI_STATUS_CONNECTED)
         {
             ESP_LOGI(TAG, "Connection finished!");
             lv_label_set_text(wifi_ui.status_label_dyn, "Connected");
+            lv_label_set_text(wifi_ui.ssid_label, "Connected");
             lv_obj_set_style_text_color(wifi_ui.status_label_dyn, lv_color_hex(0x66FF00), LV_PART_MAIN | LV_STATE_DEFAULT);
-            // If SSID was loaded from NVS into w_data.wifi_info.ssid
+            lv_obj_set_style_text_color(wifi_ui.ssid_label, lv_color_hex(0x66FF00), LV_PART_MAIN | LV_STATE_DEFAULT);
+
+            // Use the SSID from active connection, if it has one.
+            // Otherwise fallback to SSID from currently selected in the UI
             if (w_data.wifi_info.ssid[0] != '\0') {
                 lv_label_set_text(wifi_ui.ssid_label, w_data.wifi_info.ssid);
             }
-            // Else if manually connected
             else {
                 lv_label_set_text(wifi_ui.ssid_label, wifi_ui.selected_ssid);
             }
+        }   
+        if (w_data.status == WIFI_STATUS_RECONNECTING)
+        {
+            lv_label_set_text(wifi_ui.status_label_dyn, "Reconnecting...");
+            lv_obj_set_style_text_color(
+                wifi_ui.status_label_dyn,
+                lv_color_hex(0xFFFF00),
+                LV_PART_MAIN | LV_STATE_DEFAULT
+            );
 
-
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            lv_label_set_text(wifi_ui.ssid_label, "Reconnecting");
+            lv_obj_set_style_text_color(
+                wifi_ui.ssid_label,
+                lv_color_hex(0xFFFF00),
+                LV_PART_MAIN | LV_STATE_DEFAULT
+            );
         }
-        // xQueueSend(wifi_queue, &w_data, portMAX_DELAY);
+        if (w_data.status == WIFI_STATUS_DISCONNECTED)
+        {
+            // Change the wifi status next to the "Status: " in the Wifi tab.
+            lv_label_set_text(wifi_ui.status_label_dyn, "Disconnected");
+            lv_obj_set_style_text_color(wifi_ui.status_label_dyn,
+                lv_color_hex(0xFF0000),
+                LV_PART_MAIN | LV_STATE_DEFAULT
+            );
+
+            // Change the status of the Wifi status in the top right of screen
+            lv_label_set_text(wifi_ui.ssid_label, "No WiFi");
+            lv_obj_set_style_text_color(
+                wifi_ui.ssid_label,
+                lv_color_hex(0xFF0000),
+                LV_PART_MAIN | LV_STATE_DEFAULT
+            );
+        }
     }
 }
 
@@ -245,4 +322,5 @@ void WiFi_UI_Set_Callbacks(void)
     lv_obj_add_event_cb(wifi_ui.network_dropdown_dyn, WiFi_UI_Dropdown_cb, LV_EVENT_VALUE_CHANGED, NULL);
     lv_obj_add_event_cb(wifi_ui.password_textarea_dyn, WiFi_UI_TextArea_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_add_event_cb(wifi_ui.scan_button_dyn, WiFi_UI_Scan_cb, LV_EVENT_PRESSED, NULL);
+    lv_obj_add_event_cb(wifi_ui.disconnect_button_dyn, WiFi_UI_Disconnect_cb, LV_EVENT_PRESSED, NULL);
 }

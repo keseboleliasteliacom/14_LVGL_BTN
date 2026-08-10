@@ -50,6 +50,8 @@ typedef enum
 typedef enum
 {
     WIFI_STATUS_INITIALIZED,
+    WIFI_STATUS_CONNECTING,
+    WIFI_STATUS_RECONNECTING,
     WIFI_STATUS_CONNECTED,
     WIFI_STATUS_SCAN_DONE,
     WIFI_STATUS_DISCONNECTED,
@@ -68,7 +70,7 @@ typedef struct
 
 
 /**
- * @brief Credentials used for Wi-Fi station connection.
+ * @brief Station credentials used by the Wi-Fi module.
  */
 typedef struct
 {

@@ -3,6 +3,7 @@
 
 #include "stddef.h"
 #include "../Cache/Cache.h"
+#include "LEOP_Limits.h"
 
 /**
  * @file Recommendation.h
@@ -16,8 +17,8 @@
  * @defgroup RECOMMENDATION Recommendation
  * @brief Recommendation data handling and cache access.
  *
- * The module stores up to 96 recommendation entries, tracks fetch state, and
- * uses the cache helper for persisted JSON data.
+ * The module stores recommendation entries in a fixed-size list, tracks fetch
+ * state, and uses the cache helper for persisted JSON data.
  *
  * @note Functions operate on a caller-provided RecommendationList instance.
  * @note Fetch functions depend on the HTTP and JSON parsing pipeline used by
@@ -32,6 +33,14 @@ typedef struct{
     bool recommendation_fetched;
 }RecommendationStatus;
 
+typedef enum
+{
+    LEOP_RECOMMENDATION_UNKNOWN = 0,
+    LEOP_RECOMMENDATION_BUY,
+    LEOP_RECOMMENDATION_HOLD,
+    LEOP_RECOMMENDATION_SELL
+} RecommendationAction;
+
 /**
  * @brief Single recommendation entry.
  *
@@ -39,18 +48,19 @@ typedef struct{
  */
 typedef struct{
     int id;
-    double recommendation;
+    double recommendation; /**< Recommendation score parsed from the source data. */
+    RecommendationAction action; /**< Recommendation category. */
     char timestamp[20];
 }Recommendation;
 
 /**
  * @brief Container for recommendation entries, status, and cache state.
  *
- * Holds up to 96 entries in the fixed-size array and keeps the cache and
- * fetch status used by the recommendation workflow.
+ * Holds up to LEOP_FORECAST_MAX_ENTRIES entries in the fixed-size array and
+ * keeps the cache and fetch status used by the recommendation workflow.
  */
 typedef struct{
-    Recommendation rec[96];
+    Recommendation rec[LEOP_FORECAST_MAX_ENTRIES];
     size_t count;
     Cache_t cache;
     RecommendationStatus status;

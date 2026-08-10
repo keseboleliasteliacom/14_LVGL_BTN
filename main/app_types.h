@@ -6,7 +6,6 @@
 #include <time.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-//#include <task.h>
 #include "Price.h"
 #include "Recommendation.h"
 #include "LEOP_Fetcher.h"
@@ -14,9 +13,10 @@
 
 /**
  * @file app_types.h
- * @brief Shared application data types for system state, configuration, and task handles.
+ * @brief Shared application data types for state, configuration, and task handles.
  *
- * Defines the data structures used to share application state between modules.
+ * Defines the common data structures used to exchange application state
+ * between modules.
  */
 
 /**
@@ -37,43 +37,19 @@ typedef enum {
 } recommendation_type_t;
 
 /**
- * @brief One LEOP recommendation entry.
+ * @brief Latest BME280 sensor readings and validity state.
  *
- * Stores a timestamp, normalized recommendation value, and decoded
- * recommendation type.
+ * Contains the most recent sensor values together with timestamp and
+ * synchronization flags used by the application.
  */
 typedef struct {
-    char timestamp[20]; /**< Timestamp in "YYYY-MM-DD HH:MM" format. */
-    float recommendation;  /**< Normalized value in the range 0 to 1. */
-    recommendation_type_t recommendation_type; /**< BUY, HOLD, SELL, INVALID, or ERROR. */
-} leop_entry_t;
-
-/**
- * @brief Latest LEOP data snapshot.
- *
- * Contains the cached LEOP entries and the number of valid entries currently
- * stored in the array.
- */
-typedef struct {
-    int id;
-    leop_entry_t entries[128];
-    uint32_t entry_count;
-
-} leop_data_t;
-
-/**
- * @brief Latest BME280 sensor readings.
- *
- * Contains the most recent sensor values and the associated validity flags.
- */
-typedef struct {
-    bool valid;
-    uint32_t last_update_seconds;
-    time_t last_unix_time;
-    bool wall_time_valid;
-    double temperature;
-    double pressure;
-    double humidity;
+    bool valid; /**< True when the sensor reading is valid. */
+    uint32_t last_update_seconds; /**< Seconds since the last sensor update. */
+    time_t last_unix_time; /**< Last update time in Unix seconds. */
+    bool wall_time_valid; /**< True when wall time has been synchronized. */
+    double temperature; /**< Temperature in project-defined units. */
+    double pressure; /**< Pressure in project-defined units. */
+    double humidity; /**< Relative humidity in project-defined units. */
 } sensor_data_t;
 
 
@@ -86,7 +62,7 @@ typedef struct {
  */
 typedef struct {
     uint32_t fetch_interval_minutes; /**< Fetch interval in minutes. */
-    bool test_mode;
+    bool test_mode; /**< True when running in test mode. */
     uint32_t sensor_interval_ms; /**< Sensor interval in milliseconds. */
 
 } config_data_t;
@@ -97,10 +73,10 @@ typedef struct {
  * Tracks basic connectivity and health indicators used by the application.
  */
 typedef struct {
-    bool wifi_connected;
-    bool leop_connected;
-    bool sensor_ok;
-    uint32_t update_counter;
+    bool wifi_connected; /**< True when Wi-Fi is connected. */
+    bool leop_connected; /**< True when LEOP data is available. */
+    bool sensor_ok; /**< True when the sensor path is considered healthy. */
+    uint32_t update_counter; /**< Number of completed application updates. */
 } system_status_t;
 
 /**
@@ -109,20 +85,22 @@ typedef struct {
  * Stores the task name, FreeRTOS handle, and configured stack size.
  */
 typedef struct {
-    const char * name;
-    TaskHandle_t handle;
-    uint32_t stack_size;
+    const char * name; /**< Task name. */
+    TaskHandle_t handle; /**< FreeRTOS task handle. */
+    uint32_t stack_size; /**< Configured task stack size. */
 } task_info_t;
 
 /**
  * @brief Collection of application task handles.
+ *
+ * Groups the task records used by the application to track its worker tasks.
  */
 typedef struct {
-    task_info_t wifi_task;
-    task_info_t ui_task;
-    task_info_t uart_task;
-    task_info_t sensor_task;
-    task_info_t leop_task;
+    task_info_t wifi_task; /**< Wi-Fi task information. */
+    task_info_t ui_task; /**< UI task information. */
+    task_info_t uart_task; /**< UART task information. */
+    task_info_t sensor_task; /**< Sensor task information. */
+    task_info_t leop_task; /**< LEOP task information. */
 } system_task_handlers_t;
 
 
@@ -138,6 +116,7 @@ typedef struct {
     config_data_t config_data;
     system_status_t system_status;
     system_task_handlers_t system_task_handlers;
+    uint32_t last_recommendation_update_seconds;
 } app_state_t;
 
 /** @} */

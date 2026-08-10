@@ -3,6 +3,7 @@
 
 #include <string>
 #include "../app_types.h"
+#include "../SNTP/time_sync.h"
 
 /**
  * @file uart_diag_shell.hpp
@@ -12,8 +13,15 @@
  * diagnostic input and dispatch shell commands against shared application
  * state.
  *
+ * @ingroup UART
+ */
+
+/**
  * @defgroup UART UART
  * @brief UART communication and diagnostic helpers.
+ *
+ * Command handling for the UART diagnostic shell used by the application
+ * tasking model.
  * @{
  */
 

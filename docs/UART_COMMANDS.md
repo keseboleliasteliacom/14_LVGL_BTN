@@ -1,231 +1,138 @@
-# UART Command Documentation
+# UART diagnostic shell
 
-This document describes the UART diagnostics interface used by the Glennergy ESP32 terminal.
+> **In short:** UART0 provides read-only diagnostics, three persistent setting
+> changes and restart; it is a development shell, not a stable external API.
 
-The UART shell is intended for development, debugging and simple runtime inspection of the terminal state.
+The firmware exposes a small development shell on UART0. It is useful for
+inspecting the latest in-memory state and changing three configuration values.
+It is not a stable external API, and its output should not be parsed as a
+machine-readable protocol.
 
-## Interface Settings
+Opening a real serial port and sending commands interacts with hardware. Verify
+the device and port and obtain authorization first. Serial output may contain
+network names, request paths, timestamps, or other operational details; inspect
+captures before sharing them. Never paste passwords, tokens, private keys, or
+other secrets into this shell.
 
-| Setting | Value |
+## Serial settings and input handling
+
+| Setting | Current value |
 | --- | --- |
-| UART port | `UART_NUM_0` |
-| Baud rate | `115200` |
-| Data bits | `8` |
-| Parity | None |
-| Stop bits | `1` |
-| Flow control | Disabled |
-| Pins | Default UART0 pins, `UART_PIN_NO_CHANGE` |
-| Input ending | `Enter`, `\n` or `\r` |
+| Port | `UART_NUM_0` |
+| Baud | 115200 |
+| Format | 8 data bits, no parity, 1 stop bit |
+| Hardware flow control | Disabled |
+| Pins | Existing UART0 pins (`UART_PIN_NO_CHANGE`) |
+| Line ending | Carriage return or line feed |
+| Editable line capacity | 127 characters plus terminator |
 
-Defined in:
+The worker echoes accepted bytes. On a carriage return or line feed it trims
+leading and trailing whitespace, converts the whole line to lowercase, and
+splits tokens on the literal space character. Commands and keys are therefore
+case-insensitive, but values are lowercased too. Use exactly one space between
+tokens: repeated internal spaces create empty tokens and can make `config`
+fail its three-token check. Bytes beyond the 127-character capacity are
+silently ignored until Enter is pressed.
 
-```c
-#define UART_PORT UART_NUM_0
-#define UART_BAUD 115200
-```
+## Command summary
 
-The code does not assign custom TX/RX pins. UART0 is kept on the default serial connection used for the ESP terminal.
+| Command | Mutates state? | Purpose |
+| --- | --- | --- |
+| `help` | No | Print the normal command list |
+| `help immersive` | No, but blocks | Run a long novelty help sequence that waits for Enter repeatedly |
+| `status` | No | Print shared system-status fields |
+| `sensor` | No | Print the latest shared BME280 snapshot |
+| `leop` | No | Print the latest shared recommendation list |
+| `pconfig` | No | Print the three runtime configuration values |
+| `config <key> <value>` | **Yes** | Change RAM and attempt to persist the selected value to NVS |
+| `diag` | No | Print uptime, heap, task count, and task stack high-water estimates |
+| `reboot` | **Yes** | Immediately restart the device; hidden testing command, absent from `help` |
 
-## Input Handling
+An unknown command prints `Unknown command: <normalized input>`. An empty
+trimmed line prints the shell's no/incorrect-input message.
 
-The UART task reads one byte at a time and builds a line buffer.
+## Read-only diagnostics
 
-When the user presses Enter:
+### `status`
 
-1. The current line is terminated.
-2. Leading and trailing whitespace is removed.
-3. The command is converted to lowercase.
-4. The command is split on spaces.
-5. The first token is used as the command name.
+Prints an overall `All systems OK.` or `Degraded.` classification followed by:
 
-Example:
+- uptime in seconds;
+- `Wifi`: mirrored by the Wi-Fi connection callback;
+- `LEOP`: `Connected` for the internal connected or degraded LEOP states and
+  `Disconnected` for the other states;
+- `Sensor`: derived from the active sensor snapshot validity/update fields;
+- `Time sync`: `Synchronized` or `Not synchronized`.
 
-```text
-  SeNsOr
-```
+The overall classification requires Wi-Fi, LEOP, a valid sensor snapshot, and
+synchronized time. It is a current-state summary, not a freshness guarantee for
+all three LEOP datasets.
 
-is handled as:
+### `sensor`
 
-```text
-sensor
-```
+Always prints `Debug valid` and the raw temperature. If `valid` is false, it
+then prints `Sensor: No valid data yet.` and stops. For a valid snapshot it also
+prints:
 
-The current line buffer is 128 characters long. Longer input is ignored after the buffer is full.
+- monotonic last-update seconds (the source output misspells this as
+  `monotinic`);
+- local last-update time, or `not synced yet` when wall time is not valid;
+- temperature, pressure, and humidity.
 
-## Command Summary
+The command reads shared state directly without a common application mutex. A
+coherent multi-field snapshot is not guaranteed while the Sensor task writes.
+Units are not included consistently in UART output; use the sensor/hardware
+documentation rather than inferring a formal unit contract from these lines.
 
-| Command | Purpose |
-| --- | --- |
-| `help` | Prints available commands. |
-| `status` | Prints basic system health. |
-| `sensor` | Prints latest BME280 sensor readings. |
-| `leop` | Prints latest LEOP recommendation data. |
-| `config <name> <value>` | Updates a runtime config value. |
-| `pconfig` | Prints current config values. |
-| `diag` | Prints runtime diagnostics. |
+### `leop`
 
-Unknown commands return:
+Prints `leop_data.recommendations.count`, followed by each recommendation value
+and timestamp. It does not print weather, prices, transport status, or whether
+the displayed list came from the network or SPIFFS cache. Recommendation
+semantics remain unresolved; the numeric values must not be interpreted as a
+settled buy/sell rule. The command also reads the shared container without a
+common mutex.
 
-```text
-Unknown command: <input>
-```
+### `pconfig`
 
-## `help`
+Prints:
 
-Prints the available UART commands.
+- `fetch_interval_minutes`;
+- `sensor_interval_ms`;
+- `test_mode` as `Enabled` or `Disabled`.
 
-Request:
+These are the current RAM values after defaults and any successfully loaded NVS
+values. `test_mode` is stored and displayed but has no other active consumer in
+the authoritative source snapshot.
 
-```text
-help
-```
+### `diag`
 
-Output includes:
+Prints uptime in seconds, current default-capability free heap, minimum free
+heap since boot, total FreeRTOS task count, and one line for each of the five
+application task handles.
 
-```text
-STATUS
-LEOP
-SENSOR
-CONFIG <param> <value>
-PCONFIG
-DIAG
-HELP
-```
+The task lines derive `used = configured_stack_size -
+uxTaskGetStackHighWaterMark(handle)`. Treat them as rough diagnostics. Their
+units and interpretation depend on the ESP-IDF FreeRTOS port, and the displayed
+configured size is not an independently measured allocation. A missing handle
+prints `<name>: no handle:`. The metadata names are also passed to task
+creation; see [firmware architecture](architecture.md#application-tasks).
 
-There is also a `help immersive` variant in the code. It prints a longer interactive help sequence and waits for Enter between messages. This is mostly an Easter egg/debug feature and is not needed for normal diagnostics.
-
-## `status`
-
-Prints high-level system status from `app_state_t.system_status`.
-
-Request:
-
-```text
-status
-```
-
-Output fields:
-
-| Field | Meaning |
-| --- | --- |
-| `Wifi` | Whether system status says WiFi is connected. |
-| `LEOP` | Whether system status says LEOP is connected. |
-| `Sensor` | Whether system status says sensor is OK. |
-| `Update counter` | Current system update counter. |
-
-Example output:
-
-```text
-Wifi: Connected
-LEOP: Connected
-Sensor: OK
-Update counter: 123
-```
-
-## `sensor`
-
-Prints the latest sensor snapshot from `app_state_t.sensor_data`.
-
-Request:
-
-```text
-sensor
-```
-
-If no valid sensor data exists yet:
-
-```text
-Debug valid: 0
-Temperature raw: 0
-Sensor: No valid data yet.
-```
-
-If valid data exists:
-
-```text
-Debug valid: 1
-Temperature raw: 22.5
-Last updated monotinic time: 183
-Last updated local time: 2026-06-12 14:05:22
-Temperature - 22.5
-Pressure    - 1012.8
-Humidity    - 44.1
-```
-
-Notes:
-
-- Monotonic time is seconds since boot.
-- Local time is printed only when wall time has been synced and validated.
-- Sensor values come from the BME280 task through `app.sensor_data`.
-
-## `leop`
-
-Prints the latest LEOP recommendation data from `app_state_t.leop_data`.
-
-Request:
-
-```text
-leop
-```
-
-Output format:
-
-```text
---- Latest leop data ---
-Number of entries: <count>
-Now printing entries  recommendation and timestamp
-<recommendation>, <timestamp>
-<recommendation>, <timestamp>
-...
-```
-
-The current command prints recommendation values only. Weather and price data are fetched by the LEOP task, but this UART command does not currently print them.
-
-## `pconfig`
-
-Prints current runtime configuration values.
-
-Request:
-
-```text
-pconfig
-```
-
-Output fields:
-
-| Field | Meaning |
-| --- | --- |
-| `fetch_interval_minutes` | LEOP fetch interval in minutes. |
-| `sensor_interval_ms` | Sensor read interval in milliseconds. |
-| `test_mode` | Whether test mode is enabled. |
-
-Example output:
-
-```text
-fetch_interval_minutes: 5
-sensor_interval_ms: 1000
-test_mode: Disabled
-```
-
-## `config`
-
-Updates a runtime configuration value.
+## Persistent configuration command
 
 Syntax:
 
 ```text
-config <config_name> <value>
+config <key> <value>
 ```
 
-Supported fields:
+| Key | Accepted value | Runtime consumer | NVS namespace/key |
+| --- | --- | --- | --- |
+| `fetch_interval_minutes` | Decimal integer `1` through `1440` | Next LEOP fetch interval calculation | `config` / `leop_min` as `u32` |
+| `sensor_interval_ms` | Decimal integer `1000` through `60000` | Sensor task reads it before each delay | `config` / `sensor_ms` as `u32` |
+| `test_mode` | Exactly `true` or `false` after lowercasing | No active behavior beyond storage/display | `config` / `test_mode` as `u8` boolean |
 
-| Config name | Type | Accepted values |
-| --- | --- | --- |
-| `fetch_interval_minutes` | integer | `2` to `1440` |
-| `sensor_interval_ms` | integer | `1000` to `60000` |
-| `test_mode` | boolean string | `true` or `false` |
-
-Examples:
+Examples for an authorized development device:
 
 ```text
 config fetch_interval_minutes 15
@@ -233,61 +140,32 @@ config sensor_interval_ms 5000
 config test_mode true
 ```
 
-Important behavior:
+Each accepted value is written to RAM first, then committed to NVS. On the next
+boot, NVS replaces the compiled default when the key can be read. If the NVS
+write fails, the shell logs a warning but leaves the new RAM value active; the
+value can therefore appear changed until restart without having persisted.
 
-- `fetch_interval_minutes` must currently be greater than `1`, so `1` is rejected even though the error text says "between 1 and 1440".
-- `sensor_interval_ms` accepts values from 1 second to 60 seconds.
-- `test_mode` accepts only lowercase `true` or `false`, but command input is lowercased before parsing.
-- Values are changed in RAM through `app_state_t.config_data`.
-- The command does not currently persist the config to NVS.
+Important current validation details:
 
-Invalid syntax prints:
+- decimal parsing must consume the entire token, but it does not explicitly
+  detect `strtol` overflow before casting to `int`;
+- an invalid `test_mode` value produces no user-facing error;
+- the generic syntax text omits `sensor_interval_ms`, even though it is
+  implemented;
+- `config` changes live task behavior and performs flash writes, so it is not a
+  read-only diagnostic command.
 
-```text
-syntax: "config <config_name> <value>".
-Fields (name) (value):
-        fetch_interval_minutes uint32_t
-        test_mode bool
-```
+## Restart command
 
-## `diag`
+`reboot` calls `esp_restart()` immediately after printing and flushing a short
+message. It is a hidden testing command and is not listed by `help`. Use it only
+after confirming the exact development device, that a restart is authorized,
+and that interrupting its current work is acceptable. It does not prompt for
+confirmation.
 
-Prints runtime diagnostics.
+## Suggested read-only triage
 
-Request:
-
-```text
-diag
-```
-
-Output fields:
-
-| Field | Meaning |
-| --- | --- |
-| `Uptime` | Seconds since boot. |
-| `Free Heap` | Current heap available. |
-| `Minimum free heap` | Lowest heap level since boot. |
-| `Task count` | Number of FreeRTOS tasks. |
-| Task stack lines | Stack usage estimate for WiFi, UI, Sensor, UART and LEOP tasks. |
-
-Example output:
-
-```text
-Diagnostics:
-Uptime: 120 seconds.
-Free Heap: 123456 bytes.
-Minimum free heap: 100000 bytes.
-Task count: 12
-WIFI_Work: used 512/4096 {12%), min free 3584
-UI_Update: used 9000/16384 {54%), min free 7384
-Sensor: used 480/4096 {11%), min free 3616
-UART: used 700/4096 {17%), min free 3396
-LEOP: used 1200/4096 {29%), min free 2896
-```
-
-Note: the printed stack usage is based on `uxTaskGetStackHighWaterMark()`. It is useful for debugging but should be treated as an estimate.
-
-## Typical Debug Session
+After an authorized serial session is already open, begin with:
 
 ```text
 help
@@ -298,18 +176,33 @@ leop
 diag
 ```
 
-Recommended workflow:
+Do not start with `config`, `reboot`, flash erase, or other state-changing
+operations. See [troubleshooting](troubleshooting.md) for symptom-oriented
+checks and [development](development.md#flash-and-monitor-a-development-board)
+for the hardware authorization boundary.
 
-1. Run `status` to check overall state.
-2. Run `sensor` to confirm BME280 data.
-3. Run `leop` to confirm LEOP recommendation data.
-4. Run `pconfig` to inspect intervals.
-5. Run `diag` if memory or task behavior looks suspicious.
+## Implementation evidence and maintenance
 
-## Limitations
+<details>
+<summary>Verification metadata</summary>
 
-- Commands read shared `app_state_t` values directly.
-- The UART shell is intended as a diagnostics tool, not a user-facing API.
-- Config changes are runtime-only and are not persisted.
-- `leop` currently prints recommendation data, not all LEOP data types.
-- UART output uses `std::cout`, so formatting is simple text rather than structured JSON.
+| Item | Value |
+| --- | --- |
+| Status | Current implementation, including known defects |
+| Audience | Firmware developers and authorized device testers |
+| Last verified | Glennergy-ESP `693dc8819ac5b6d8fb29ce057d287814a3b9a14d` |
+| Evidence | Static source inspection; no serial session was opened |
+
+</details>
+
+- `main/UART/UART.cpp`: UART setup, line editing, normalization, and worker;
+- `main/UART/uart_diag_shell.cpp`: command dispatch, validation, output, and
+  restart behavior;
+- `main/Config/AppConfig.c`: defaults and NVS keys;
+- `main/Memory/NVS.c`: storage and commit behavior;
+- `main/main.c`: task metadata and shared application state.
+
+Re-check this page whenever the parser, help text, configuration keys/ranges,
+shared state, task diagnostics, or restart command changes. This edition was
+validated statically; no serial port, hardware, secret, or production endpoint
+was accessed.

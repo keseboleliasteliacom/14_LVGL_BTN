@@ -13,7 +13,7 @@ When an AI agent processes any file in this project, it MUST:
 1. Follow the rules in this document
 2. Never modify logic, control flow, initialization, signatures, task behavior, ISR behavior, or hardware access behavior
 3. Only add or update documentation and comments
-4. Preserve developer intent and non-Doxygen comments
+4. Preserve developer intent and non-Doxygen comments unless a reviewer explicitly selects the separate ordinary-comment audit policy
 5. Prefer concise, useful documentation over repetitive boilerplate
 
 If a rule conflicts with code preservation, preserve the code and ordinary developer comments.
@@ -48,9 +48,12 @@ AI MUST NOT:
 - Change peripheral names, queue names, event IDs, ISR/task behavior, timing constants, log strings, or format strings
 - Change line endings or formatting-only details unless required to place comments
 
-AI MAY:
+AI MAY in all documentation modes:
 
 - Add or update Doxygen comments
+
+AI MAY only in an explicitly selected ordinary-comment audit:
+
 - Add or update normal comments
 - Add `// Suggestion:` comments
 
@@ -70,7 +73,7 @@ Suggestions must:
 
 ### 3. Preservation Rules
 
-AI MUST preserve:
+Unless an ordinary-comment audit was explicitly selected, AI MUST preserve:
 
 - All existing non-Doxygen comments in any language
 - All debug prints and log statements (`printf`, `fprintf`, `ESP_LOG*`, similar logging)
@@ -79,7 +82,7 @@ AI MUST preserve:
 - All commented-out code
 - Existing formatting that does not need to move for documentation placement
 
-AI MUST NOT:
+Unless an ordinary-comment audit was explicitly selected, AI MUST NOT:
 
 - Remove ordinary developer comments
 - Rewrite ordinary developer comments unnecessarily
@@ -89,6 +92,17 @@ AI MUST NOT:
 
 AI MAY rewrite, simplify, merge, or trim existing Doxygen comments when needed to match this repository standard.
 When an existing Doxygen block conflicts with the target style examples, prefer the target style examples.
+
+Routine normal and semantic-audit runs treat every ordinary comment, TODO, commented-out include, and disabled-code block as immutable. Ordinary-comment cleanup is a separate, explicit policy choice and must leave unrelated comments unchanged.
+
+### Semantic Evidence Rules
+
+- Names containing `test`, `legacy`, `old`, or similar wording do not prove that code is inactive. Check callers and application startup flow.
+- Document task arguments from both the implementation cast and task-creation caller when available.
+- Document connectivity from the state transitions that set and clear it. Distinguish association, acquired IP connectivity, and application-service health.
+- Check queue producers and consumers before describing data availability, freshness, or ownership.
+- Prefer narrower wording when paired files and callers do not establish a stronger contract.
+- A semantic correction is preferred over preserving inaccurate existing wording; cosmetic paraphrasing is not a semantic correction.
 
 ### 4. Language Rules
 

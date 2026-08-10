@@ -20,7 +20,7 @@ static const char *TAG = "Weather";
 int Weather_Initialize(WeatherList *w_list)
 {
     w_list->count = 0;
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < LEOP_FORECAST_MAX_ENTRIES; i++)
     {
         w_list->weather[i] = (Weather){0};
     }
@@ -33,9 +33,10 @@ int Weather_Initialize(WeatherList *w_list)
 }
 
 /**
- * @brief Implementation of Weather_Fetch.
+ * @brief Fetches weather data from the network and updates the list.
  *
- * See header for full contract documentation.
+ * Performs an HTTP GET, attempts to cache the payload, and parses the
+ * response into the provided weather list.
  */
 int Weather_Fetch(const char *url, WeatherList *w_list)
 {
@@ -63,10 +64,12 @@ int Weather_Fetch(const char *url, WeatherList *w_list)
         return 2;
     }
 
+    /* debug
     for (int i = 0; i < w_list->count; i++)
     {
-        //ESP_LOGI(TAG, "%.f", w_list->weather[i].temp);
+        ESP_LOGI(TAG, "%.f", w_list->weather[i].temp);
     }
+    */
 
     HTTPClient_Dispose(&http_response);
 
@@ -74,9 +77,9 @@ int Weather_Fetch(const char *url, WeatherList *w_list)
 }
 
 /**
- * @brief Implementation of Weather_FetchCache.
+ * @brief Loads weather data from the local cache file.
  *
- * See header for full contract documentation.
+ * Reads the cached JSON payload and parses it into the provided weather list.
  */
 int Weather_FetchCache(WeatherList *w_list)
 {
@@ -102,15 +105,15 @@ int Weather_FetchCache(WeatherList *w_list)
 }
 
 /**
- * @brief Implementation of Weather_Dispose.
+ * @brief Clears weather list contents.
  *
- * See header for full contract documentation.
+ * Resets the entry count and clears the stored weather entries.
  */
 void Weather_Dispose(WeatherList *w_list)
 {
     w_list->count = 0;
 
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < LEOP_FORECAST_MAX_ENTRIES; i++)
     {
         w_list->weather[i] = (Weather){0};
     }

@@ -7,8 +7,8 @@
  * @file Price_UI.h
  * @brief Public API for the electricity price UI tab.
  *
- * Declares the LVGL widgets used to show hourly electricity prices and the
- * functions that create and refresh the tab content.
+ * Declares the LVGL widgets used to show electricity prices and the functions
+ * that create and refresh the tab content.
  *
  * @ingroup Electricity
  */
@@ -26,19 +26,20 @@
 /**
  * @brief LVGL widget handles for the electricity price view.
  *
- * The arrays contain 24 entries, one per hour shown in the tab.
+ * The arrays contain 32 entries, one per visible row that may be shown in the
+ * tab.
  */
 typedef struct
 {
     lv_obj_t* price_panel; /**< Root container for the price list. */
-    lv_obj_t *hourLabel[24]; /**< Hour labels, indexed by display row. */
-    lv_obj_t *priceLabel[24]; /**< Price labels, indexed by display row. */
+    lv_obj_t *hourLabel[32]; /**< Hour labels, indexed by display row. */
+    lv_obj_t *priceLabel[32]; /**< Price labels, indexed by display row. */
 } Price_UI;
 
 /**
  * @brief Creates the electricity price UI.
  *
- * Initializes the LVGL widgets for the tab and prepares the 24 hourly rows.
+ * Initializes the LVGL widgets for the tab and prepares the display rows.
  */
 void Price_UI_Initialize();
 

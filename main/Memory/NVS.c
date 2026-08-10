@@ -3,6 +3,9 @@
  * @brief Implementation of the NVS helper module.
  *
  * @ingroup NVS
+ *
+ * Provides simple wrappers around ESP-IDF NVS operations for the default
+ * storage namespace and named namespaces.
  */
 
 #include "NVS.h"
@@ -15,7 +18,11 @@ const static char* TAG = "NVS";
 /**
  * @brief Initializes the default NVS flash partition.
  *
- * Returns a non-zero value if the partition must be erased and reinitialized.
+ * Reinitializes the partition after erasing it when ESP-IDF reports that the
+ * NVS pages are exhausted or the stored version is incompatible.
+ *
+ * @return 0 on success, or -1 when the partition had to be erased and
+ * reinitialized.
  */
 int NVS_Init() {
     err = nvs_flash_init();
@@ -62,7 +69,6 @@ int NVS_WriteToFile(const char* key, const char* value)
  * See header for full contract documentation.
  */
 int NVS_LoadFromFile(const char* key, char* value, size_t length) {
-    //char value[20];
 
     err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
@@ -249,88 +255,4 @@ int NVS_WriteBool(const char* nvs_namespace, const char* key, bool value)
     }
 
     return 0;
-}
-
-
-
-
-/**
- * @brief Demonstrates NVS initialization, read-modify-write, and restart flow.
- *
- * The function opens the storage namespace, updates the restart counter, and
- * then delays before restarting the device.
- */
-void FullNVS() {
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        // NVS partition was truncated and needs to be erased
-        // Then retry nvm flash init
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    }
-
-    ESP_ERROR_CHECK(err);
-
-    // Open
-    ESP_LOGI(TAG, "\n");
-    ESP_LOGI(TAG, "Opening NVS handle...");
-    nvs_handle_t my_handle;
-    //std::unique_ptr<nvs::NVSHandle> handle nvs::open_nvs_handle("storage", NVS_READWRITE, &err);
-    err = nvs_open("storage", NVS_READWRITE, &my_handle);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "Error (%s) opening NVS handle.", esp_err_to_name(err));
-    }
-    else {
-        ESP_LOGI(TAG, "Done.");
-
-        ESP_LOGI(TAG, "Reading restart counter from NVS...");
-        int32_t restart_counter = 0;
-        err = nvs_get_i32(my_handle, "restart_counter", &restart_counter);
-        //err = handle->get_item("restart_counter", restart_counter);
-        switch (err) {
-            case ESP_OK:
-                ESP_LOGI(TAG, "Done.");
-                ESP_LOGI(TAG, "Restart counter = %"PRIu32"", restart_counter);
-                break;
-            case ESP_ERR_NVS_NOT_FOUND:
-                ESP_LOGW(TAG, "This value has not been initalized yet.");
-                break;
-            default:
-                ESP_LOGE(TAG, "Error (%s) reading.", esp_err_to_name(err));
-        }
-
-        ESP_LOGI(TAG, "Updating restart counter in NVS...");
-        restart_counter++;
-        //err = handle->set_item("restart_counter", restart_counter);
-        err = nvs_set_i32(my_handle, "restart_counter", restart_counter);
-        if (err == ESP_OK) {
-            ESP_LOGI(TAG, "Done.");
-        }
-        else {
-            ESP_LOGI(TAG, "Failed.");
-        }
-
-        //Commit the newly written values.
-        // just like git, we must commit any changes using nvs_commit.
-        // Implementations may write to storage at other times, but this is not guaranteed.
-        ESP_LOGI(TAG, "Commiting updates in NVS...");
-        //err = handle->commit();
-        err = nvs_commit(my_handle);
-        if (err == ESP_OK) {
-            ESP_LOGI(TAG, "Done.");
-        }
-        else {
-            ESP_LOGI(TAG, "Failed.");
-        }
-
-        nvs_close(my_handle);
-
-    }
-
-    for (int i = 15; i >= 0; i--) {
-        printf("Restarting in %d seconds...", i);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
-
-    esp_restart();
 }

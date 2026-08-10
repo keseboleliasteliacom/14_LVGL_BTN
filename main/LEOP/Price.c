@@ -20,7 +20,7 @@ static const char *TAG = "Price";
 int Price_Initialize(PriceList *p_list)
 {
     p_list->count = 0;
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < LEOP_FORECAST_MAX_ENTRIES; i++)
     {
         p_list->price[i] = (Price){0};
     }
@@ -33,9 +33,13 @@ int Price_Initialize(PriceList *p_list)
 }
 
 /**
- * @brief Implementation of Price_Fetch.
+ * @brief Fetches price data from a remote URL and updates the cache.
  *
- * See header for full contract documentation.
+ * Performs HTTP retrieval, writes the raw JSON to the local cache, and parses
+ * the response into the provided list.
+ *
+ * @note Performs network I/O and may leave cached raw data available even if
+ * parsing fails.
  */
 int Price_Fetch(const char *url, PriceList *p_list)
 {
@@ -64,11 +68,7 @@ int Price_Fetch(const char *url, PriceList *p_list)
         return 2;
     }
 
-    /*
-    for (int i = 0; i < p_list->count; i++)
-    {
-        //ESP_LOGI(TAG, "%lf", p_list->price[i].current_prices);
-    }*/
+
 
     HTTPClient_Dispose(&http_response);
 
@@ -76,9 +76,12 @@ int Price_Fetch(const char *url, PriceList *p_list)
 }
 
 /**
- * @brief Implementation of Price_FetchCache.
+ * @brief Loads cached price data from local storage and parses it.
  *
- * See header for full contract documentation.
+ * Uses the cached JSON file, then clears the cache buffer after parsing.
+ *
+ * @note Uses local storage and returns before cache disposal on load or parse
+ * failure.
  */
 int Price_FetchCache(PriceList *p_list)
 {
@@ -104,15 +107,15 @@ int Price_FetchCache(PriceList *p_list)
 }
 
 /**
- * @brief Implementation of Price_Dispose.
+ * @brief Clears the price list contents.
  *
- * See header for full contract documentation.
+ * Resets the entry count and zeroes the stored prices.
  */
 void Price_Dispose(PriceList *p_list)
 {
     p_list->count = 0;
 
-    for (int i = 0; i < 96; i++)
+    for (int i = 0; i < LEOP_FORECAST_MAX_ENTRIES; i++)
     {
         p_list->price[i] = (Price){0};
     }

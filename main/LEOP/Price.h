@@ -9,8 +9,8 @@
  * @file Price.h
  * @brief Public API for the price cache and fetch module.
  *
- * Provides the data structures and functions used to initialize, fetch from
- * HTTP, restore cached JSON, and clear price data.
+ * Provides the data structures and functions used to initialize, fetch remote
+ * price data, restore cached JSON, and clear in-memory price entries.
  *
  * @defgroup PRICE PRICE
  * @brief Price data management.
@@ -58,16 +58,20 @@ typedef struct
 /**
  * @brief Initializes a price list.
  *
+ * Resets the stored entries, clears the count, and initializes the cache
+ * storage for later fetch or restore operations.
+ *
  * @param[in,out] r_list Pointer to the price list to reset and prepare.
  *
  * @return 0 on success.
- *
- * @note Resets the stored entries and prepares the cache for use.
  */
 int Price_Initialize(PriceList *r_list);
 
 /**
  * @brief Fetches price data from a remote URL.
+ *
+ * Retrieves JSON over HTTP, attempts to cache the raw response, and parses the
+ * response into the provided list.
  *
  * @param[in] url Remote JSON source URL.
  * @param[in,out] r_list Pointer to the price list to populate.
@@ -78,11 +82,15 @@ int Price_Initialize(PriceList *r_list);
  * - 2 if the response could not be parsed
  *
  * @note Performs network I/O and attempts to write the raw response to cache.
+ * @note Cache write failures are logged but do not stop parsing.
  */
 int Price_Fetch(const char *url, PriceList *r_list);
 
 /**
  * @brief Loads price data from the local cache.
+ *
+ * Loads the cached JSON file, parses it into the provided list, and disposes
+ * the cache buffer after a successful parse.
  *
  * @param[in,out] p_list Pointer to the price list to populate from cache.
  *
@@ -99,9 +107,9 @@ int Price_FetchCache(PriceList *p_list);
 /**
  * @brief Clears the price list contents.
  *
- * @param[in,out] r_list Pointer to the price list to reset.
+ * Resets the entry count and zeroes stored prices.
  *
- * @note Resets the entry count and zeroes stored prices.
+ * @param[in,out] r_list Pointer to the price list to reset.
  */
 void Price_Dispose(PriceList *r_list);
 

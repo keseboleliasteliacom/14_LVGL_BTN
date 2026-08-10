@@ -45,10 +45,9 @@ static leop_connection_cb_t connection_callback = NULL;
 static void *connection_callback_ctx = NULL;
 
 /**
- * @brief Registers the LEOP connection-state callback.
+ * @brief Implementation of LEOPFetcher_SetConnectionCallback.
  *
- * The callback is invoked from LEOP worker task context when the published
- * connection state changes.
+ * See header for full contract documentation.
  */
 void LEOPFetcher_SetConnectionCallback(leop_connection_cb_t cb, void *ctx)
 {
@@ -281,6 +280,8 @@ int LEOPFetcher_Initialize(LEOPData *leop_data, uint32_t interval)
  * @brief Implementation of LEOPFetcher_Work.
  *
  * See header for full contract documentation.
+ *
+ * @param[in] arg Pointer to an app_state_t passed to the task.
  */
 void LEOPFetcher_Work(void *arg)
 {

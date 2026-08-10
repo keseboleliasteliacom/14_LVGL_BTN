@@ -20,7 +20,7 @@
  * @file WiFi.h
  * @brief Public API for the Wi-Fi module.
  *
- * Defines the Wi-Fi worker-task interface, connection state, and command and
+ * Defines the Wi-Fi worker-task interface, shared state, and command and
  * result payloads used by the module.
  *
  * @defgroup WIFI WiFi
@@ -60,7 +60,7 @@ typedef enum
 /**
  * @brief Shared Wi-Fi connection state.
  *
- * Exposes whether the station is connected to an access point.
+ * Tracks whether the station is connected to an access point.
  */
 typedef struct 
 {

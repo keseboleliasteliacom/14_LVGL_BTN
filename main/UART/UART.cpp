@@ -125,12 +125,9 @@ extern "C" void UART_Work(void* parameter) {
    ESP_LOGI(TAG, "UART_Work started.");
    ESP_LOGI(TAG, "Type HELP for commands");
 
-   char input[8];
    char line[128];
    int line_pos = 0;
-   bool prompt_needed = true;
 
-   uint8_t *buf = new uint8_t[BUF_SIZE];
    
    ESP_LOGI(TAG, "Uart WORK now entering main loop.");   
 
@@ -147,7 +144,6 @@ extern "C" void UART_Work(void* parameter) {
                 handle_input(to_lower_copy(trim_copy(line)), app);
 
                 line_pos = 0;
-                prompt_needed = true;
             }
             else {
                 if (line_pos < sizeof(line) -1) {
